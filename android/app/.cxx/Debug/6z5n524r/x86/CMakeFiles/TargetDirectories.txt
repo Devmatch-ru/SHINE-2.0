@@ -1,0 +1,2 @@
+C:/work/Flutter/Shine/shine/android/app/.cxx/Debug/6z5n524r/x86/CMakeFiles/edit_cache.dir
+C:/work/Flutter/Shine/shine/android/app/.cxx/Debug/6z5n524r/x86/CMakeFiles/rebuild_cache.dir
