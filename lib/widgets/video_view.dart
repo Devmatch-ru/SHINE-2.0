@@ -3,7 +3,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class VideoView extends StatefulWidget {
   final MediaStream? stream;
-  VideoView({this.stream});
+  const VideoView({super.key, this.stream});
 
   @override
   _VideoViewState createState() => _VideoViewState();

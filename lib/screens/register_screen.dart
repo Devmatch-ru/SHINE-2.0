@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_cubit.dart';
 import '../widgets/custom_text_field.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _confirm = TextEditingController();
+  bool _agree = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 32),
               Center(
                 child: Text(
-                  'Вход в аккаунт',
+                  'Регистрация',
                   style: theme.textTheme.titleLarge,
                 ),
               ),
@@ -46,27 +47,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _password,
                 obscure: true,
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                  child: const Text('Забыли пароль?'),
-                ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: 'ПОВТОРИТЕ ПАРОЛЬ',
+                hint: 'Повторите пароль',
+                controller: _confirm,
+                obscure: true,
               ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => context.read<AuthCubit>().signIn(
-                      _email.text,
-                      _password.text,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _agree,
+                    onChanged: (v) => setState(() => _agree = v ?? false),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Я согласен(-на) с условиями\nПользовательского соглашения',
+                      style: theme.textTheme.bodySmall,
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _agree
+                    ? () => context.read<AuthCubit>().signUp(
+                          _email.text,
+                          _password.text,
+                        )
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Войти'),
+                child: const Text('Зарегистрироваться'),
               ),
               const SizedBox(height: 16),
               Center(
@@ -85,20 +101,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const Spacer(),
-              Center(child: Text('Нет аккаунта?', style: theme.textTheme.bodySmall)),
+              Center(child: Text('Уже есть аккаунт?', style: theme.textTheme.bodySmall)),
               const SizedBox(height: 8),
               OutlinedButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                ),
+                onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   shape: const StadiumBorder(),
                   side: BorderSide.none,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Зарегистрироваться'),
+                child: const Text('Войти'),
               ),
               const SizedBox(height: 32),
             ],

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CaptureButton extends StatelessWidget {
   final VoidCallback? onPressed;
-  CaptureButton({this.onPressed});
+  const CaptureButton({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) => ElevatedButton(

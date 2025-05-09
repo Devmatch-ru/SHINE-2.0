@@ -20,7 +20,6 @@ class _WebRtcServiceImpl implements WebRtcService {
   @override
   Future<RTCPeerConnection> createPeerConnection(MediaStream stream) async {
     final config = {
-      // настройки STUN/TURN серверов которые надо использовать
       'iceServers': [
         {'urls': 'stun:stun.l.google.com:19302'},
       ]
