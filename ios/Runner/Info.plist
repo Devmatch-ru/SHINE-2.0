@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSCameraUsageDescription</key>
+    <string>Приложение Shine использует камеру для съёмки</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Приложение Shine сохраняет фото в галерею</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Требуется для обнаружения Wi-Fi сетей в локальной сети</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Требуется для работы в фоне с камерой и Wi-Fi</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

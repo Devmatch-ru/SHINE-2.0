@@ -1,0 +1,2575 @@
+warning: in the working copy of 'lib/screens/roles/test2/host_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/services/recording_manager.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/widgets/video_view/local_video_view.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/widgets/video_view/remote_video_view.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugin_registrant.cc', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugin_registrant.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugins.cmake', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'macos/Flutter/GeneratedPluginRegistrant.swift', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'pubspec.lock', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugin_registrant.cc', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugin_registrant.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugins.cmake', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/android/app/.cxx/Debug/6z5n524r/arm64-v8a/configure_fingerprint.bin b/android/app/.cxx/Debug/6z5n524r/arm64-v8a/configure_fingerprint.bin[m
+[1mindex d6b82c2..8d6f63d 100644[m
+[1m--- a/android/app/.cxx/Debug/6z5n524r/arm64-v8a/configure_fingerprint.bin[m
+[1m+++ b/android/app/.cxx/Debug/6z5n524r/arm64-v8a/configure_fingerprint.bin[m
+[36m@@ -2,27 +2,27 @@[m [mC/C++ Structured Logi[m
+ g[m
+ eC:\flutter_windows_3.27.3-stable\flutter\packages\flutter_tools\gradle\src\main\groovy\CMakeLists.txtC[m
+ A[m
+[31m-?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	´ƒõﬂÚ2ß ˙û„ùÊ2f[m
+[32m+[m[32m?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	™ ùØÙ2ß ˙û„ùÊ2f[m
+ d[m
+[31m-bC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\additional_project_files.txt	´ƒõﬂÚ2 ÜÚÀÊ2c[m
+[32m+[m[32mbC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\additional_project_files.txt	´ ùØÙ2 ÜÚÀÊ2c[m
+ a[m
+[31m-_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\android_gradle_build.json	´ƒõﬂÚ2¡ ˚ÜÚÀÊ2h[m
+[32m+[m[32m_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\android_gradle_build.json	´ ùØÙ2¡ ˚ÜÚÀÊ2h[m
+ f[m
+[31m-dC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\android_gradle_build_mini.json	¨ƒõﬂÚ2ú ìáÚÀÊ2U[m
+[32m+[m[32mdC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\android_gradle_build_mini.json	´ ùØÙ2ú ìáÚÀÊ2U[m
+ S[m
+[31m-QC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\build.ninja	¨ƒõﬂÚ2À‘ ¬ÖÚÀÊ2Y[m
+[32m+[m[32mQC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\build.ninja	´ ùØÙ2À‘ ¬ÖÚÀÊ2Y[m
+ W[m
+[31m-UC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\build.ninja.txt	¨ƒõﬂÚ2^[m
+[32m+[m[32mUC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\build.ninja.txt	´ ùØÙ2^[m
+ \[m
+[31m-ZC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\build_file_index.txt	¨ƒõﬂÚ2e òáÚÀÊ2_[m
+[32m+[m[32mZC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\build_file_index.txt	´ ùØÙ2e òáÚÀÊ2_[m
+ ][m
+[31m-[C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\compile_commands.json	¨ƒõﬂÚ2	c[m
+[32m+[m[32m[C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\compile_commands.json	´ ùØÙ2	c[m
+ a[m
+[31m-_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\compile_commands.json.bin	¨ƒõﬂÚ2[m
+[32m+[m[32m_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\compile_commands.json.bin	´ ùØÙ2[m
+ i[m
+ g[m
+[31m-eC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\metadata_generation_command.txt	¨ƒõﬂÚ2Œ ïáÚÀÊ2\[m
+[32m+[m[32meC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\metadata_generation_command.txt	´ ùØÙ2Œ ïáÚÀÊ2\[m
+ Z[m
+[31m-XC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\prefab_config.json	¨ƒõﬂÚ2( ïáÚÀÊ2a[m
+[32m+[m[32mXC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\prefab_config.json	´ ùØÙ2( ïáÚÀÊ2a[m
+ _[m
+[31m-]C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\symbol_folder_index.txt	¨ƒõﬂÚ2T ñáÚÀÊ2[m
+\ No newline at end of file[m
+[32m+[m[32m]C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\arm64-v8a\symbol_folder_index.txt	´ ùØÙ2T ñáÚÀÊ2[m
+\ No newline at end of file[m
+[1mdiff --git a/android/app/.cxx/Debug/6z5n524r/armeabi-v7a/configure_fingerprint.bin b/android/app/.cxx/Debug/6z5n524r/armeabi-v7a/configure_fingerprint.bin[m
+[1mindex 0856b20..1479971 100644[m
+[1m--- a/android/app/.cxx/Debug/6z5n524r/armeabi-v7a/configure_fingerprint.bin[m
+[1m+++ b/android/app/.cxx/Debug/6z5n524r/armeabi-v7a/configure_fingerprint.bin[m
+[36m@@ -2,27 +2,27 @@[m [mC/C++ Structured Logi[m
+ g[m
+ eC:\flutter_windows_3.27.3-stable\flutter\packages\flutter_tools\gradle\src\main\groovy\CMakeLists.txtC[m
+ A[m
+[31m-?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	€ƒõﬂÚ2ß ˙û„ùÊ2h[m
+[32m+[m[32m?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	˛ ùØÙ2ß ˙û„ùÊ2h[m
+ f[m
+[31m-dC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\additional_project_files.txt	€ƒõﬂÚ2 ÖäÛÀÊ2e[m
+[32m+[m[32mdC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\additional_project_files.txt	˛ ùØÙ2 ÖäÛÀÊ2e[m
+ c[m
+[31m-aC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\android_gradle_build.json	€ƒõﬂÚ2≈ áäÛÀÊ2j[m
+[32m+[m[32maC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\android_gradle_build.json	˛ ùØÙ2≈ áäÛÀÊ2j[m
+ h[m
+[31m-fC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\android_gradle_build_mini.json	€ƒõﬂÚ2† îäÛÀÊ2W[m
+[32m+[m[32mfC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\android_gradle_build_mini.json	˛ ùØÙ2† îäÛÀÊ2W[m
+ U[m
+[31m-SC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\build.ninja	€ƒõﬂÚ2’‘ ™âÛÀÊ2[[m
+[32m+[m[32mSC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\build.ninja	˛ ùØÙ2’‘ ™âÛÀÊ2[[m
+ Y[m
+[31m-WC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\build.ninja.txt	€ƒõﬂÚ2`[m
+[32m+[m[32mWC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\build.ninja.txt	ˇ ùØÙ2`[m
+ ^[m
+[31m-\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\build_file_index.txt	€ƒõﬂÚ2e óäÛÀÊ2a[m
+[32m+[m[32m\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\build_file_index.txt	ˇ ùØÙ2e óäÛÀÊ2a[m
+ _[m
+[31m-]C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\compile_commands.json	€ƒõﬂÚ2	e[m
+[32m+[m[32m]C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\compile_commands.json	ˇ ùØÙ2	e[m
+ c[m
+[31m-aC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\compile_commands.json.bin	€ƒõﬂÚ2[m
+[32m+[m[32maC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\compile_commands.json.bin	ˇ ùØÙ2[m
+ k[m
+ i[m
+[31m-gC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\metadata_generation_command.txt	€ƒõﬂÚ2ÿ ñäÛÀÊ2^[m
+[32m+[m[32mgC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\metadata_generation_command.txt	ˇ ùØÙ2ÿ ñäÛÀÊ2^[m
+ \[m
+[31m-ZC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\prefab_config.json	€ƒõﬂÚ2( ñäÛÀÊ2c[m
+[32m+[m[32mZC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\prefab_config.json	ˇ ùØÙ2( ñäÛÀÊ2c[m
+ a[m
+[31m-_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\symbol_folder_index.txt	€ƒõﬂÚ2V óäÛÀÊ2[m
+\ No newline at end of file[m
+[32m+[m[32m_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\armeabi-v7a\symbol_folder_index.txt	ˇ ùØÙ2V óäÛÀÊ2[m
+\ No newline at end of file[m
+[1mdiff --git a/android/app/.cxx/Debug/6z5n524r/x86/configure_fingerprint.bin b/android/app/.cxx/Debug/6z5n524r/x86/configure_fingerprint.bin[m
+[1mindex c8b6007..c42b887 100644[m
+[1m--- a/android/app/.cxx/Debug/6z5n524r/x86/configure_fingerprint.bin[m
+[1m+++ b/android/app/.cxx/Debug/6z5n524r/x86/configure_fingerprint.bin[m
+[36m@@ -2,27 +2,27 @@[m [mC/C++ Structured Logi[m
+ g[m
+ eC:\flutter_windows_3.27.3-stable\flutter\packages\flutter_tools\gradle\src\main\groovy\CMakeLists.txtC[m
+ A[m
+[31m-?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	¸ƒõﬂÚ2ß ˙û„ùÊ2`[m
+[32m+[m[32m?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	…ÀùØÙ2ß ˙û„ùÊ2`[m
+ ^[m
+[31m-\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\additional_project_files.txt	¸ƒõﬂÚ2 …ìÛÀÊ2][m
+[32m+[m[32m\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\additional_project_files.txt	…ÀùØÙ2 …ìÛÀÊ2][m
+ [[m
+[31m-YC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\android_gradle_build.json	¸ƒõﬂÚ2µ ÀìÛÀÊ2b[m
+[32m+[m[32mYC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\android_gradle_build.json	…ÀùØÙ2µ ÀìÛÀÊ2b[m
+ `[m
+[31m-^C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\android_gradle_build_mini.json	¸ƒõﬂÚ2ê ◊ìÛÀÊ2O[m
+[32m+[m[32m^C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\android_gradle_build_mini.json	…ÀùØÙ2ê ◊ìÛÀÊ2O[m
+ M[m
+[31m-KC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\build.ninja	¸ƒõﬂÚ2≠‘ ÚíÛÀÊ2S[m
+[32m+[m[32mKC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\build.ninja	…ÀùØÙ2≠‘ ÚíÛÀÊ2S[m
+ Q[m
+[31m-OC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\build.ninja.txt	¸ƒõﬂÚ2X[m
+[32m+[m[32mOC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\build.ninja.txt	…ÀùØÙ2X[m
+ V[m
+[31m-TC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\build_file_index.txt	¸ƒõﬂÚ2e ŸìÛÀÊ2Y[m
+[32m+[m[32mTC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\build_file_index.txt	…ÀùØÙ2e ŸìÛÀÊ2Y[m
+ W[m
+[31m-UC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\compile_commands.json	¸ƒõﬂÚ2	][m
+[32m+[m[32mUC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\compile_commands.json	…ÀùØÙ2	][m
+ [[m
+[31m-YC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\compile_commands.json.bin	¸ƒõﬂÚ2[m
+[32m+[m[32mYC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\compile_commands.json.bin	…ÀùØÙ2[m
+ c[m
+ a[m
+[31m-_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\metadata_generation_command.txt	¸ƒõﬂÚ2∞ ÿìÛÀÊ2V[m
+[32m+[m[32m_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\metadata_generation_command.txt	…ÀùØÙ2∞ ÿìÛÀÊ2V[m
+ T[m
+[31m-RC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\prefab_config.json	¸ƒõﬂÚ2( ÿìÛÀÊ2[[m
+[32m+[m[32mRC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\prefab_config.json	…ÀùØÙ2( ÿìÛÀÊ2[[m
+ Y[m
+[31m-WC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\symbol_folder_index.txt	¸ƒõﬂÚ2N ŸìÛÀÊ2[m
+\ No newline at end of file[m
+[32m+[m[32mWC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86\symbol_folder_index.txt	…ÀùØÙ2N ŸìÛÀÊ2[m
+\ No newline at end of file[m
+[1mdiff --git a/android/app/.cxx/Debug/6z5n524r/x86_64/configure_fingerprint.bin b/android/app/.cxx/Debug/6z5n524r/x86_64/configure_fingerprint.bin[m
+[1mindex 253bd4d..65452c5 100644[m
+[1m--- a/android/app/.cxx/Debug/6z5n524r/x86_64/configure_fingerprint.bin[m
+[1m+++ b/android/app/.cxx/Debug/6z5n524r/x86_64/configure_fingerprint.bin[m
+[36m@@ -2,27 +2,27 @@[m [mC/C++ Structured Logi[m
+ g[m
+ eC:\flutter_windows_3.27.3-stable\flutter\packages\flutter_tools\gradle\src\main\groovy\CMakeLists.txtC[m
+ A[m
+[31m-?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	•≈õﬂÚ2ß ˙û„ùÊ2c[m
+[32m+[m[32m?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	ÅÃùØÙ2ß ˙û„ùÊ2c[m
+ a[m
+[31m-_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\additional_project_files.txt	•≈õﬂÚ2 ”úÛÀÊ2`[m
+[32m+[m[32m_C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\additional_project_files.txt	ÇÃùØÙ2 ”úÛÀÊ2`[m
+ ^[m
+[31m-\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\android_gradle_build.json	•≈õﬂÚ2ª ‚úÛÀÊ2e[m
+[32m+[m[32m\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\android_gradle_build.json	ÇÃùØÙ2ª ‚úÛÀÊ2e[m
+ c[m
+[31m-aC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\android_gradle_build_mini.json	•≈õﬂÚ2ñ ÓúÛÀÊ2R[m
+[32m+[m[32maC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\android_gradle_build_mini.json	ÇÃùØÙ2ñ ÓúÛÀÊ2R[m
+ P[m
+[31m-NC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\build.ninja	•≈õﬂÚ2º‘ ÄúÛÀÊ2V[m
+[32m+[m[32mNC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\build.ninja	ÇÃùØÙ2º‘ ÄúÛÀÊ2V[m
+ T[m
+[31m-RC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\build.ninja.txt	•≈õﬂÚ2[[m
+[32m+[m[32mRC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\build.ninja.txt	ÇÃùØÙ2[[m
+ Y[m
+[31m-WC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\build_file_index.txt	•≈õﬂÚ2e ÒúÛÀÊ2\[m
+[32m+[m[32mWC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\build_file_index.txt	ÇÃùØÙ2e ÒúÛÀÊ2\[m
+ Z[m
+[31m-XC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\compile_commands.json	•≈õﬂÚ2	`[m
+[32m+[m[32mXC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\compile_commands.json	ÇÃùØÙ2	`[m
+ ^[m
+[31m-\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\compile_commands.json.bin	•≈õﬂÚ2[m
+[32m+[m[32m\C:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\compile_commands.json.bin	ÇÃùØÙ2[m
+ f[m
+ d[m
+[31m-bC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\metadata_generation_command.txt	•≈õﬂÚ2ø ÔúÛÀÊ2Y[m
+[32m+[m[32mbC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\metadata_generation_command.txt	ÇÃùØÙ2ø ÔúÛÀÊ2Y[m
+ W[m
+[31m-UC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\prefab_config.json	•≈õﬂÚ2( ÔúÛÀÊ2^[m
+[32m+[m[32mUC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\prefab_config.json	ÇÃùØÙ2( ÔúÛÀÊ2^[m
+ \[m
+[31m-ZC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\symbol_folder_index.txt	•≈õﬂÚ2Q úÛÀÊ2[m
+\ No newline at end of file[m
+[32m+[m[32mZC:\work\Flutter\Shine\shine\android\app\.cxx\Debug\6z5n524r\x86_64\symbol_folder_index.txt	ÇÃùØÙ2Q úÛÀÊ2[m
+\ No newline at end of file[m
+[1mdiff --git a/lib/main.dart b/lib/main.dart[m
+[1mdeleted file mode 100644[m
+[1mindex c500654..0000000[m
+[1m--- a/lib/main.dart[m
+[1m+++ /dev/null[m
+[36m@@ -1,162 +0,0 @@[m
+[31m-// lib/main.dart[m
+[31m-import 'package:connectivity_plus/connectivity_plus.dart';[m
+[31m-import 'package:flutter/material.dart';[m
+[31m-import 'package:flutter/rendering.dart';[m
+[31m-import 'package:flutter_bloc/flutter_bloc.dart';[m
+[31m-import 'package:permission_handler/permission_handler.dart';[m
+[31m-import 'package:shine/screens/auth/auth_screen.dart';[m
+[31m-import 'package:shine/screens/onboarding_screen.dart';[m
+[31m-import 'package:shine/screens/roles/client_screen.dart';[m
+[31m-import 'package:shine/screens/roles/role_select.dart';[m
+[31m-import 'package:shine/screens/settings_screen.dart';[m
+[31m-import 'package:shine/theme/main_design.dart';[m
+[31m-[m
+[31m-import 'blocs/auth/auth_cubit.dart';[m
+[31m-import 'blocs/auth/auth_state.dart';[m
+[31m-import 'blocs/role/role_cubit.dart';[m
+[31m-import 'blocs/role/role_state.dart';[m
+[31m-import 'blocs/onboarding/onboarding_cubit.dart';[m
+[31m-import 'blocs/onboarding/onboarding_cubit.dart' as onb;[m
+[31m-import 'blocs/wifi/wifi_cubit.dart';[m
+[31m-import 'services/auth_service.dart';[m
+[31m-[m
+[31m-Future<void> main() async {[m
+[31m-  WidgetsFlutterBinding.ensureInitialized();[m
+[31m-  await _requestPermissions();[m
+[31m-  debugPaintBaselinesEnabled = false;[m
+[31m-  runApp([m
+[31m-    MultiBlocProvider([m
+[31m-      providers: [[m
+[31m-        BlocProvider(create: (_) => AuthCubit(AuthService.instance)),[m
+[31m-        BlocProvider(create: (_) => WifiCubit(connectivity: Connectivity())),[m
+[31m-        BlocProvider(create: (_) => onb.OnboardingCubit()),[m
+[31m-        BlocProvider(create: (_) => RoleCubit()),[m
+[31m-      ],[m
+[31m-      child: const ShineApp(),[m
+[31m-    ),[m
+[31m-  );[m
+[31m-}[m
+[31m-Future<void> _requestPermissions() async {[m
+[31m-  final statuses = await [[m
+[31m-    Permission.camera,[m
+[31m-    Permission.nearbyWifiDevices,[m
+[31m-    Permission.locationWhenInUse,[m
+[31m-    Permission.storage,[m
+[31m-  ].request();[m
+[31m-[m
+[31m-  statuses.forEach((permission, status) {[m
+[31m-    if (status.isDenied || status.isPermanentlyDenied) {[m
+[31m-      debugPrint('Permission $permission was denied');[m
+[31m-      if (permission == Permission.nearbyWifiDevices) {[m
+[31m-        debugPrint('NEARBY_WIFI_DEVICES denied, Wi-Fi detection may fail');[m
+[31m-      }[m
+[31m-    }[m
+[31m-  });[m
+[31m-}[m
+[31m-class ShineApp extends StatelessWidget {[m
+[31m-  const ShineApp({Key? key}) : super(key: key);[m
+[31m-[m
+[31m-  @override[m
+[31m-  Widget build(BuildContext context) {[m
+[31m-    return MaterialApp([m
+[31m-      title: 'SHINE',[m
+[31m-      theme: ThemeData([m
+[31m-        useMaterial3: true,[m
+[31m-        colorScheme: const ColorScheme([m
+[31m-          brightness: Brightness.light,[m
+[31m-          primary: AppColors.primary,[m
+[31m-          onPrimary: AppColors.primaryLight,[m
+[31m-          secondary: AppColors.accentLight,[m
+[31m-          onSecondary: Colors.white,[m
+[31m-          error: AppColors.error,[m
+[31m-          onError: Colors.white,[m
+[31m-          background: AppColors.bgMain,[m
+[31m-          onBackground: AppColors.primary,[m
+[31m-          surface: Colors.white,[m
+[31m-          onSurface: AppColors.primary,[m
+[31m-        ),[m
+[31m-        scaffoldBackgroundColor: AppColors.bgMain,[m
+[31m-        textTheme: const TextTheme([m
+[31m-          displayLarge: AppTextStyles.h1,[m
+[31m-          displayMedium: AppTextStyles.h2,[m
+[31m-          titleLarge: AppTextStyles.lead,[m
+[31m-          bodyLarge: AppTextStyles.body,[m
+[31m-          bodySmall: AppTextStyles.hintAccent,[m
+[31m-          bodyMedium: AppTextStyles.hintMain,[m
+[31m-        ),[m
+[31m-        inputDecorationTheme: InputDecorationTheme([m
+[31m-          filled: true,[m
+[31m-          fillColor: AppColors.primaryLight,[m
+[31m-          contentPadding: const EdgeInsets.symmetric([m
+[31m-              horizontal: AppSpacing.s, vertical: AppSpacing.m),[m
+[31m-          border: OutlineInputBorder([m
+[31m-            borderRadius: AppBorderRadius.m,[m
+[31m-            borderSide: BorderSide.none,[m
+[31m-          ),[m
+[31m-          hintStyle: AppTextStyles.hintMain,[m
+[31m-        ),[m
+[31m-        appBarTheme: const AppBarTheme([m
+[31m-          backgroundColor: Colors.white,[m
+[31m-          elevation: 0,[m
+[31m-          titleTextStyle: TextStyle([m
+[31m-            fontFamily: AppTextStyles.fontFamily,[m
+[31m-            fontSize: 32,[m
+[31m-            color: AppColors.primary,[m
+[31m-            fontWeight: FontWeight.w400,[m
+[31m-          ),[m
+[31m-          iconTheme: IconThemeData(color: AppColors.primary),[m
+[31m-        ),[m
+[31m-        elevatedButtonTheme: ElevatedButtonThemeData([m
+[31m-          style: ElevatedButton.styleFrom([m
+[31m-            backgroundColor: AppColors.primary,[m
+[31m-            foregroundColor: AppColors.primaryLight,[m
+[31m-            shape: RoundedRectangleBorder([m
+[31m-              borderRadius: AppBorderRadius.xs,[m
+[31m-            ),[m
+[31m-            textStyle: const TextStyle([m
+[31m-              fontFamily: AppTextStyles.fontFamily,[m
+[31m-              fontSize: 17,[m
+[31m-            ),[m
+[31m-            padding: const EdgeInsets.symmetric([m
+[31m-              horizontal: AppSpacing.l,[m
+[31m-              vertical: AppSpacing.s,[m
+[31m-            ),[m
+[31m-          ),[m
+[31m-        ),[m
+[31m-      ),[m
+[31m-      home: BlocBuilder<AuthCubit, AuthState>([m
+[31m-        builder: (context, authState) {[m
+[31m-          if (authState is AuthLoading) {[m
+[31m-            return const Scaffold([m
+[31m-              body: Center(child: CircularProgressIndicator()),[m
+[31m-            );[m
+[31m-          } else if (authState is Unauthenticated) {[m
+[31m-            return const LoginScreen();[m
+[31m-          } else {[m
+[31m-            return BlocBuilder<onb.OnboardingCubit, onb.OnboardingState>([m
+[31m-              builder: (context, onbState) {[m
+[31m-                if (onbState is onb.OnboardingRequired) {[m
+[31m-                  return const OnboardingScreen();[m
+[31m-                }[m
+[31m-                // onboarding complete:[m
+[31m-                return BlocBuilder<RoleCubit, RoleState>([m
+[31m-                  builder: (context, roleState) {[m
+[31m-                    if (roleState is RoleInitial) {[m
+[31m-                      return const RoleSelectScreen();[m
+[31m-                    }[m
+[31m-                      // else if (roleState is RoleHost) {[m
+[31m-                    //   return const HostScreen();[m
+[31m-                    // } else if (roleState is RoleClient) {[m
+[31m-                    //   return const ClientScreen();[m
+[31m-                    // }[m
+[31m-                    return const RoleSelectScreen();[m
+[31m-                  },[m
+[31m-                );[m
+[31m-              },[m
+[31m-            );[m
+[31m-          }[m
+[31m-        },[m
+[31m-      ),[m
+[31m-    );[m
+[31m-  }[m
+[31m-}[m
+[1mdiff --git a/lib/screens/BroadcasterScreen.dart b/lib/screens/BroadcasterScreen.dart[m
+[1mindex e69de29..938c39d 100644[m
+[1m--- a/lib/screens/BroadcasterScreen.dart[m
+[1m+++ b/lib/screens/BroadcasterScreen.dart[m
+[36m@@ -0,0 +1,471 @@[m
+[32m+[m[32mimport 'dart:convert';[m
+[32m+[m[32mimport 'dart:io';[m
+[32m+[m[32mimport 'package:collection/collection.dart';[m
+[32m+[m[32mimport 'package:flutter/foundation.dart';[m
+[32m+[m[32mimport 'package:flutter/material.dart';[m
+[32m+[m[32mimport 'package:flutter_webrtc/flutter_webrtc.dart';[m
+[32m+[m[32mimport 'package:permission_handler/permission_handler.dart';[m
+[32m+[m[32mimport 'package:shelf/shelf.dart' as shelf;[m
+[32m+[m[32mimport 'package:shelf/shelf_io.dart' as shelf_io;[m
+[32m+[m
+[32m+[m[32mimport '../utils/video_size.dart';[m
+[32m+[m
+[32m+[m[32mclass BroadcasterScreen extends StatefulWidget {[m
+[32m+[m[32m  const BroadcasterScreen({super.key});[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  _BroadcasterScreenState createState() => _BroadcasterScreenState();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mclass _BroadcasterScreenState extends State<BroadcasterScreen> {[m
+[32m+[m[32m  MediaStream? _localStream;[m
+[32m+[m[32m  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();[m
+[32m+[m[32m  bool _inCalling = false;[m
+[32m+[m[32m  bool _flashOn = false;[m
+[32m+[m
+[32m+[m[32m  bool _isRecording = false;[m
+[32m+[m[32m  int qualityIndex = 0;[m
+[32m+[m[32m  int modeIndex = 0;[m
+[32m+[m[32m  final modes = ['–§–û–¢–û–ì–†–ê–§–ò–Ø', '–í–ò–î–ï–û–ó–ê–ü–ò–°–¨'];[m
+[32m+[m
+[32m+[m[32m  RTCPeerConnection? _pc;[m
+[32m+[m[32m  HttpServer? _server;[m
+[32m+[m[32m  final List<RTCIceCandidate> _candidates = [];[m
+[32m+[m[32m  RTCSessionDescription? _offer;[m
+[32m+[m[32m  final List<String> _messages = [];[m
+[32m+[m
+[32m+[m[32m  List<MediaDeviceInfo> _devices = [];[m
+[32m+[m[32m  String? _selectedVideoInputId;[m
+[32m+[m[32m  // String? _selectedAudioInputId;[m
+[32m+[m[32m  String? _selectedVideoFPS = '30';[m
+[32m+[m[32m  VideoSize _selectedVideoSize = VideoSize(1280, 720);[m
+[32m+[m[32m  final List<RTCRtpSender> _senders = [];[m
+[32m+[m
+[32m+[m[32m  List<MediaDeviceInfo> get videoInputs =>[m
+[32m+[m[32m      _devices.where((device) => device.kind == 'videoinput').toList();[m
+[32m+[m
+[32m+[m[32m  List<MediaDeviceInfo> get audioInputs =>[m
+[32m+[m[32m      _devices.where((device) => device.kind == 'audioinput').toList();[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void initState() {[m
+[32m+[m[32m    super.initState();[m
+[32m+[m[32m    _initRenderers();[m
+[32m+[m[32m    _loadDevices();[m
+[32m+[m[32m    navigator.mediaDevices.ondevicechange = (event) => _loadDevices();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void dispose() {[m
+[32m+[m[32m    _stop();[m
+[32m+[m[32m    _localRenderer.dispose();[m
+[32m+[m[32m    _server?.close();[m
+[32m+[m[32m    navigator.mediaDevices.ondevicechange = null;[m
+[32m+[m[32m    super.dispose();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _initRenderers() async {[m
+[32m+[m[32m    await _localRenderer.initialize();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m
+[32m+[m[32m  Future<void> _loadDevices() async {[m
+[32m+[m[32m    if (WebRTC.platformIsAndroid || WebRTC.platformIsIOS) {[m
+[32m+[m[32m      var status = await Permission.camera.request();[m
+[32m+[m[32m      if (status.isPermanentlyDenied) _messages.add('Camera permission denied');[m
+[32m+[m[32m      status = await Permission.microphone.request();[m
+[32m+[m[32m      if (status.isPermanentlyDenied) _messages.add('Microphone permission denied');[m
+[32m+[m[32m    }[m
+[32m+[m[32m    final devices = await navigator.mediaDevices.enumerateDevices();[m
+[32m+[m[32m    setState(() {[m
+[32m+[m[32m      _devices = devices;[m
+[32m+[m[32m      _messages.add('Devices loaded: ${devices.map((d) => d.label).toList()}');[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _selectVideoInput(String? deviceId) async {[m
+[32m+[m[32m    _selectedVideoInputId = deviceId;[m
+[32m+[m[32m    if (!_inCalling) return;[m
+[32m+[m
+[32m+[m[32m    _localRenderer.srcObject = null;[m
+[32m+[m[32m    _localStream?.getTracks().forEach((track) async => await track.stop());[m
+[32m+[m[32m    await _localStream?.dispose();[m
+[32m+[m
+[32m+[m[32m    var newLocalStream = await navigator.mediaDevices.getUserMedia({[m
+[32m+[m[32m      'audio': false,[m
+[32m+[m[32m      'video': {[m
+[32m+[m[32m        if (_selectedVideoInputId != null && kIsWeb) 'deviceId': {'exact': _selectedVideoInputId},[m
+[32m+[m[32m        if (_selectedVideoInputId != null && !kIsWeb) 'optional': [{'sourceId': _selectedVideoInputId}],[m
+[32m+[m[32m        'width': _selectedVideoSize.width,[m
+[32m+[m[32m        'height': _selectedVideoSize.height,[m
+[32m+[m[32m        'frameRate': double.parse(_selectedVideoFPS!),[m
+[32m+[m[32m      },[m
+[32m+[m[32m    });[m
+[32m+[m
+[32m+[m[32m    _localStream = newLocalStream;[m
+[32m+[m[32m    _localRenderer.srcObject = _localStream;[m
+[32m+[m[32m    var newTrack = _localStream!.getVideoTracks().first;[m
+[32m+[m[32m    _messages.add('Video track settings: ${newTrack.getSettings()}');[m
+[32m+[m[32m    var sender = _senders.firstWhereOrNull((sender) => sender.track?.kind == 'video');[m
+[32m+[m[32m    if (sender != null) {[m
+[32m+[m[32m      var params = sender.parameters;[m
+[32m+[m[32m      params.degradationPreference = RTCDegradationPreference.MAINTAIN_RESOLUTION;[m
+[32m+[m[32m      await sender.setParameters(params);[m
+[32m+[m[32m      await sender.replaceTrack(newTrack);[m
+[32m+[m[32m      _messages.add('Video track replaced');[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  // Future<void> _selectAudioInput(String? deviceId) async {[m
+[32m+[m[32m  //   _selectedAudioInputId = deviceId;[m
+[32m+[m[32m  //   if (!_inCalling) return;[m
+[32m+[m[32m  //[m
+[32m+[m[32m  //   var newLocalStream = await navigator.mediaDevices.getUserMedia({[m
+[32m+[m[32m  //     'audio': {[m
+[32m+[m[32m  //       if (_selectedAudioInputId != null && kIsWeb) 'deviceId': {'exact': _selectedAudioInputId},[m
+[32m+[m[32m  //       if (_selectedAudioInputId != null && !kIsWeb) 'optional': [{'sourceId': _selectedAudioInputId}],[m
+[32m+[m[32m  //     },[m
+[32m+[m[32m  //     'video': false,[m
+[32m+[m[32m  //   });[m
+[32m+[m[32m  //[m
+[32m+[m[32m  //   var newTrack = newLocalStream.getAudioTracks().first;[m
+[32m+[m[32m  //   _messages.add('Audio track settings: ${newTrack.getSettings()}');[m
+[32m+[m[32m  //   var sender = _senders.firstWhereOrNull((sender) => sender.track?.kind == 'audio');[m
+[32m+[m[32m  //   await sender?.replaceTrack(newTrack);[m
+[32m+[m[32m  //   await newLocalStream.dispose();[m
+[32m+[m[32m  // }[m
+[32m+[m
+[32m+[m[32m  Future<void> _selectVideoFps(String fps) async {[m
+[32m+[m[32m    _selectedVideoFPS = fps;[m
+[32m+[m[32m    if (_inCalling) await _selectVideoInput(_selectedVideoInputId);[m
+[32m+[m[32m    setState(() {});[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _selectVideoSize(String size) async {[m
+[32m+[m[32m    _selectedVideoSize = VideoSize.fromString(size);[m
+[32m+[m[32m    if (_inCalling) await _selectVideoInput(_selectedVideoInputId);[m
+[32m+[m[32m    setState(() {});[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _start() async {[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      _localStream = await navigator.mediaDevices.getUserMedia({[m
+[32m+[m[32m        'audio': true,[m
+[32m+[m[32m        'video': {[m
+[32m+[m[32m          if (_selectedVideoInputId != null && kIsWeb) 'deviceId': {'exact': _selectedVideoInputId},[m
+[32m+[m[32m          if (_selectedVideoInputId != null && !kIsWeb) 'optional': [{'sourceId': _selectedVideoInputId}],[m
+[32m+[m[32m          'width': _selectedVideoSize.width,[m
+[32m+[m[32m          'height': _selectedVideoSize.height,[m
+[32m+[m[32m          'frameRate': double.parse(_selectedVideoFPS!),[m
+[32m+[m[32m        },[m
+[32m+[m[32m      });[m
+[32m+[m[32m      _localRenderer.srcObject = _localStream;[m
+[32m+[m[32m      _inCalling = true;[m
+[32m+[m
+[32m+[m[32m      _pc = await createPeerConnection({});[m
+[32m+[m[32m      _pc!.onConnectionState = (state) => _messages.add('Connection state: $state');[m
+[32m+[m[32m      _pc!.onIceConnectionState = (state) => _messages.add('ICE state: $state');[m
+[32m+[m[32m      _pc!.onIceCandidate = (candidate) {[m
+[32m+[m[32m        _candidates.add(candidate);[m
+[32m+[m[32m        _messages.add('ICE candidate: ${candidate.candidate}');[m
+[32m+[m[32m      };[m
+[32m+[m
+[32m+[m[32m      for (var track in _localStream!.getTracks()) {[m
+[32m+[m[32m        var rtpSender = await _pc!.addTrack(track, _localStream!);[m
+[32m+[m[32m        _messages.add('Track added: kind=${track.kind}, id=${track.id}');[m
+[32m+[m[32m        _senders.add(rtpSender!);[m
+[32m+[m[32m      }[m
+[32m+[m
+[32m+[m[32m      await _startServer();[m
+[32m+[m[32m      _offer = await _pc!.createOffer();[m
+[32m+[m[32m      await _pc!.setLocalDescription(_offer!);[m
+[32m+[m[32m      _messages.add('Offer created: ${_offer!.sdp}');[m
+[32m+[m[32m      setState(() {});[m
+[32m+[m[32m    } catch (e) {[m
+[32m+[m[32m      _messages.add('Start error: $e');[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _startServer() async {[m
+[32m+[m[32m    final handler = shelf.Pipeline().addHandler((request) async {[m
+[32m+[m[32m      _messages.add('Request: ${request.method} ${request.url.path}');[m
+[32m+[m[32m      if (request.method == 'GET' && request.url.path == 'offer') {[m
+[32m+[m[32m        if (_offer != null) {[m
+[32m+[m[32m          return shelf.Response.ok(jsonEncode({'sdp': _offer!.sdp, 'type': _offer!.type}));[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return shelf.Response.internalServerError(body: 'Offer not ready');[m
+[32m+[m[32m      } else if (request.method == 'POST' && request.url.path == 'answer') {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m          final body = await request.readAsString();[m
+[32m+[m[32m          final data = jsonDecode(body);[m
+[32m+[m[32m          final answer = RTCSessionDescription(data['sdp'], data['type']);[m
+[32m+[m[32m          await _pc!.setRemoteDescription(answer);[m
+[32m+[m[32m          _messages.add('Answer received');[m
+[32m+[m[32m          return shelf.Response.ok(jsonEncode({[m
+[32m+[m[32m            'candidates': _candidates.map((c) => c.toMap()).toList(),[m
+[32m+[m[32m          }));[m
+[32m+[m[32m        } catch (e) {[m
+[32m+[m[32m          _messages.add('Error processing answer: $e');[m
+[32m+[m[32m          return shelf.Response.internalServerError(body: 'Error: $e');[m
+[32m+[m[32m        }[m
+[32m+[m[32m      } else if (request.method == 'POST' && request.url.path == 'candidate') {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m          final body = await request.readAsString();[m
+[32m+[m[32m          final data = jsonDecode(body);[m
+[32m+[m[32m          final candidate = RTCIceCandidate([m
+[32m+[m[32m            data['candidate']['candidate'],[m
+[32m+[m[32m            data['candidate']['sdpMid'],[m
+[32m+[m[32m            data['candidate']['sdpMLineIndex'],[m
+[32m+[m[32m          );[m
+[32m+[m[32m          await _pc!.addCandidate(candidate);[m
+[32m+[m[32m          _messages.add('Candidate received');[m
+[32m+[m[32m          return shelf.Response.ok('Candidate added');[m
+[32m+[m[32m        } catch (e) {[m
+[32m+[m[32m          _messages.add('Error processing candidate: $e');[m
+[32m+[m[32m          return shelf.Response.internalServerError(body: 'Error: $e');[m
+[32m+[m[32m        }[m
+[32m+[m[32m      }[m
+[32m+[m[32m      return shelf.Response.notFound('Not found');[m
+[32m+[m[32m    });[m
+[32m+[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, 8080);[m
+[32m+[m[32m      _messages.add('Server running on port 8080');[m
+[32m+[m[32m    } catch (e) {[m
+[32m+[m[32m      _messages.add('Failed to start server: $e');[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _stop() async {[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      _localStream?.getTracks().forEach((track) async => await track.stop());[m
+[32m+[m[32m      await _localStream?.dispose();[m
+[32m+[m[32m      _localStream = null;[m
+[32m+[m[32m      _localRenderer.srcObject = null;[m
+[32m+[m[32m      _senders.clear();[m
+[32m+[m[32m      _inCalling = false;[m
+[32m+[m[32m      await _pc?.close();[m
+[32m+[m[32m      _pc = null;[m
+[32m+[m[32m      await _server?.close();[m
+[32m+[m[32m      _server = null;[m
+[32m+[m[32m      _candidates.clear();[m
+[32m+[m[32m      _offer = null;[m
+[32m+[m[32m      setState(() {});[m
+[32m+[m[32m    } catch (e) {[m
+[32m+[m[32m      _messages.add('Stop error: $e');[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  Widget build(BuildContext context) {[m
+[32m+[m[32m    return Scaffold([m
+[32m+[m[32m      backgroundColor: Colors.black,[m
+[32m+[m[32m      body: SafeArea([m
+[32m+[m[32m        child: Stack([m
+[32m+[m[32m          children: [[m
+[32m+[m[32m            // Full-screen video view[m
+[32m+[m[32m            Positioned.fill([m
+[32m+[m[32m              child: RTCVideoView(_localRenderer),[m
+[32m+[m[32m            ),[m
+[32m+[m
+[32m+[m[32m            // Top bar with title and close button[m
+[32m+[m[32m            Positioned([m
+[32m+[m[32m              top: 0,[m
+[32m+[m[32m              left: 0,[m
+[32m+[m[32m              right: 0,[m
+[32m+[m[32m              child: Padding([m
+[32m+[m[32m                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),[m
+[32m+[m[32m                child: Row([m
+[32m+[m[32m                  mainAxisAlignment: MainAxisAlignment.spaceBetween,[m
+[32m+[m[32m                  children: [[m
+[32m+[m[32m                    const SizedBox(width: 24),[m
+[32m+[m[32m                    const Text([m
+[32m+[m[32m                      'Camera',[m
+[32m+[m[32m                      style: TextStyle(color: Colors.white, fontSize: 18),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    IconButton([m
+[32m+[m[32m                      icon: const Icon(Icons.close, color: Colors.white),[m
+[32m+[m[32m                      onPressed: () => Navigator.pop(context),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                  ],[m
+[32m+[m[32m                ),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m
+[32m+[m
+[32m+[m[32m            //[m
+[32m+[m[32m            // PopupMenuButton<String>([m
+[32m+[m[32m            //   onSelected: _selectVideoInput,[m
+[32m+[m[32m            //   icon: const Icon(Icons.switch_camera),[m
+[32m+[m[32m            //   itemBuilder: (context) => videoInputs[m
+[32m+[m[32m            //       .map((device) => PopupMenuItem<String>([m
+[32m+[m[32m            //     value: device.deviceId,[m
+[32m+[m[32m            //     child: Text(device.label),[m
+[32m+[m[32m            //   ))[m
+[32m+[m[32m            //       .toList(),[m
+[32m+[m[32m            // ),[m
+[32m+[m[32m            // PopupMenuButton<String>([m
+[32m+[m[32m            //   onSelected: _selectVideoFps,[m
+[32m+[m[32m            //   icon: const Icon(Icons.menu),[m
+[32m+[m[32m            //   itemBuilder: (context) => [[m
+[32m+[m[32m            //     PopupMenuItem<String>([m
+[32m+[m[32m            //       value: _selectedVideoFPS,[m
+[32m+[m[32m            //       child: Text('Select FPS ($_selectedVideoFPS)'),[m
+[32m+[m[32m            //     ),[m
+[32m+[m[32m            //     const PopupMenuDivider(),[m
+[32m+[m[32m            //     ...['8', '15', '30', '60'].map((fps) => PopupMenuItem<String>([m
+[32m+[m[32m            //       value: fps,[m
+[32m+[m[32m            //       child: Text(fps),[m
+[32m+[m[32m            //     )),[m
+[32m+[m[32m            //   ],[m
+[32m+[m[32m            // ),[m
+[32m+[m[32m            // PopupMenuButton<String>([m
+[32m+[m[32m            //   onSelected: _selectVideoSize,[m
+[32m+[m[32m            //   icon: const Icon(Icons.screenshot_monitor),[m
+[32m+[m[32m            //   itemBuilder: (context) => [[m
+[32m+[m[32m            //     PopupMenuItem<String>([m
+[32m+[m[32m            //       value: _selectedVideoSize.toString(),[m
+[32m+[m[32m            //       child: Text('Select Video Size ($_selectedVideoSize)'),[m
+[32m+[m[32m            //     ),[m
+[32m+[m[32m            //     const PopupMenuDivider(),[m
+[32m+[m[32m            //     ...['320x180', '640x360', '1280x720', '1920x1080'][m
+[32m+[m[32m            //         .map((size) => PopupMenuItem<String>([m
+[32m+[m[32m            //       value: size,[m
+[32m+[m[32m            //       child: Text(size),[m
+[32m+[m[32m            //     )),[m
+[32m+[m[32m            //   ],[m
+[32m+[m[32m            // ),[m
+[32m+[m
+[32m+[m[32m            //[m
+[32m+[m[32m            // Quality selector[m
+[32m+[m[32m            Positioned([m
+[32m+[m[32m              top: 60,[m
+[32m+[m[32m              left: 0,[m
+[32m+[m[32m              right: 0,[m
+[32m+[m[32m              child: Center([m
+[32m+[m[32m                child: Container([m
+[32m+[m[32m                  decoration: BoxDecoration([m
+[32m+[m[32m                    color: Colors.transparent,[m
+[32m+[m[32m                    borderRadius: BorderRadius.circular(24),[m
+[32m+[m[32m                    border: Border.all(color: Colors.white),[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                  child: Row([m
+[32m+[m[32m                    mainAxisSize: MainAxisSize.min,[m
+[32m+[m[32m                    children: [[m
+[32m+[m[32m                      PopupMenuButton<String>([m
+[32m+[m[32m                        onSelected: _selectVideoInput,[m
+[32m+[m[32m                        icon: const Icon(Icons.switch_camera, color: Colors.white),[m
+[32m+[m[32m                        itemBuilder: (context) => videoInputs[m
+[32m+[m[32m                            .map((device) => PopupMenuItem<String>([m
+[32m+[m[32m                          value: device.deviceId,[m
+[32m+[m[32m                          child: Text(device.label),[m
+[32m+[m[32m                        ))[m
+[32m+[m[32m                            .toList(),[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                      const SizedBox(width: 8),[m
+[32m+[m[32m                      PopupMenuButton<String>([m
+[32m+[m[32m                        onSelected: _selectVideoFps,[m
+[32m+[m[32m                        icon: const Icon(Icons.menu, color: Colors.white),[m
+[32m+[m[32m                        itemBuilder: (context) => [[m
+[32m+[m[32m                          PopupMenuItem<String>([m
+[32m+[m[32m                            value: _selectedVideoFPS,[m
+[32m+[m[32m                            child: Text('–í—ã–±–æ—Ä FPS ($_selectedVideoFPS)'),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                          const PopupMenuDivider(),[m
+[32m+[m[32m                          ...['8', '15', '30', '60'].map((fps) => PopupMenuItem<String>([m
+[32m+[m[32m                            value: fps,[m
+[32m+[m[32m                            child: Text(fps),[m
+[32m+[m[32m                          )),[m
+[32m+[m[32m                        ],[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                      const SizedBox(width: 8),[m
+[32m+[m[32m                      PopupMenuButton<String>([m
+[32m+[m[32m                        onSelected: _selectVideoSize,[m
+[32m+[m[32m                        icon: const Icon(Icons.screenshot_monitor, color: Colors.white),[m
+[32m+[m[32m                        itemBuilder: (context) => [[m
+[32m+[m[32m                          PopupMenuItem<String>([m
+[32m+[m[32m                            value: _selectedVideoSize.toString(),[m
+[32m+[m[32m                            child: Text('–†–∞–∑–º–µ—Ä –≤–∏–¥–µ–æ ($_selectedVideoSize)'),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                          const PopupMenuDivider(),[m
+[32m+[m[32m                          ...['320x180', '640x360', '1280x720', '1920x1080', '3840x2160'][m
+[32m+[m[32m                              .map((size) => PopupMenuItem<String>([m
+[32m+[m[32m                            value: size,[m
+[32m+[m[32m                            child: Text(size),[m
+[32m+[m[32m                          )),[m
+[32m+[m[32m                        ],[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                    ],[m
+[32m+[m[32m                  ),[m
+[32m+[m
+[32m+[m
+[32m+[m[32m                ),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m
+[32m+[m[32m            // Bottom control panel[m
+[32m+[m[32m            Positioned([m
+[32m+[m[32m              bottom: 30,[m
+[32m+[m[32m              left: 0,[m
+[32m+[m[32m              right: 0,[m
+[32m+[m[32m              child: Column([m
+[32m+[m[32m                children: [[m
+[32m+[m[32m                  // Mode selection[m
+[32m+[m[32m                  Row([m
+[32m+[m[32m                    mainAxisAlignment: MainAxisAlignment.center,[m
+[32m+[m[32m                    children: List.generate(modes.length, (index) {[m
+[32m+[m[32m                      final isSelected = index == modeIndex;[m
+[32m+[m[32m                      return GestureDetector([m
+[32m+[m[32m                        onTap: () => setState(() => modeIndex = index),[m
+[32m+[m[32m                        child: Padding([m
+[32m+[m[32m                          padding: const EdgeInsets.symmetric(horizontal: 16),[m
+[32m+[m[32m                          child: Text([m
+[32m+[m[32m                            modes[index],[m
+[32m+[m[32m                            style: TextStyle([m
+[32m+[m[32m                              color: isSelected ? Colors.amber : Colors.white,[m
+[32m+[m[32m                              fontWeight: FontWeight.w500,[m
+[32m+[m[32m                              fontSize: 14,[m
+[32m+[m[32m                            ),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                        ),[m
+[32m+[m[32m                      );[m
+[32m+[m[32m                    }),[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                  const SizedBox(height: 16),[m
+[32m+[m
+[32m+[m[32m                  // Control buttons[m
+[32m+[m[32m                  Row([m
+[32m+[m[32m                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,[m
+[32m+[m[32m                    children: [[m
+[32m+[m[32m                      IconButton([m
+[32m+[m[32m                        icon: const Icon(Icons.flash_on, color: Colors.white),[m
+[32m+[m[32m                        onPressed: () {},[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                      GestureDetector([m
+[32m+[m[32m                        onTap: _inCalling ? _stop : _start,[m
+[32m+[m[32m                        child: Container([m
+[32m+[m[32m                          width: 80,[m
+[32m+[m[32m                          height: 80,[m
+[32m+[m[32m                          decoration: BoxDecoration([m
+[32m+[m[32m                            shape: BoxShape.circle,[m
+[32m+[m[32m                            border: Border.all(color: Colors.white, width: 4),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                        ),[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                      IconButton([m
+[32m+[m[32m                        icon: const Icon(Icons.timer, color: Colors.white),[m
+[32m+[m[32m                        onPressed: () {},[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                    ],[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                ],[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ],[m
+[32m+[m[32m        ),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/lib/screens/CapturerScreen.dart b/lib/screens/CapturerScreen.dart[m
+[1mindex e69de29..a37903b 100644[m
+[1m--- a/lib/screens/CapturerScreen.dart[m
+[1m+++ b/lib/screens/CapturerScreen.dart[m
+[36m@@ -0,0 +1,177 @@[m
+[32m+[m[32mimport 'dart:convert';[m
+[32m+[m[32mimport 'package:flutter/material.dart';[m
+[32m+[m[32mimport 'package:flutter_webrtc/flutter_webrtc.dart';[m
+[32m+[m[32mimport 'package:http/http.dart' as http;[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass ReceiverScreen extends StatefulWidget {[m
+[32m+[m[32m  const ReceiverScreen({super.key});[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  _ReceiverScreenState createState() => _ReceiverScreenState();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mclass _ReceiverScreenState extends State<ReceiverScreen> {[m
+[32m+[m[32m  String? _broadcasterIp;[m
+[32m+[m[32m  final List<RTCVideoRenderer> _renderers = List.generate(7, (_) => RTCVideoRenderer());[m
+[32m+[m[32m  final List<RTCPeerConnection> _peerConnections = [];[m
+[32m+[m[32m  final List<MediaStream?> _remoteStreams = List.filled(7, null);[m
+[32m+[m[32m  final List<String> _messages = [];[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void initState() {[m
+[32m+[m[32m    super.initState();[m
+[32m+[m[32m    _initRenderers();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void dispose() {[m
+[32m+[m[32m    for (var renderer in _renderers) {[m
+[32m+[m[32m      renderer.dispose();[m
+[32m+[m[32m    }[m
+[32m+[m[32m    for (var pc in _peerConnections) {[m
+[32m+[m[32m      pc.close();[m
+[32m+[m[32m    }[m
+[32m+[m[32m    super.dispose();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _initRenderers() async {[m
+[32m+[m[32m    for (var renderer in _renderers) {[m
+[32m+[m[32m      await renderer.initialize();[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _connectToBroadcaster(String ip) async {[m
+[32m+[m[32m    if (ip.isEmpty) {[m
+[32m+[m[32m      setState(() {[m
+[32m+[m[32m        _messages.add('Error: Enter valid IP');[m
+[32m+[m[32m      });[m
+[32m+[m[32m      return;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      final response = await http.get(Uri.parse('http://' + ip + ':8080/offer'));[m
+[32m+[m[32m      if (response.statusCode != 200) {[m
+[32m+[m[32m        setState(() {[m
+[32m+[m[32m          _messages.add('Failed to get offer: ${response.statusCode} - ${response.body}');[m
+[32m+[m[32m        });[m
+[32m+[m[32m        return;[m
+[32m+[m[32m      }[m
+[32m+[m
+[32m+[m[32m      final data = jsonDecode(response.body);[m
+[32m+[m[32m      final offer = await RTCSessionDescription(data['sdp'], data['type']);[m
+[32m+[m[32m      final pc = await createPeerConnection({});[m
+[32m+[m
+[32m+[m[32m      pc.onTrack = (event) {[m
+[32m+[m[32m        if (event.track.kind == 'video') {[m
+[32m+[m[32m          setState(() {[m
+[32m+[m[32m            final index = _peerConnections.length;[m
+[32m+[m[32m            if (index < 7) {[m
+[32m+[m[32m              _remoteStreams[index] = event.streams[0];[m
+[32m+[m[32m              _renderers[index].srcObject = _remoteStreams[index];[m
+[32m+[m[32m              _messages.add('Video stream received at index $index');[m
+[32m+[m[32m            }[m
+[32m+[m[32m          });[m
+[32m+[m[32m        }[m
+[32m+[m[32m      };[m
+[32m+[m
+[32m+[m[32m      pc.onConnectionState = (state) {[m
+[32m+[m[32m        _messages.add('Connection state: $state');[m
+[32m+[m[32m      };[m
+[32m+[m
+[32m+[m[32m      pc.onIceConnectionState = (state) {[m
+[32m+[m[32m        _messages.add('ICE state: $state');[m
+[32m+[m[32m      };[m
+[32m+[m
+[32m+[m[32m      pc.onIceCandidate = (candidate) async {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m          final candidateResponse = await http.post([m
+[32m+[m[32m            Uri.parse('http://' + ip + ':8080/candidate'),[m
+[32m+[m[32m            headers: {'Content-Type': 'application/json'},[m
+[32m+[m[32m            body: jsonEncode({'candidate': candidate.toMap()}),[m
+[32m+[m[32m          );[m
+[32m+[m[32m          _messages.add('Candidate sent: ${candidateResponse.statusCode}');[m
+[32m+[m[32m        } catch (e) {[m
+[32m+[m[32m          _messages.add('Error sending candidate: $e');[m
+[32m+[m[32m        }[m
+[32m+[m[32m      };[m
+[32m+[m
+[32m+[m[32m      await pc.setRemoteDescription(offer);[m
+[32m+[m[32m      _messages.add('Remote offer set: ${offer.sdp}');[m
+[32m+[m
+[32m+[m[32m      final answer = await pc.createAnswer();[m
+[32m+[m[32m      await pc.setLocalDescription(answer);[m
+[32m+[m[32m      _messages.add('Answer created: ${answer.sdp}');[m
+[32m+[m
+[32m+[m[32m      final answerResponse = await http.post([m
+[32m+[m[32m        Uri.parse('http://' + ip + ':8080/answer'),[m
+[32m+[m[32m        headers: {'Content-Type': 'application/json'},[m
+[32m+[m[32m        body: jsonEncode({'sdp': answer.sdp, 'type': answer.type}),[m
+[32m+[m[32m      );[m
+[32m+[m
+[32m+[m[32m      if (answerResponse.statusCode == 200) {[m
+[32m+[m[32m        final data = jsonDecode(answerResponse.body);[m
+[32m+[m[32m        final candidates = data['candidates'] as List;[m
+[32m+[m[32m        for (var cand in candidates) {[m
+[32m+[m[32m          final rtcCandidate = RTCIceCandidate([m
+[32m+[m[32m            cand['candidate'],[m
+[32m+[m[32m            cand['sdpMid'],[m
+[32m+[m[32m            cand['sdpMLineIndex'],[m
+[32m+[m[32m          );[m
+[32m+[m[32m          await pc.addCandidate(rtcCandidate);[m
+[32m+[m[32m          _messages.add('Candidate added: ${rtcCandidate.candidate}');[m
+[32m+[m[32m        }[m
+[32m+[m[32m        setState(() {[m
+[32m+[m[32m          _peerConnections.add(pc);[m
+[32m+[m[32m          _messages.add('Connected to broadcaster at $ip');[m
+[32m+[m[32m        });[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        setState(() {[m
+[32m+[m[32m          _messages.add('Failed to send answer: ${answerResponse.statusCode}');[m
+[32m+[m[32m        });[m
+[32m+[m[32m      }[m
+[32m+[m[32m    } catch (e) {[m
+[32m+[m[32m      setState(() {[m
+[32m+[m[32m        _messages.add('Error: $e');[m
+[32m+[m[32m      });[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  Widget build(BuildContext context) {[m
+[32m+[m[32m    return Scaffold([m
+[32m+[m[32m      appBar: AppBar(title: const Text('Receiver')),[m
+[32m+[m[32m      body: Column([m
+[32m+[m[32m        children: [[m
+[32m+[m[32m          TextField([m
+[32m+[m[32m            decoration: const InputDecoration([m
+[32m+[m[32m              labelText: 'Enter Broadcaster IP',[m
+[32m+[m[32m              hintText: 'e.g., 192.168.1.100',[m
+[32m+[m[32m            ),[m
+[32m+[m[32m            onChanged: (value) => _broadcasterIp = value.trim(),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m          ElevatedButton([m
+[32m+[m[32m            onPressed: () => _connectToBroadcaster(_broadcasterIp ?? ''),[m
+[32m+[m[32m            child: const Text('Connect'),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m          Expanded([m
+[32m+[m[32m            child: GridView.builder([m
+[32m+[m[32m              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount([m
+[32m+[m[32m                crossAxisCount: 3,[m
+[32m+[m[32m                childAspectRatio: 1.0,[m
+[32m+[m[32m              ),[m
+[32m+[m[32m              itemCount: _renderers.length,[m
+[32m+[m[32m              itemBuilder: (context, index) => RTCVideoView(_renderers[index]),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m          Expanded([m
+[32m+[m[32m            child: ListView.builder([m
+[32m+[m[32m              itemCount: _messages.length,[m
+[32m+[m[32m              itemBuilder: (context, index) => ListTile(title: Text(_messages[index])),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ],[m
+[32m+[m[32m      ),[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/lib/screens/auth/register_screen.dart b/lib/screens/auth/register_screen.dart[m
+[1mindex f72e1fb..2c3b385 100644[m
+[1m--- a/lib/screens/auth/register_screen.dart[m
+[1m+++ b/lib/screens/auth/register_screen.dart[m
+[36m@@ -97,17 +97,17 @@[m [mclass _RegisterScreenState extends State<RegisterScreen> {[m
+                 ],[m
+               ),[m
+               const SizedBox(height: 16),[m
+[31m-              ElevatedButton.icon([m
+[31m-                icon: Image.asset('assets/images/google.png',[m
+[31m-                    width: 24, height: 24),[m
+[31m-                label: const Text('Google Sign-In'),[m
+[31m-                onPressed: () {[m
+[31m-                  Navigator.push([m
+[31m-                    context,[m
+[31m-                    MaterialPageRoute(builder: (_) => const GoogleTestScreen()),[m
+[31m-                  );[m
+[31m-                },[m
+[31m-              ),[m
+[32m+[m[32m              // ElevatedButton.icon([m
+[32m+[m[32m              //   icon: Image.asset('assets/images/google.png',[m
+[32m+[m[32m              //       width: 24, height: 24),[m
+[32m+[m[32m              //   label: const Text('Google Sign-In'),[m
+[32m+[m[32m              //   onPressed: () {[m
+[32m+[m[32m              //     Navigator.push([m
+[32m+[m[32m              //       context,[m
+[32m+[m[32m              //       MaterialPageRoute(builder: (_) => const GoogleTestScreen()),[m
+[32m+[m[32m              //     );[m
+[32m+[m[32m              //   },[m
+[32m+[m[32m              // ),[m
+               ElevatedButton([m
+                 onPressed: _agree[m
+                     ? () => context.read<AuthCubit>().signUp([m
+[36m@@ -140,37 +140,37 @@[m [mclass _RegisterScreenState extends State<RegisterScreen> {[m
+                   padding: const EdgeInsets.symmetric(vertical: 14),[m
+                 ),[m
+               ),[m
+[31m-              OutlinedButton.icon([m
+[31m-                onPressed: () async => await Navigator.push([m
+[31m-                  context,[m
+[31m-                  MaterialPageRoute([m
+[31m-                      builder: (_) => const PermissionsTestScreen()),[m
+[31m-                ),[m
+[31m-                icon: Image.asset('assets/images/google.png',[m
+[31m-                    width: 24, height: 24),[m
+[31m-                label: const Text('Permision'),[m
+[31m-                style: OutlinedButton.styleFrom([m
+[31m-                  backgroundColor: Colors.white,[m
+[31m-                  shape: const StadiumBorder(),[m
+[31m-                  side: BorderSide.none,[m
+[31m-                  padding: const EdgeInsets.symmetric(vertical: 14),[m
+[31m-                ),[m
+[31m-              ),OutlinedButton.icon([m
+[31m-                onPressed: () async => await Navigator.push([m
+[31m-                  context,[m
+[31m-                  MaterialPageRoute([m
+[31m-                      builder: (_) => const HostTipScreen()),[m
+[31m-                ),[m
+[31m-                icon: Image.asset('assets/images/google.png',[m
+[31m-                    width: 24, height: 24),[m
+[31m-                label: const Text('Permision'),[m
+[31m-                style: OutlinedButton.styleFrom([m
+[31m-                  backgroundColor: Colors.white,[m
+[31m-                  shape: const StadiumBorder(),[m
+[31m-                  side: BorderSide.none,[m
+[31m-                  padding: const EdgeInsets.symmetric(vertical: 14),[m
+[31m-                ),[m
+[31m-              ),[m
+[32m+[m[32m              // OutlinedButton.icon([m
+[32m+[m[32m              //   onPressed: () async => await Navigator.push([m
+[32m+[m[32m              //     context,[m
+[32m+[m[32m              //     MaterialPageRoute([m
+[32m+[m[32m              //         builder: (_) => const PermissionsTestScreen()),[m
+[32m+[m[32m              //   ),[m
+[32m+[m[32m              //   icon: Image.asset('assets/images/google.png',[m
+[32m+[m[32m              //       width: 24, height: 24),[m
+[32m+[m[32m              //   label: const Text('Permision'),[m
+[32m+[m[32m              //   style: OutlinedButton.styleFrom([m
+[32m+[m[32m              //     backgroundColor: Colors.white,[m
+[32m+[m[32m              //     shape: const StadiumBorder(),[m
+[32m+[m[32m              //     side: BorderSide.none,[m
+[32m+[m[32m              //     padding: const EdgeInsets.symmetric(vertical: 14),[m
+[32m+[m[32m              //   ),[m
+[32m+[m[32m              // ),OutlinedButton.icon([m
+[32m+[m[32m              //   onPressed: () async => await Navigator.push([m
+[32m+[m[32m              //     context,[m
+[32m+[m[32m              //     MaterialPageRoute([m
+[32m+[m[32m              //         builder: (_) => const HostTipScreen()),[m
+[32m+[m[32m              //   ),[m
+[32m+[m[32m              //   icon: Image.asset('assets/images/google.png',[m
+[32m+[m[32m              //       width: 24, height: 24),[m
+[32m+[m[32m              //   label: const Text('Permision'),[m
+[32m+[m[32m              //   style: OutlinedButton.styleFrom([m
+[32m+[m[32m              //     backgroundColor: Colors.white,[m
+[32m+[m[32m              //     shape: const StadiumBorder(),[m
+[32m+[m[32m              //     side: BorderSide.none,[m
+[32m+[m[32m              //     padding: const EdgeInsets.symmetric(vertical: 14),[m
+[32m+[m[32m              //   ),[m
+[32m+[m[32m              // ),[m
+               const Spacer(),[m
+               Center([m
+                   child: Text('–£–∂–µ –µ—Å—Ç—å –∞–∫–∫–∞—É–Ω—Ç?',[m
+[1mdiff --git a/lib/screens/roles/client_screen.dart b/lib/screens/roles/client_screen.dart[m
+[1mindex 87e5e46..dba25a2 100644[m
+[1m--- a/lib/screens/roles/client_screen.dart[m
+[1m+++ b/lib/screens/roles/client_screen.dart[m
+[36m@@ -1,87 +1,177 @@[m
+[31m-// import 'package:flutter/material.dart';[m
+[31m-// import 'package:flutter_webrtc/flutter_webrtc.dart';[m
+[31m-// import '../../../services/webrtc_service.dart';[m
+[31m-// import '../../../services/signaling_service.dart';[m
+[31m-// import '../../../widgets/video_view.dart';[m
+[31m-// import '../../../utils/constants.dart';[m
+[31m-// class ClientScreen extends StatefulWidget {[m
+[31m-//   const ClientScreen({super.key});[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   State<ClientScreen> createState() => _ClientScreenState();[m
+[31m-// }[m
+[31m-//[m
+[31m-// class _ClientScreenState extends State<ClientScreen> {[m
+[31m-//   final _webrtc   = WebRtcService();[m
+[31m-//   final _renderer = RTCVideoRenderer();[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   void initState() {[m
+[31m-//     super.initState();[m
+[31m-//     _init();[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   Future<void> _init() async {[m
+[31m-//     await _renderer.initialize();[m
+[31m-//     await _webrtc.initLocalCamera();[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   /// –ö–æ–≥–¥–∞ –ø–æ–ª—É—á–∏–ª–∏ offer –æ—Ç —Ö–æ—Å—Ç–∞‚Ä¶[m
+[31m-//   Future<void> handleIncomingOffer(String sdp) async {[m
+[31m-//     await _webrtc.handleRemoteOffer([m
+[31m-//       sdp: sdp,[m
+[31m-//       onAnswerCreated: (answer) {[m
+[31m-//         // TODO: –æ—Ç–ø—Ä–∞–≤–∏—Ç—å answer —Ö–æ—Å—Ç—É (UDP/WS)[m
+[31m-//       },[m
+[31m-//     );[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   Widget build(BuildContext context) {[m
+[31m-//     return Scaffold([m
+[31m-//       appBar: AppBar(title: const Text('–ö–ª–∏–µ–Ω—Ç')),[m
+[31m-//       body: Stack([m
+[31m-//         children: [[m
+[31m-//           RTCVideoView(_renderer),[m
+[31m-//           Align([m
+[31m-//             alignment: Alignment.bottomCenter,[m
+[31m-//             child: Padding([m
+[31m-//               padding: const EdgeInsets.all(24),[m
+[31m-//               child: Row([m
+[31m-//                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,[m
+[31m-//                 children: [[m
+[31m-//                   FloatingActionButton([m
+[31m-//                     heroTag: 'photo',[m
+[31m-//                     onPressed: _takePhoto,[m
+[31m-//                     child: const Icon(Icons.camera_alt),[m
+[31m-//                   ),[m
+[31m-//                   FloatingActionButton([m
+[31m-//                     heroTag: 'video',[m
+[31m-//                     onPressed: _toggleRec,[m
+[31m-//                     child: const Icon(Icons.videocam),[m
+[31m-//                   ),[m
+[31m-//                 ],[m
+[31m-//               ),[m
+[31m-//             ),[m
+[31m-//           )[m
+[31m-//         ],[m
+[31m-//       ),[m
+[31m-//     );[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   Future<void> _takePhoto() async {[m
+[31m-//     // navigator.mediaDevices.getUserMedia + canvas capture ‚Üí —Ñ–∞–π–ª[m
+[31m-//     // –∑–∞—Ç–µ–º —á–µ—Ä–µ–∑ UDP/TCP –æ—Ç–ø—Ä–∞–≤–∏—Ç—å —Ö–æ—Å—Ç—É[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   Future<void> _toggleRec() async {[m
+[31m-//     // start / stop MediaRecorder –Ω–∞ –ª–æ–∫–∞–ª—å–Ω–æ–º –≤–∏–¥–µ–æ–ø–æ—Ç–æ–∫–µ[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   void dispose() {[m
+[31m-//     _renderer.dispose();[m
+[31m-//     _webrtc.dispose();[m
+[31m-//     super.dispose();[m
+[31m-//   }[m
+[31m-// }[m
+\ No newline at end of file[m
+[32m+[m[32mimport 'package:flutter/material.dart';[m
+[32m+[m[32mimport 'package:flutter_bloc/flutter_bloc.dart';[m
+[32m+[m[32mimport 'package:flutter_webrtc/flutter_webrtc.dart';[m
+[32m+[m
+[32m+[m[32mimport '../../blocs/wifi/wifi_cubit.dart';[m
+[32m+[m[32mimport '../../blocs/wifi/wifi_state.dart';[m
+[32m+[m[32mimport '../../models/network/discovered_device.dart';[m
+[32m+[m[32mimport '../../widgets/video_view/local_video_view.dart';[m
+[32m+[m[32mimport '../../widgets/video_view/remote_video_view.dart';[m
+[32m+[m
+[32m+[m[32mclass ClientScreen extends StatefulWidget {[m
+[32m+[m[32m  const ClientScreen({super.key});[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  State<ClientScreen> createState() => _ClientScreenState();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mclass _ClientScreenState extends State<ClientScreen> {[m
+[32m+[m[32m  DiscoveredDevice? _selectedHost;[m
+[32m+[m[32m  bool _isConnected = false;[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void initState() {[m
+[32m+[m[32m    super.initState();[m
+[32m+[m[32m    _startDiscovery();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  void _startDiscovery() async {[m
+[32m+[m[32m    // No need to listen here; StreamBuilder will handle updates[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  void _connectToHost(DiscoveredDevice host) async {[m
+[32m+[m[32m    setState(() => _selectedHost = host);[m
+[32m+[m[32m    _updateStatus("Connecting to '${host.name}'...");[m
+[32m+[m[32m    bool success = await HostFacade.connectToDevice(host);[m
+[32m+[m[32m    if (success && mounted) {[m
+[32m+[m[32m      setState(() => _isConnected = true);[m
+[32m+[m[32m      _updateStatus("Connected to '${host.name}'");[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m      _updateStatus("Failed to connect to '${host.name}'", isError: true);[m
+[32m+[m[32m      setState(() => _selectedHost = null);[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  void _updateStatus(String message, {bool isError = false}) {[m
+[32m+[m[32m    ScaffoldMessenger.of(context).showSnackBar([m
+[32m+[m[32m      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : Colors.green),[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void dispose() {[m
+[32m+[m[32m    super.dispose();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  Widget build(BuildContext context) {[m
+[32m+[m[32m    return Scaffold([m
+[32m+[m[32m      appBar: AppBar([m
+[32m+[m[32m        title: const Text('Client'),[m
+[32m+[m[32m        actions: [[m
+[32m+[m[32m          IconButton([m
+[32m+[m[32m            icon: const Icon(Icons.close),[m
+[32m+[m[32m            onPressed: () => Navigator.pop(context),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ],[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      body: BlocBuilder<WifiCubit, WifiState>([m
+[32m+[m[32m        builder: (context, wifiState) {[m
+[32m+[m[32m          if (!_isConnected) {[m
+[32m+[m[32m            return _buildSearchScreen();[m
+[32m+[m[32m          } else {[m
+[32m+[m[32m            return _buildCameraScreen();[m
+[32m+[m[32m          }[m
+[32m+[m[32m        },[m
+[32m+[m[32m      ),[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Widget _buildSearchScreen() {[m
+[32m+[m[32m    return Column([m
+[32m+[m[32m      children: [[m
+[32m+[m[32m        Padding([m
+[32m+[m[32m          padding: const EdgeInsets.all(16.0),[m
+[32m+[m[32m          child: Text([m
+[32m+[m[32m            '–í—ã–±–µ—Ä–∏—Ç–µ —É—á–∞—Å—Ç–Ω–∏–∫ (1/7)',[m
+[32m+[m[32m            style: Theme.of(context).textTheme.titleLarge,[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+[32m+[m[32m        Padding([m
+[32m+[m[32m          padding: const EdgeInsets.symmetric(horizontal: 16.0),[m
+[32m+[m[32m          child: TextField([m
+[32m+[m[32m            decoration: const InputDecoration([m
+[32m+[m[32m              hintText: '–ü–æ–∏—Å–∫...',[m
+[32m+[m[32m              border: OutlineInputBorder(),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m            onChanged: (value) {[m
+[32m+[m[32m              // Implement search logic if needed[m
+[32m+[m[32m            },[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+[32m+[m[32m        const SizedBox(height: 16),[m
+[32m+[m[32m        const Padding([m
+[32m+[m[32m          padding: EdgeInsets.symmetric(horizontal: 16.0),[m
+[32m+[m[32m          child: Text([m
+[32m+[m[32m            '–ù–µ—Ç –ø–æ–¥–∫–ª—é—á–µ–Ω–Ω—ã—Ö —É—Å—Ç—Ä–æ–π—Å—Ç–≤',[m
+[32m+[m[32m            style: TextStyle(color: Colors.grey),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+[32m+[m
+[32m+[m[32m      ],[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Widget _buildCameraScreen() {[m
+[32m+[m[32m    return Stack([m
+[32m+[m[32m      children: [[m
+[32m+[m[32m        // Remote video (full screen)[m
+[32m+[m[32m        RemoteVideoView(renderer: RTCVideoRenderer()), // Replace with actual renderer[m
+[32m+[m[32m        // Local video (overlay, e.g., bottom right)[m
+[32m+[m[32m        Positioned([m
+[32m+[m[32m          bottom: 16,[m
+[32m+[m[32m          right: 16,[m
+[32m+[m[32m          child: SizedBox([m
+[32m+[m[32m            width: 120,[m
+[32m+[m[32m            height: 160,[m
+[32m+[m[32m            child: LocalVideoView(renderer: RTCVideoRenderer()), // Replace with actual renderer[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+[32m+[m[32m        // Camera controls[m
+[32m+[m[32m        Align([m
+[32m+[m[32m          alignment: Alignment.bottomCenter,[m
+[32m+[m[32m          child: Padding([m
+[32m+[m[32m            padding: const EdgeInsets.all(16.0),[m
+[32m+[m[32m            child: Row([m
+[32m+[m[32m              mainAxisAlignment: MainAxisAlignment.center,[m
+[32m+[m[32m              children: [[m
+[32m+[m[32m                IconButton([m
+[32m+[m[32m                  icon: const Icon(Icons.flip_camera_android, color: Colors.yellow),[m
+[32m+[m[32m                  onPressed: () {[m
+[32m+[m[32m                    // Toggle camera[m
+[32m+[m[32m                  },[m
+[32m+[m[32m                ),[m
+[32m+[m[32m                const SizedBox(width: 32),[m
+[32m+[m[32m                GestureDetector([m
+[32m+[m[32m                  onTap: () {[m
+[32m+[m[32m                    // Capture photo[m
+[32m+[m[32m                  },[m
+[32m+[m[32m                  child: const CircleAvatar([m
+[32m+[m[32m                    radius: 30,[m
+[32m+[m[32m                    backgroundColor: Colors.white,[m
+[32m+[m[32m                    child: Icon(Icons.circle, size: 60, color: Colors.black),[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                ),[m
+[32m+[m[32m                const SizedBox(width: 32),[m
+[32m+[m[32m                IconButton([m
+[32m+[m[32m                  icon: const Icon(Icons.videocam_off, color: Colors.yellow),[m
+[32m+[m[32m                  onPressed: () {[m
+[32m+[m[32m                    // Toggle video[m
+[32m+[m[32m                  },[m
+[32m+[m[32m                ),[m
+[32m+[m[32m              ],[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+[32m+[m[32m      ],[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m// Assume _hostFacade is a class with a connectToDevice method[m
+[32m+[m[32mclass HostFacade {[m
+[32m+[m[32m  static Future<bool> connectToDevice(DiscoveredDevice device) async {[m
+[32m+[m[32m    // Implement connection logic here[m
+[32m+[m[32m    return true; // Placeholder[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/lib/screens/roles/host_screen.dart b/lib/screens/roles/host_screen.dart[m
+[1mindex b6813e8..b3292b9 100644[m
+[1m--- a/lib/screens/roles/host_screen.dart[m
+[1m+++ b/lib/screens/roles/host_screen.dart[m
+[36m@@ -1,105 +1,149 @@[m
+[31m-// import 'package:flutter/material.dart';[m
+[31m-// import 'package:flutter_bloc/flutter_bloc.dart';[m
+[31m-// import 'package:flutter_webrtc/flutter_webrtc.dart';[m
+[31m-// import '../../../blocs/host/host_cubit.dart';[m
+[31m-// import '../../../blocs/host/host_state.dart';[m
+[31m-// import '../../../services/webrtc_service.dart';[m
+[31m-// class ClientScreen extends StatelessWidget {[m
+[31m-//   const ClientScreen({super.key});[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   Widget build(BuildContext context) {[m
+[31m-//     return BlocProvider([m
+[31m-//       create: (_) => HostCubit()..discoverClients(),[m
+[31m-//       child: const _HostView(),[m
+[31m-//     );[m
+[31m-//   }[m
+[31m-// }[m
+[31m-//[m
+[31m-// class _HostView extends StatefulWidget {[m
+[31m-//   const _HostView({super.key});[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   State<_HostView> createState() => _HostViewState();[m
+[31m-// }[m
+[31m-//[m
+[31m-// class _HostViewState extends State<_HostView> {[m
+[31m-//   final _webrtc = WebRtcService();[m
+[31m-//   final _remoteRenderers = <String, RTCVideoRenderer>{};[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   void initState() {[m
+[31m-//     super.initState();[m
+[31m-//     _webrtc.initLocalCamera();[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   Widget build(BuildContext context) {[m
+[31m-//     return Scaffold([m
+[31m-//       appBar: AppBar(title: const Text('–•–æ—Å—Ç')),[m
+[31m-//       body: BlocBuilder<HostCubit, HostState>([m
+[31m-//         builder: (context, state) {[m
+[31m-//           if (state is HostScanning) {[m
+[31m-//             return const Center(child: CircularProgressIndicator());[m
+[31m-//           }[m
+[31m-//           if (state is HostReady) {[m
+[31m-//             return Column([m
+[31m-//               children: [[m
+[31m-//                 Expanded([m
+[31m-//                   child: ListView.builder([m
+[31m-//                     itemCount: state.clients.length,[m
+[31m-//                     itemBuilder: (_, i) {[m
+[31m-//                       final c = state.clients[i];[m
+[31m-//                       final renderer =[m
+[31m-//                           _remoteRenderers[c.id] ?? RTCVideoRenderer();[m
+[31m-//                       return ListTile([m
+[31m-//                         leading: const Icon(Icons.videocam),[m
+[31m-//                         title: Text(c.id),[m
+[31m-//                         subtitle: Text(c.address.address),[m
+[31m-//                         trailing: c.connected[m
+[31m-//                             ? const Icon(Icons.check, color: Colors.green)[m
+[31m-//                             : ElevatedButton([m
+[31m-//                           onPressed: () async {[m
+[31m-//                             await _webrtc.createPeer([m
+[31m-//                               onRemote: (stream) async {[m
+[31m-//                                 await renderer.initialize();[m
+[31m-//                                 renderer.srcObject = stream;[m
+[31m-//                                 setState(() => _remoteRenderers[c.id] = renderer);[m
+[31m-//                               },[m
+[31m-//                               onOfferCreated: c.sendOffer,[m
+[31m-//                             );[m
+[31m-//                           },[m
+[31m-//                           child: const Text('–ü–æ–¥–∫–ª.'),[m
+[31m-//                         ),[m
+[31m-//                       );[m
+[31m-//                     },[m
+[31m-//                   ),[m
+[31m-//                 ),[m
+[31m-//                 // —Å–µ—Ç–∫–∞ –ø—Ä–µ–≤—å—é –≤—Å–µ—Ö –∫–ª–∏–µ–Ω—Ç–æ–≤[m
+[31m-//                 SizedBox([m
+[31m-//                   height: 240,[m
+[31m-//                   child: GridView.count([m
+[31m-//                     crossAxisCount: 2,[m
+[31m-//                     children: _remoteRenderers.values[m
+[31m-//                         .map((r) => RTCVideoView(r))[m
+[31m-//                         .toList(),[m
+[31m-//                   ),[m
+[31m-//                 ),[m
+[31m-//               ],[m
+[31m-//             );[m
+[31m-//           }[m
+[31m-//           return const SizedBox.shrink();[m
+[31m-//         },[m
+[31m-//       ),[m
+[31m-//     );[m
+[31m-//   }[m
+[31m-//[m
+[31m-//   @override[m
+[31m-//   void dispose() {[m
+[31m-//     for (final r in _remoteRenderers.values) {[m
+[31m-//       r.dispose();[m
+[31m-//     }[m
+[31m-//     _webrtc.dispose();[m
+[31m-//     super.dispose();[m
+[31m-//   }[m
+[31m-// }[m
+\ No newline at end of file[m
+[32m+[m[32mimport 'package:flutter/material.dart';[m
+[32m+[m[32mimport 'package:shine/screens/roles/role_select.dart';[m
+[32m+[m
+[32m+[m[32mclass HostScreen extends StatefulWidget {[m
+[32m+[m[32m  const HostScreen({super.key});[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  State<HostScreen> createState() => _CameraScreenState();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mclass _CameraScreenState extends State<HostScreen> {[m
+[32m+[m[32m  int qualityIndex = 0;[m
+[32m+[m[32m  int modeIndex = 0;[m
+[32m+[m
+[32m+[m[32m  final qualities = ['–ù–∏–∑–∫–æ–µ', '–°—Ä–µ–¥–Ω–µ–µ', '–í—ã—Å–æ–∫–æ–µ'];[m
+[32m+[m[32m  final modes = ['–§–û–¢–û–ì–†–ê–§–ò–Ø', '–í–ò–î–ï–û–ó–ê–ü–ò–°–¨'];[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  Widget build(BuildContext context) {[m
+[32m+[m[32m    return Scaffold([m
+[32m+[m[32m      backgroundColor: Colors.black,[m
+[32m+[m[32m      body: SafeArea([m
+[32m+[m[32m        child: Stack([m
+[32m+[m[32m          children: [[m
+[32m+[m[32m            Positioned([m
+[32m+[m[32m              top: 0,[m
+[32m+[m[32m              left: 0,[m
+[32m+[m[32m              right: 0,[m
+[32m+[m[32m              child: Padding([m
+[32m+[m[32m                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),[m
+[32m+[m[32m                child: Row([m
+[32m+[m[32m                  mainAxisAlignment: MainAxisAlignment.spaceBetween,[m
+[32m+[m[32m                  children: [[m
+[32m+[m[32m                    const SizedBox(width: 24),[m
+[32m+[m[32m                    const Text([m
+[32m+[m[32m                      'Camera',[m
+[32m+[m[32m                      style: TextStyle(color: Colors.white, fontSize: 18),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    IconButton([m
+[32m+[m[32m                      icon: const Icon(Icons.close, color: Colors.white),[m
+[32m+[m[32m                      onPressed: () async => await Navigator.push([m
+[32m+[m[32m                        context,[m
+[32m+[m[32m                        MaterialPageRoute([m
+[32m+[m[32m                            builder: (_) => const RoleSelectScreen()),[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                  ],[m
+[32m+[m[32m                ),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m
+[32m+[m[32m            // –°–µ–ª–µ–∫—Ç–æ—Ä –∫–∞—á–µ—Å—Ç–≤–∞[m
+[32m+[m[32m            Positioned([m
+[32m+[m[32m              top: 60,[m
+[32m+[m[32m              left: 0,[m
+[32m+[m[32m              right: 0,[m
+[32m+[m[32m              child: Center([m
+[32m+[m[32m                child: Container([m
+[32m+[m[32m                  decoration: BoxDecoration([m
+[32m+[m[32m                    color: Colors.transparent,[m
+[32m+[m[32m                    borderRadius: BorderRadius.circular(24),[m
+[32m+[m[32m                    border: Border.all(color: Colors.white),[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                  child: Row([m
+[32m+[m[32m                    mainAxisSize: MainAxisSize.min,[m
+[32m+[m[32m                    children: List.generate(qualities.length, (index) {[m
+[32m+[m[32m                      final isSelected = index == qualityIndex;[m
+[32m+[m[32m                      return GestureDetector([m
+[32m+[m[32m                        onTap: () => setState(() => qualityIndex = index),[m
+[32m+[m[32m                        child: Container([m
+[32m+[m[32m                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),[m
+[32m+[m[32m                          decoration: BoxDecoration([m
+[32m+[m[32m                            color: isSelected ? Colors.white : Colors.transparent,[m
+[32m+[m[32m                            borderRadius: BorderRadius.circular(index == 0[m
+[32m+[m[32m                                ? 24[m
+[32m+[m[32m                                : index == qualities.length - 1[m
+[32m+[m[32m                                ? 24[m
+[32m+[m[32m                                : 0),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                          child: Text([m
+[32m+[m[32m                            qualities[index],[m
+[32m+[m[32m                            style: TextStyle([m
+[32m+[m[32m                              color: isSelected ? Colors.black : Colors.white,[m
+[32m+[m[32m                              fontWeight: FontWeight.w500,[m
+[32m+[m[32m                            ),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                        ),[m
+[32m+[m[32m                      );[m
+[32m+[m[32m                    }),[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                ),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m
+[32m+[m[32m            // –ü–∞–Ω–µ–ª—å —É–ø—Ä–∞–≤–ª–µ–Ω–∏—è –≤–Ω–∏–∑—É[m
+[32m+[m[32m            Positioned([m
+[32m+[m[32m              bottom: 30,[m
+[32m+[m[32m              left: 0,[m
+[32m+[m[32m              right: 0,[m
+[32m+[m[32m              child: Column([m
+[32m+[m[32m                children: [[m
+[32m+[m[32m                  // –†–µ–∂–∏–º —Å—ä—ë–º–∫–∏[m
+[32m+[m[32m                  Row([m
+[32m+[m[32m                    mainAxisAlignment: MainAxisAlignment.center,[m
+[32m+[m[32m                    children: List.generate(modes.length, (index) {[m
+[32m+[m[32m                      final isSelected = index == modeIndex;[m
+[32m+[m[32m                      return GestureDetector([m
+[32m+[m[32m                        onTap: () => setState(() => modeIndex = index),[m
+[32m+[m[32m                        child: Padding([m
+[32m+[m[32m                          padding: const EdgeInsets.symmetric(horizontal: 16),[m
+[32m+[m[32m                          child: Text([m
+[32m+[m[32m                            modes[index],[m
+[32m+[m[32m                            style: TextStyle([m
+[32m+[m[32m                              color: isSelected ? Colors.amber : Colors.white,[m
+[32m+[m[32m                              fontWeight: FontWeight.w500,[m
+[32m+[m[32m                              fontSize: 14,[m
+[32m+[m[32m                            ),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                        ),[m
+[32m+[m[32m                      );[m
+[32m+[m[32m                    }),[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                  const SizedBox(height: 16),[m
+[32m+[m
+[32m+[m[32m                  // –ö–Ω–æ–ø–∫–∏: –≤—Å–ø—ã—à–∫–∞, –∑–∞—Ö–≤–∞—Ç, —Ç–∞–π–º–µ—Ä[m
+[32m+[m[32m                  Row([m
+[32m+[m[32m                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,[m
+[32m+[m[32m                    children: [[m
+[32m+[m[32m                      const Icon(Icons.flash_on, color: Colors.white),[m
+[32m+[m[32m                      Container([m
+[32m+[m[32m                        width: 80,[m
+[32m+[m[32m                        height: 80,[m
+[32m+[m[32m                        decoration: BoxDecoration([m
+[32m+[m[32m                          shape: BoxShape.circle,[m
+[32m+[m[32m                          border: Border.all(color: Colors.white, width: 4),[m
+[32m+[m[32m                        ),[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                      const Icon(Icons.timer, color: Colors.white),[m
+[32m+[m[32m                    ],[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                ],[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ],[m
+[32m+[m[32m        ),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[1mdiff --git a/lib/screens/roles/host_selection_screen.dart b/lib/screens/roles/host_selection_screen.dart[m
+[1mindex e69de29..ae4529a 100644[m
+[1m--- a/lib/screens/roles/host_selection_screen.dart[m
+[1m+++ b/lib/screens/roles/host_selection_screen.dart[m
+[36m@@ -0,0 +1,147 @@[m
+[32m+[m[32mimport 'package:flutter/material.dart';[m
+[32m+[m[32mimport 'package:shine/screens/roles/client_screen.dart';[m
+[32m+[m[32mimport 'package:shine/screens/roles/role_select.dart';[m
+[32m+[m
+[32m+[m[32mimport '../../theme/main_design.dart';[m
+[32m+[m
+[32m+[m[32mclass HostSelectionScreen extends StatefulWidget {[m
+[32m+[m[32m  const HostSelectionScreen({super.key});[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  State<HostSelectionScreen> createState() => _HostSelectionScreenState();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mclass _HostSelectionScreenState extends State<HostSelectionScreen> {[m
+[32m+[m[32m  final TextEditingController _searchController = TextEditingController();[m
+[32m+[m[32m  String? _selectedHost;[m
+[32m+[m[32m  final List<String> _allHosts = ['–û—Ç–≤–µ—Ç 1', '–û—Ç–≤–µ—Ç 2', '–û—Ç–≤–µ—Ç 3'];[m
+[32m+[m[32m  List<String> _filteredHosts = [];[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void initState() {[m
+[32m+[m[32m    super.initState();[m
+[32m+[m[32m    _filteredHosts = _allHosts;[m
+[32m+[m[32m    _searchController.addListener(_onSearchChanged);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  void _onSearchChanged() {[m
+[32m+[m[32m    final query = _searchController.text.toLowerCase();[m
+[32m+[m[32m    setState(() {[m
+[32m+[m[32m      _filteredHosts = _allHosts[m
+[32m+[m[32m          .where((host) => host.toLowerCase().contains(query))[m
+[32m+[m[32m          .toList();[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  void _onSelect(String host) {[m
+[32m+[m[32m    setState(() {[m
+[32m+[m[32m      _selectedHost = host;[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }[m
+[32m+[m[32m  Widget _buildDivider() => const Divider([m
+[32m+[m[32m    height: 0,[m
+[32m+[m[32m    thickness: 0.5,[m
+[32m+[m[32m    indent: AppSpacing.s,[m
+[32m+[m[32m    color: Color(0xFFE0E0E0),[m
+[32m+[m[32m  );[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  Widget build(BuildContext context) {[m
+[32m+[m[32m    return Scaffold([m
+[32m+[m[32m      backgroundColor: const Color(0xFFF6F7F9),[m
+[32m+[m[32m      appBar: AppBar([m
+[32m+[m[32m        backgroundColor: Colors.transparent,[m
+[32m+[m[32m        elevation: 0,[m
+[32m+[m[32m        automaticallyImplyLeading: false,[m
+[32m+[m[32m        title: Row([m
+[32m+[m[32m          mainAxisAlignment: MainAxisAlignment.spaceBetween,[m
+[32m+[m[32m          children: [[m
+[32m+[m[32m            TextButton([m
+[32m+[m[32m              onPressed: () async => await Navigator.push([m
+[32m+[m[32m                context,[m
+[32m+[m[32m                MaterialPageRoute([m
+[32m+[m[32m                    builder: (_) => const RoleSelectScreen()),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m              child: Text([m
+[32m+[m[32m                '–û—Ç–º–µ–Ω–∏—Ç—å',[m
+[32m+[m[32m                style: AppTextStyles.lead.copyWith(color: Colors.red),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m            TextButton([m
+[32m+[m[32m              onPressed: () async => await Navigator.push([m
+[32m+[m[32m                context,[m
+[32m+[m[32m                MaterialPageRoute([m
+[32m+[m[32m                    builder: (_) => const ClientScreen()),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m              child: Text([m
+[32m+[m[32m                '–ì–æ—Ç–æ–≤–æ',[m
+[32m+[m[32m                style: AppTextStyles.lead,[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ],[m
+[32m+[m[32m        ),[m
+[32m+[m[32m      ),[m
+[32m+[m
+[32m+[m[32m      body: Padding([m
+[32m+[m[32m        padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),[m
+[32m+[m[32m        child: Column([m
+[32m+[m[32m          crossAxisAlignment: CrossAxisAlignment.start,[m
+[32m+[m[32m          children: [[m
+[32m+[m[32m            const Text([m
+[32m+[m[32m              '–í–´–ë–ï–†–ò –£–ß–ê–°–¢–ù–ò–ö–û–í (1‚Äì7)',[m
+[32m+[m[32m              style: TextStyle([m
+[32m+[m[32m                fontSize: 12,[m
+[32m+[m[32m                color: Colors.grey,[m
+[32m+[m[32m                letterSpacing: 0.5,[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m            const SizedBox(height: 8),[m
+[32m+[m[32m            Container([m
+[32m+[m[32m              decoration: BoxDecoration([m
+[32m+[m[32m                color: Colors.white,[m
+[32m+[m[32m                borderRadius: BorderRadius.circular(12),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m              child: Column([m
+[32m+[m[32m                children: [[m
+[32m+[m[32m                  TextField([m
+[32m+[m[32m                    controller: _searchController,[m
+[32m+[m[32m                    decoration: const InputDecoration([m
+[32m+[m[32m                      hintText: '–ü–æ–∏—Å–∫...',[m
+[32m+[m[32m                      contentPadding:[m
+[32m+[m[32m                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),[m
+[32m+[m[32m                      border: InputBorder.none,[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m                  _buildDivider(),[m
+[32m+[m[32m                  if (_filteredHosts.isEmpty)[m
+[32m+[m[32m                    const Padding([m
+[32m+[m[32m                      padding: EdgeInsets.all(16),[m
+[32m+[m[32m                      child: Text([m
+[32m+[m[32m                        '–£—Å—Ç—Ä–æ–π—Å—Ç–≤–∞ –Ω–µ –Ω–∞–π–¥–µ–Ω—ã',[m
+[32m+[m[32m                        style: TextStyle(color: Colors.grey),[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                    )[m
+[32m+[m[32m                  else[m
+[32m+[m[32m                    ..._filteredHosts.map([m
+[32m+[m[32m                          (host) => Column([m
+[32m+[m[32m                        children: [[m
+[32m+[m[32m                          ListTile([m
+[32m+[m[32m                            title: Text(host),[m
+[32m+[m[32m                            trailing: _selectedHost == host[m
+[32m+[m[32m                                ? const Icon(Icons.check, color: Colors.black)[m
+[32m+[m[32m                                : null,[m
+[32m+[m[32m                            onTap: () => _onSelect(host),[m
+[32m+[m[32m                          ),[m
+[32m+[m[32m                          if (host != _filteredHosts.last)[m
+[32m+[m[32m                            _buildDivider(),[m
+[32m+[m[32m                        ],[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                ],[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ],[m
+[32m+[m[32m        ),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[1mdiff --git a/lib/screens/roles/role_select.dart b/lib/screens/roles/role_select.dart[m
+[1mindex a6b978c..f6e83dd 100644[m
+[1m--- a/lib/screens/roles/role_select.dart[m
+[1m+++ b/lib/screens/roles/role_select.dart[m
+[36m@@ -1,14 +1,16 @@[m
+ import 'package:flutter/material.dart';[m
+ import 'package:flutter_bloc/flutter_bloc.dart';[m
+ import 'package:shine/screens/profile_screen.dart';[m
+[31m-import 'package:shine/screens/settings_screen.dart';[m
+[31m-import 'package:shine/screens/tip_screen/client_tip_screen.dart';[m
+[32m+[m[32mimport 'package:shine/screens/settings/settings_screen.dart';[m
+ import '../../blocs/role/role_cubit.dart';[m
+ import '../../blocs/wifi/wifi_cubit.dart';[m
+ import '../../blocs/wifi/wifi_state.dart';[m
+ import '../../theme/main_design.dart';[m
+[32m+[m[32mimport '../tip_screen/client_tip_screen.dart';[m
+ import '../tip_screen/host_tip_screen.dart';[m
+ import 'client_screen.dart';[m
+[32m+[m[32mimport 'host_screen.dart';[m
+[32m+[m[32mimport 'host_selection_screen.dart';[m
+ [m
+ class RoleSelectScreen extends StatelessWidget {[m
+   const RoleSelectScreen({super.key});[m
+[36m@@ -172,15 +174,19 @@[m [mclass _RoleList extends StatelessWidget {[m
+           label: isHost ? '–Ø —Ñ–æ—Ç–æ–≥—Ä–∞—Ñ–∏—Ä—É—é' : '–ú–µ–Ω—è —Ñ–æ—Ç–æ–≥—Ä–∞—Ñ–∏—Ä—É—é—Ç',[m
+           onTap: () async {[m
+             final wifiState = context.read<WifiCubit>().state;[m
+[31m-            if (isHost) {[m
+[32m+[m
+[32m+[m[32m            if (!isHost) {[m
+               final needHostTip = await HostTipScreen.shouldShow() ||[m
+                   wifiState is WifiDisconnected;[m
+[32m+[m
+               if (needHostTip) {[m
+                 await Navigator.push([m
+                   context,[m
+                   MaterialPageRoute(builder: (_) => const HostTipScreen()),[m
+                 );[m
+[32m+[m[32m                return;[m
+               }[m
+[32m+[m
+               context.read<RoleCubit>().selectHost();[m
+               Navigator.pushReplacement([m
+                 context,[m
+[36m@@ -189,20 +195,24 @@[m [mclass _RoleList extends StatelessWidget {[m
+             } else {[m
+               final needClientTip = await HostTipScreen.shouldShow() ||[m
+                   wifiState is WifiDisconnected;[m
+[32m+[m
+               if (needClientTip) {[m
+                 await Navigator.push([m
+                   context,[m
+[31m-                  MaterialPageRoute(builder: (_) => const HostTipScreen()),[m
+[32m+[m[32m                  MaterialPageRoute(builder: (_) => const ClientTipScreen()),[m
+                 );[m
+[32m+[m[32m                return;[m
+               }[m
+[32m+[m
+               context.read<RoleCubit>().selectClient();[m
+               Navigator.pushReplacement([m
+                 context,[m
+[31m-                MaterialPageRoute(builder: (_) => const ClientScreen()),[m
+[32m+[m[32m                MaterialPageRoute(builder: (_) => const HostSelectionScreen()),[m
+               );[m
+             }[m
+           },[m
+         );[m
+[32m+[m
+       },[m
+     );[m
+   }[m
+[1mdiff --git a/lib/screens/saver_screen.dart b/lib/screens/saver_screen.dart[m
+[1mindex e69de29..d4362f8 100644[m
+[1m--- a/lib/screens/saver_screen.dart[m
+[1m+++ b/lib/screens/saver_screen.dart[m
+[36m@@ -0,0 +1,103 @@[m
+[32m+[m[32mimport 'package:flutter/material.dart';[m
+[32m+[m
+[32m+[m[32mclass SaverScreen extends StatelessWidget {[m
+[32m+[m[32m  const SaverScreen({super.key});[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  Widget build(BuildContext context) {[m
+[32m+[m[32m    return Scaffold([m
+[32m+[m[32m      backgroundColor: const Color(0xFFDBD4FF), // –∑–∞–ø–∞—Å–Ω–æ–π —Ü–≤–µ—Ç —Ñ–æ–Ω–∞[m
+[32m+[m[32m      body: Container([m
+[32m+[m[32m        decoration: const BoxDecoration([m
+[32m+[m[32m          gradient: LinearGradient([m
+[32m+[m[32m            colors: [Color(0xFFE2D8FF), Color(0xFFB2A5FF)],[m
+[32m+[m[32m            begin: Alignment.topCenter,[m
+[32m+[m[32m            end: Alignment.bottomCenter,[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+[32m+[m[32m        width: double.infinity,[m
+[32m+[m[32m        height: double.infinity,[m
+[32m+[m[32m        child: SafeArea([m
+[32m+[m[32m          child: Column([m
+[32m+[m[32m            children: [[m
+[32m+[m[32m              const SizedBox(height: 80),[m
+[32m+[m
+[32m+[m[32m              // –¢–µ–∫—Å—Ç—ã[m
+[32m+[m[32m              Padding([m
+[32m+[m[32m                padding: const EdgeInsets.symmetric(horizontal: 24),[m
+[32m+[m[32m                child: Column([m
+[32m+[m[32m                  crossAxisAlignment: CrossAxisAlignment.start,[m
+[32m+[m[32m                  children: const [[m
+[32m+[m[32m                    Text([m
+[32m+[m[32m                      '–°–æ–∑–¥–∞–≤–∞–π\n–ª—É—á—à–∏–µ —Ñ–æ—Ç–æ\n–≤–º–µ—Å—Ç–µ —Å Shine',[m
+[32m+[m[32m                      style: TextStyle([m
+[32m+[m[32m                        fontSize: 32,[m
+[32m+[m[32m                        fontWeight: FontWeight.w700,[m
+[32m+[m[32m                        color: Colors.black,[m
+[32m+[m[32m                        height: 1.2,[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    SizedBox(height: 16),[m
+[32m+[m[32m                    Text([m
+[32m+[m[32m                      '–ü–æ–ª–Ω—ã–π –∫–æ–Ω—Ç—Ä–æ–ª—å —Å—ä—ë–º–∫–∏ —Å –ª—é–±–æ–≥–æ —Ç–µ–ª–µ—Ñ–æ–Ω–∞',[m
+[32m+[m[32m                      style: TextStyle([m
+[32m+[m[32m                        fontSize: 16,[m
+[32m+[m[32m                        color: Colors.black87,[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                  ],[m
+[32m+[m[32m                ),[m
+[32m+[m[32m              ),[m
+[32m+[m
+[32m+[m[32m              const Spacer(),[m
+[32m+[m
+[32m+[m[32m              // –ö–∞—Ä—Ç–∏–Ω–∫–∏ —Å –±—Ä–∏–ª–ª–∏–∞–Ω—Ç–∞–º–∏[m
+[32m+[m[32m              Image.asset([m
+[32m+[m[32m                'assets/images/shine_diamond.png',[m
+[32m+[m[32m                width: 260,[m
+[32m+[m[32m              ),[m
+[32m+[m
+[32m+[m[32m              const Spacer(),[m
+[32m+[m
+[32m+[m[32m              // –ö–Ω–æ–ø–∫–∏[m
+[32m+[m[32m              Padding([m
+[32m+[m[32m                padding: const EdgeInsets.symmetric(horizontal: 24),[m
+[32m+[m[32m                child: Column([m
+[32m+[m[32m                  children: [[m
+[32m+[m[32m                    ElevatedButton([m
+[32m+[m[32m                      onPressed: () {[m
+[32m+[m[32m                        // TODO: –ø–µ—Ä–µ—Ö–æ–¥ –Ω–∞ —ç–∫—Ä–∞–Ω –≤—Ö–æ–¥–∞[m
+[32m+[m[32m                      },[m
+[32m+[m[32m                      style: ElevatedButton.styleFrom([m
+[32m+[m[32m                        backgroundColor: Colors.black,[m
+[32m+[m[32m                        foregroundColor: Colors.white,[m
+[32m+[m[32m                        shape: const StadiumBorder(),[m
+[32m+[m[32m                        minimumSize: const Size.fromHeight(50),[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                      child: const Text('–í–æ–π—Ç–∏', style: TextStyle(fontSize: 17)),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    const SizedBox(height: 12),[m
+[32m+[m[32m                    OutlinedButton([m
+[32m+[m[32m                      onPressed: () {[m
+[32m+[m[32m                        // TODO: –ø–µ—Ä–µ—Ö–æ–¥ –Ω–∞ —ç–∫—Ä–∞–Ω —Ä–µ–≥–∏—Å—Ç—Ä–∞—Ü–∏–∏[m
+[32m+[m[32m                      },[m
+[32m+[m[32m                      style: OutlinedButton.styleFrom([m
+[32m+[m[32m                        side: const BorderSide(color: Colors.white),[m
+[32m+[m[32m                        backgroundColor: Colors.white,[m
+[32m+[m[32m                        foregroundColor: Colors.black,[m
+[32m+[m[32m                        shape: const StadiumBorder(),[m
+[32m+[m[32m                        minimumSize: const Size.fromHeight(50),[m
+[32m+[m[32m                      ),[m
+[32m+[m[32m                      child: const Text('–°–æ–∑–¥–∞—Ç—å –∞–∫–∫–∞—É–Ω—Ç', style: TextStyle(fontSize: 17)),[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    const SizedBox(height: 40),[m
+[32m+[m[32m                  ],[m
+[32m+[m[32m                ),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ],[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[1mdiff --git a/lib/screens/settings/settings_screen.dart b/lib/screens/settings/settings_screen.dart[m
+[1mindex 63ba4d1..9c9a20a 100644[m
+[1m--- a/lib/screens/settings/settings_screen.dart[m
+[1m+++ b/lib/screens/settings/settings_screen.dart[m
+[36m@@ -4,8 +4,8 @@[m [mimport 'package:flutter/services.dart';[m
+ import 'package:share_plus/share_plus.dart';[m
+ import 'package:shared_preferences/shared_preferences.dart';[m
+ import 'package:shine/screens/settings/about_tabs_screen.dart';[m
+[31m-import '../theme/main_design.dart';[m
+[31m-import 'settings/faq_screen.dart';[m
+[32m+[m[32mimport '../../theme/main_design.dart';[m
+[32m+[m[32mimport 'faq_screen.dart';[m
+ import 'package:flutter_email_sender/flutter_email_sender.dart';[m
+ class SettingsScreen extends StatefulWidget {[m
+   const SettingsScreen({super.key});[m
+[1mdiff --git a/lib/screens/tip_screen/client_tip_screen.dart b/lib/screens/tip_screen/client_tip_screen.dart[m
+[1mindex 0b0de05..f38574c 100644[m
+[1m--- a/lib/screens/tip_screen/client_tip_screen.dart[m
+[1m+++ b/lib/screens/tip_screen/client_tip_screen.dart[m
+[36m@@ -4,10 +4,9 @@[m [mimport 'package:shared_preferences/shared_preferences.dart';[m
+ import '../../blocs/wifi/wifi_cubit.dart';[m
+ import '../../blocs/wifi/wifi_state.dart';[m
+ import '../../theme/main_design.dart';[m
+[31m-import 'host_tip_screen.dart';[m
+ [m
+[31m-class HostScreen extends StatelessWidget {[m
+[31m-  const HostScreen({super.key});[m
+[32m+[m[32mclass ClientTipScreen extends StatelessWidget {[m
+[32m+[m[32m  const ClientTipScreen({super.key});[m
+ [m
+   static const _prefsKey = 'client_tip_seen';[m
+ [m
+[36m@@ -104,7 +103,7 @@[m [mclass HostScreen extends StatelessWidget {[m
+                                 if ( state is! WifiDisconnected) ...[[m
+                                   ElevatedButton([m
+                                     onPressed: () async {[m
+[31m-                                      await HostTipScreen.markSeen();[m
+[32m+[m[32m                                      await ClientTipScreen.markSeen();[m
+                                       Navigator.pop(context);[m
+                                     },[m
+                                     style: ElevatedButton.styleFrom([m
+[1mdiff --git a/lib/utils/broadcaster_manager.dart b/lib/utils/broadcaster_manager.dart[m
+[1mdeleted file mode 100644[m
+[1mindex e69de29..0000000[m
+[1mdiff --git a/lib/utils/device_manager.dart b/lib/utils/device_manager.dart[m
+[1mdeleted file mode 100644[m
+[1mindex e69de29..0000000[m
+[1mdiff --git a/lib/utils/receiver_manager.dart b/lib/utils/receiver_manager.dart[m
+[1mdeleted file mode 100644[m
+[1mindex e69de29..0000000[m
+[1mdiff --git a/lib/utils/signaling_service.dart b/lib/utils/signaling_service.dart[m
+[1mdeleted file mode 100644[m
+[1mindex e69de29..0000000[m
+[1mdiff --git a/lib/widgets/video_view.dart b/lib/widgets/video_view.dart[m
+[1mindex a45316f..de6ddf9 100644[m
+[1m--- a/lib/widgets/video_view.dart[m
+[1m+++ b/lib/widgets/video_view.dart[m
+[36m@@ -1,36 +1,36 @@[m
+[31m-import 'package:flutter/material.dart';[m
+[31m-import 'package:flutter_webrtc/flutter_webrtc.dart';[m
+[31m-[m
+[31m-class VideoView extends StatefulWidget {[m
+[31m-  final MediaStream? stream;[m
+[31m-  const VideoView({super.key, this.stream});[m
+[31m-[m
+[31m-  @override[m
+[31m-  _VideoViewState createState() => _VideoViewState();[m
+[31m-}[m
+[31m-[m
+[31m-class _VideoViewState extends State<VideoView> {[m
+[31m-  final RTCVideoRenderer _renderer = RTCVideoRenderer();[m
+[31m-[m
+[31m-  @override[m
+[31m-  void initState() {[m
+[31m-    super.initState();[m
+[31m-    _renderer.initialize();[m
+[31m-  }[m
+[31m-[m
+[31m-  @override[m
+[31m-  void didUpdateWidget(VideoView oldWidget) {[m
+[31m-    super.didUpdateWidget(oldWidget);[m
+[31m-    _renderer.srcObject = widget.stream;[m
+[31m-  }[m
+[31m-[m
+[31m-  @override[m
+[31m-  void dispose() {[m
+[31m-    _renderer.dispose();[m
+[31m-    super.dispose();[m
+[31m-  }[m
+[31m-[m
+[31m-  @override[m
+[31m-  Widget build(BuildContext context) =>[m
+[31m-      widget.stream != null ? RTCVideoView(_renderer) : Container(color: Colors.black);[m
+[31m-}[m
+[32m+[m[32m// import 'package:flutter/material.dart';[m
+[32m+[m[32m// import 'package:flutter_webrtc/flutter_webrtc.dart';[m
+[32m+[m[32m//[m
+[32m+[m[32m// class VideoView extends StatefulWidget {[m
+[32m+[m[32m//   final MediaStream? stream;[m
+[32m+[m[32m//   const VideoView({super.key, this.stream});[m
+[32m+[m[32m//[m
+[32m+[m[32m//   @override[m
+[32m+[m[32m//   _VideoViewState createState() => _VideoViewState();[m
+[32m+[m[32m// }[m
+[32m+[m[32m//[m
+[32m+[m[32m// class _VideoViewState extends State<VideoView> {[m
+[32m+[m[32m//   final RTCVideoRenderer _renderer = RTCVideoRenderer();[m
+[32m+[m[32m//[m
+[32m+[m[32m//   @override[m
+[32m+[m[32m//   void initState() {[m
+[32m+[m[32m//     super.initState();[m
+[32m+[m[32m//     _renderer.initialize();[m
+[32m+[m[32m//   }[m
+[32m+[m[32m//[m
+[32m+[m[32m//   @override[m
+[32m+[m[32m//   void didUpdateWidget(VideoView oldWidget) {[m
+[32m+[m[32m//     super.didUpdateWidget(oldWidget);[m
+[32m+[m[32m//     _renderer.srcObject = widget.stream;[m
+[32m+[m[32m//   }[m
+[32m+[m[32m//[m
+[32m+[m[32m//   @override[m
+[32m+[m[32m//   void dispose() {[m
+[32m+[m[32m//     _renderer.dispose();[m
+[32m+[m[32m//     super.dispose();[m
+[32m+[m[32m//   }[m
+[32m+[m[32m//[m
+[32m+[m[32m//   @override[m
+[32m+[m[32m//   Widget build(BuildContext context) =>[m
+[32m+[m[32m//       widget.stream != null ? RTCVideoView(_renderer) : Container(color: Colors.black);[m
+[32m+[m[32m// }[m
+[1mdiff --git a/lib/widgets/video_view/local_video_view.dart b/lib/widgets/video_view/local_video_view.dart[m
+[1mindex fe55261..09ecd48 100644[m
+[1m--- a/lib/widgets/video_view/local_video_view.dart[m
+[1m+++ b/lib/widgets/video_view/local_video_view.dart[m
+[36m@@ -1,11 +1,38 @@[m
+ import 'package:flutter/material.dart';[m
+ import 'package:flutter_webrtc/flutter_webrtc.dart';[m
+ [m
+[31m-class LocalVideoView extends StatelessWidget {[m
+[32m+[m[32mclass LocalVideoView extends StatefulWidget {[m
+   final RTCVideoRenderer renderer;[m
+ [m
+   const LocalVideoView({super.key, required this.renderer});[m
+ [m
+[32m+[m[32m  @override[m
+[32m+[m[32m  State<LocalVideoView> createState() => _LocalVideoViewState();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mclass _LocalVideoViewState extends State<LocalVideoView> {[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void initState() {[m
+[32m+[m[32m    super.initState();[m
+[32m+[m[32m    widget.renderer.initialize().then((_) {[m
+[32m+[m[32m      if (mounted) setState(() {});[m
+[32m+[m[32m    }).catchError((e) {[m
+[32m+[m[32m      debugPrint('Failed to initialize renderer: $e');[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void didUpdateWidget(covariant LocalVideoView oldWidget) {[m
+[32m+[m[32m    super.didUpdateWidget(oldWidget);[m
+[32m+[m[32m    if (widget.renderer != oldWidget.renderer) {[m
+[32m+[m[32m      widget.renderer.initialize().then((_) {[m
+[32m+[m[32m        if (mounted) setState(() {});[m
+[32m+[m[32m      }).catchError((e) {[m
+[32m+[m[32m        debugPrint('Failed to initialize new renderer: $e');[m
+[32m+[m[32m      });[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+   @override[m
+   Widget build(BuildContext context) {[m
+     return Container([m
+[36m@@ -13,30 +40,36 @@[m [mclass LocalVideoView extends StatelessWidget {[m
+       decoration: BoxDecoration([m
+         borderRadius: BorderRadius.circular(12),[m
+         border: Border.all(color: Colors.blueGrey.shade300, width: 2),[m
+[31m-        color: Colors.black, [m
+[32m+[m[32m        color: Colors.black,[m
+       ),[m
+[31m-      child: ClipRRect( [m
+[31m-        borderRadius: BorderRadius.circular(10), [m
+[31m-        child: renderer.textureId != null && renderer.srcObject?.active == true[m
+[32m+[m[32m      child: ClipRRect([m
+[32m+[m[32m        borderRadius: BorderRadius.circular(10),[m
+[32m+[m[32m        child: widget.renderer.textureId != null[m
+             ? RTCVideoView([m
+[31m-                renderer,[m
+[31m-                mirror: true, [m
+[31m-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover, [m
+[31m-              )[m
+[32m+[m[32m          widget.renderer,[m
+[32m+[m[32m          mirror: true,[m
+[32m+[m[32m          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,[m
+[32m+[m[32m        )[m
+             : const Center([m
+[31m-                child: Column([m
+[31m-                  mainAxisAlignment: MainAxisAlignment.center,[m
+[31m-                  children: [[m
+[31m-                    CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white54)),[m
+[31m-                    SizedBox(height: 12),[m
+[31m-                    Text([m
+[31m-                      "Initializing local camera...",[m
+[31m-                      style: TextStyle(color: Colors.white70, fontSize: 16),[m
+[31m-                    ),[m
+[31m-                  ],[m
+[31m-                ),[m
+[32m+[m[32m          child: Column([m
+[32m+[m[32m            mainAxisAlignment: MainAxisAlignment.center,[m
+[32m+[m[32m            children: [[m
+[32m+[m[32m              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white54)),[m
+[32m+[m[32m              SizedBox(height: 12),[m
+[32m+[m[32m              Text([m
+[32m+[m[32m                "Initializing local camera...",[m
+[32m+[m[32m                style: TextStyle(color: Colors.white70, fontSize: 16),[m
+               ),[m
+[32m+[m[32m            ],[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ),[m
+       ),[m
+     );[m
+   }[m
+[31m-}[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  void dispose() {[m
+[32m+[m[32m    widget.renderer.dispose();[m
+[32m+[m[32m    super.dispose();[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/lib/widgets/video_view/remote_video_view.dart b/lib/widgets/video_view/remote_video_view.dart[m
+[1mindex fe601b8..c2d3165 100644[m
+[1m--- a/lib/widgets/video_view/remote_video_view.dart[m
+[1m+++ b/lib/widgets/video_view/remote_video_view.dart[m
+[36m@@ -9,28 +9,26 @@[m [mclass RemoteVideoView extends StatelessWidget {[m
+   @override[m
+   Widget build(BuildContext context) {[m
+     return Container([m
+[31m-      decoration: BoxDecoration([m
+[31m-        color: Colors.black, [m
+[31m-      ),[m
+[32m+[m[32m      decoration: const BoxDecoration(color: Colors.black),[m
+       child: renderer.textureId != null && renderer.srcObject?.active == true[m
+           ? RTCVideoView([m
+[31m-              renderer,[m
+[31m-              mirror: false, [m
+[31m-              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain, [m
+[31m-            )[m
+[31m-          : const Center( [m
+[31m-              child: Column([m
+[31m-                mainAxisAlignment: MainAxisAlignment.center,[m
+[31m-                children: [[m
+[31m-                  Icon(Icons.videocam_off_outlined, color: Colors.white54, size: 56),[m
+[31m-                  SizedBox(height: 12),[m
+[31m-                  Text([m
+[31m-                    "Remote video stream not available",[m
+[31m-                    style: TextStyle(color: Colors.white70, fontSize: 16),[m
+[31m-                  ),[m
+[31m-                ],[m
+[31m-              ),[m
+[32m+[m[32m        renderer,[m
+[32m+[m[32m        mirror: false,[m
+[32m+[m[32m        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,[m
+[32m+[m[32m      )[m
+[32m+[m[32m          : const Center([m
+[32m+[m[32m        child: Column([m
+[32m+[m[32m          mainAxisAlignment: MainAxisAlignment.center,[m
+[32m+[m[32m          children: [[m
+[32m+[m[32m            Icon(Icons.videocam_off_outlined, color: Colors.white54, size: 56),[m
+[32m+[m[32m            SizedBox(height: 12),[m
+[32m+[m[32m            Text([m
+[32m+[m[32m              "Remote video stream not available",[m
+[32m+[m[32m              style: TextStyle(color: Colors.white70, fontSize: 16),[m
+             ),[m
+[32m+[m[32m          ],[m
+[32m+[m[32m        ),[m
+[32m+[m[32m      ),[m
+     );[m
+   }[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/macos/Flutter/GeneratedPluginRegistrant.swift b/macos/Flutter/GeneratedPluginRegistrant.swift[m
+[1mindex f6670e4..d33603f 100644[m
+[1m--- a/macos/Flutter/GeneratedPluginRegistrant.swift[m
+[1m+++ b/macos/Flutter/GeneratedPluginRegistrant.swift[m
+[36m@@ -5,6 +5,7 @@[m
+ import FlutterMacOS[m
+ import Foundation[m
+ [m
+[32m+[m[32mimport bonsoir_darwin[m
+ import connectivity_plus[m
+ import flutter_webrtc[m
+ import google_sign_in_ios[m
+[36m@@ -12,9 +13,9 @@[m [mimport nsd_macos[m
+ import path_provider_foundation[m
+ import share_plus[m
+ import shared_preferences_foundation[m
+[31m-import sign_in_with_apple[m
+ [m
+ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {[m
+[32m+[m[32m  SwiftBonsoirPlugin.register(with: registry.registrar(forPlugin: "SwiftBonsoirPlugin"))[m
+   ConnectivityPlusPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlusPlugin"))[m
+   FlutterWebRTCPlugin.register(with: registry.registrar(forPlugin: "FlutterWebRTCPlugin"))[m
+   FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))[m
+[36m@@ -22,5 +23,4 @@[m [mfunc RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {[m
+   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))[m
+   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))[m
+   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))[m
+[31m-  SignInWithApplePlugin.register(with: registry.registrar(forPlugin: "SignInWithApplePlugin"))[m
+ }[m
+[1mdiff --git a/pubspec.lock b/pubspec.lock[m
+[1mindex 4ac0924..5f6a469 100644[m
+[1m--- a/pubspec.lock[m
+[1m+++ b/pubspec.lock[m
+[36m@@ -25,6 +25,54 @@[m [mpackages:[m
+       url: "https://pub.dev"[m
+     source: hosted[m
+     version: "9.0.0"[m
+[32m+[m[32m  bonsoir:[m
+[32m+[m[32m    dependency: "direct main"[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: bonsoir[m
+[32m+[m[32m      sha256: "2e2cf3be580deccad9a48dcaddddf90de092e74b7de2015ef58fb24e11d66496"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "5.1.11"[m
+[32m+[m[32m  bonsoir_android:[m
+[32m+[m[32m    dependency: transitive[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: bonsoir_android[m
+[32m+[m[32m      sha256: "9a65b6e50c5718c3f1a7ed6ff57ab9ed8ae990ff9c36d2b1ab3d1b90f28f7d1b"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "5.1.6"[m
+[32m+[m[32m  bonsoir_darwin:[m
+[32m+[m[32m    dependency: transitive[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: bonsoir_darwin[m
+[32m+[m[32m      sha256: "2d25c70f0d09260be1c2ab583b80dd89cbbfd59997579dadf789c5af00c7b2e4"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "5.1.3"[m
+[32m+[m[32m  bonsoir_linux:[m
+[32m+[m[32m    dependency: transitive[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: bonsoir_linux[m
+[32m+[m[32m      sha256: f2639aded6e15943a9822de98a663a1056f37cbfd0a74d72c9eaa941965945c2[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "5.1.3"[m
+[32m+[m[32m  bonsoir_platform_interface:[m
+[32m+[m[32m    dependency: transitive[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: bonsoir_platform_interface[m
+[32m+[m[32m      sha256: "08bb8b35d0198168b3bce87dbc718e4e510336cff1d97e43762e030c01636d45"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "5.1.3"[m
+[32m+[m[32m  bonsoir_windows:[m
+[32m+[m[32m    dependency: transitive[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: bonsoir_windows[m
+[32m+[m[32m      sha256: d4a0ca479d4f3679487a61f3174fb9fe1651e323c778b02dfa630490366be65d[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "5.1.5"[m
+   boolean_selector:[m
+     dependency: transitive[m
+     description:[m
+[36m@@ -198,6 +246,14 @@[m [mpackages:[m
+     description: flutter[m
+     source: sdk[m
+     version: "0.0.0"[m
+[32m+[m[32m  flutter_background:[m
+[32m+[m[32m    dependency: "direct main"[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: flutter_background[m
+[32m+[m[32m      sha256: "8dad66e3102da2b4046cc3adcf70625578809827170bd78e36e5890c074287d2"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "1.3.0+1"[m
+   flutter_bloc:[m
+     dependency: "direct main"[m
+     description:[m
+[36m@@ -248,6 +304,14 @@[m [mpackages:[m
+       url: "https://pub.dev"[m
+     source: hosted[m
+     version: "0.14.1"[m
+[32m+[m[32m  gallery_saver_plus:[m
+[32m+[m[32m    dependency: "direct main"[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: gallery_saver_plus[m
+[32m+[m[32m      sha256: "179a2cf0a8d5d61957724e39cf5664a336d5ef28a4222543462dd9fc4c1a6af9"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "3.2.4"[m
+   google_identity_services_web:[m
+     dependency: transitive[m
+     description:[m
+[36m@@ -297,7 +361,7 @@[m [mpackages:[m
+     source: hosted[m
+     version: "0.12.4+4"[m
+   http:[m
+[31m-    dependency: transitive[m
+[32m+[m[32m    dependency: "direct main"[m
+     description:[m
+       name: http[m
+       sha256: "2c11f3f94c687ee9bad77c171151672986360b2b001d109814ee7140b2cf261b"[m
+[36m@@ -408,6 +472,14 @@[m [mpackages:[m
+       url: "https://pub.dev"[m
+     source: hosted[m
+     version: "2.0.0"[m
+[32m+[m[32m  multicast_dns:[m
+[32m+[m[32m    dependency: "direct main"[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: multicast_dns[m
+[32m+[m[32m      sha256: de72ada5c3db6fdd6ad4ae99452fe05fb403c4bb37c67ceb255ddd37d2b5b1eb[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "0.3.3"[m
+   nested:[m
+     dependency: transitive[m
+     description:[m
+[36m@@ -608,6 +680,14 @@[m [mpackages:[m
+       url: "https://pub.dev"[m
+     source: hosted[m
+     version: "6.1.5"[m
+[32m+[m[32m  sdp_transform:[m
+[32m+[m[32m    dependency: "direct main"[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: sdp_transform[m
+[32m+[m[32m      sha256: "73e412a5279a5c2de74001535208e20fff88f225c9a4571af0f7146202755e45"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "0.3.2"[m
+   share_plus:[m
+     dependency: "direct main"[m
+     description:[m
+[36m@@ -680,30 +760,14 @@[m [mpackages:[m
+       url: "https://pub.dev"[m
+     source: hosted[m
+     version: "2.4.1"[m
+[31m-  sign_in_with_apple:[m
+[32m+[m[32m  shelf:[m
+     dependency: "direct main"[m
+     description:[m
+[31m-      name: sign_in_with_apple[m
+[31m-      sha256: "8bd875c8e8748272749eb6d25b896f768e7e9d60988446d543fe85a37a2392b8"[m
+[31m-      url: "https://pub.dev"[m
+[31m-    source: hosted[m
+[31m-    version: "7.0.1"[m
+[31m-  sign_in_with_apple_platform_interface:[m
+[31m-    dependency: transitive[m
+[31m-    description:[m
+[31m-      name: sign_in_with_apple_platform_interface[m
+[31m-      sha256: "981bca52cf3bb9c3ad7ef44aace2d543e5c468bb713fd8dda4275ff76dfa6659"[m
+[31m-      url: "https://pub.dev"[m
+[31m-    source: hosted[m
+[31m-    version: "2.0.0"[m
+[31m-  sign_in_with_apple_web:[m
+[31m-    dependency: transitive[m
+[31m-    description:[m
+[31m-      name: sign_in_with_apple_web[m
+[31m-      sha256: f316400827f52cafcf50d00e1a2e8a0abc534ca1264e856a81c5f06bd5b10fed[m
+[32m+[m[32m      name: shelf[m
+[32m+[m[32m      sha256: e7dd780a7ffb623c57850b33f43309312fc863fb6aa3d276a754bb299839ef12[m
+       url: "https://pub.dev"[m
+     source: hosted[m
+[31m-    version: "3.0.0"[m
+[32m+[m[32m    version: "1.4.2"[m
+   sky_engine:[m
+     dependency: transitive[m
+     description: flutter[m
+[36m@@ -853,6 +917,22 @@[m [mpackages:[m
+       url: "https://pub.dev"[m
+     source: hosted[m
+     version: "1.1.1"[m
+[32m+[m[32m  web_socket:[m
+[32m+[m[32m    dependency: transitive[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: web_socket[m
+[32m+[m[32m      sha256: "34d64019aa8e36bf9842ac014bb5d2f5586ca73df5e4d9bf5c936975cae6982c"[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "1.0.1"[m
+[32m+[m[32m  web_socket_channel:[m
+[32m+[m[32m    dependency: "direct main"[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      name: web_socket_channel[m
+[32m+[m[32m      sha256: d645757fb0f4773d602444000a8131ff5d48c9e47adfe9772652dd1a4f2d45c8[m
+[32m+[m[32m      url: "https://pub.dev"[m
+[32m+[m[32m    source: hosted[m
+[32m+[m[32m    version: "3.0.3"[m
+   webrtc_interface:[m
+     dependency: "direct overridden"[m
+     description:[m
+[1mdiff --git a/pubspec.yaml b/pubspec.yaml[m
+[1mindex d3fd800..dca2f89 100644[m
+[1m--- a/pubspec.yaml[m
+[1m+++ b/pubspec.yaml[m
+[36m@@ -36,8 +36,10 @@[m [mdependencies:[m
+   cupertino_icons: ^1.0.8[m
+   shared_preferences: ^2.5.3[m
+   flutter_webrtc: ^0.14.1[m
+[32m+[m[32m  flutter_background: ^1.3.0+1[m
+[32m+[m[32m  gallery_saver_plus: ^3.2.4[m
+[32m+[m[32m  sdp_transform: ^0.3.2[m
+   google_sign_in: ^6.1.6[m
+[31m-  sign_in_with_apple: ^7.0.1[m
+   flutter_bloc: ^9.1.0[m
+   flutter_email_sender: ^7.0.0[m
+   permission_handler: ^12.0.0+1[m
+[36m@@ -45,11 +47,16 @@[m [mdependencies:[m
+   share_plus: ^11.0.0[m
+   internet_connection_checker: ^3.0.1[m
+   camera: ^0.11.1[m
+[31m-[m
+[32m+[m[32m  bonsoir: ^5.1.11[m
+   intl: ^0.20.2[m
+   path_provider: ^2.1.5[m
+   collection: ^1.19.1[m
+   nsd: ^4.0.3[m
+[32m+[m[32m  shelf: ^1.4.0[m
+[32m+[m[32m  http: ^1.2.0[m
+[32m+[m[32m  multicast_dns: ^0.3.3[m
+[32m+[m[32m  web_socket_channel: ^3.0.3[m
+[32m+[m
+ [m
+ [m
+ [m
+[36m@@ -87,6 +94,7 @@[m [mflutter:[m
+     - assets/images/camera.png[m
+     - assets/images/camera2.png[m
+     - assets/images/google.png[m
+[32m+[m[32m    - assets/images/saver_screen.png[m
+     - assets/images/onboarding/onboard1.png[m
+     - assets/images/onboarding/onboard2.png[m
+     - assets/images/onboarding/onboard3.png[m
+[1mdiff --git a/test/widget_test.dart b/test/widget_test.dart[m
+[1mindex 1adefee..13a014d 100644[m
+[1m--- a/test/widget_test.dart[m
+[1m+++ b/test/widget_test.dart[m
+[36m@@ -13,7 +13,7 @@[m [mimport 'package:shine/main.dart';[m
+ void main() {[m
+   testWidgets('Counter increments smoke test', (WidgetTester tester) async {[m
+     // Build our app and trigger a frame.[m
+[31m-    await tester.pumpWidget(ShineApp());[m
+[32m+[m[32m    //await tester.pumpWidget(ShineApp());[m
+ [m
+     // Verify that our counter starts at 0.[m
+     expect(find.text('0'), findsOneWidget);[m
+[1mdiff --git a/windows/flutter/generated_plugin_registrant.cc b/windows/flutter/generated_plugin_registrant.cc[m
+[1mindex 6995177..fa98d23 100644[m
+[1m--- a/windows/flutter/generated_plugin_registrant.cc[m
+[1m+++ b/windows/flutter/generated_plugin_registrant.cc[m
+[36m@@ -6,6 +6,7 @@[m
+ [m
+ #include "generated_plugin_registrant.h"[m
+ [m
+[32m+[m[32m#include <bonsoir_windows/bonsoir_windows_plugin_c_api.h>[m
+ #include <connectivity_plus/connectivity_plus_windows_plugin.h>[m
+ #include <flutter_webrtc/flutter_web_r_t_c_plugin.h>[m
+ #include <nsd_windows/nsd_windows_plugin_c_api.h>[m
+[36m@@ -14,6 +15,8 @@[m
+ #include <url_launcher_windows/url_launcher_windows.h>[m
+ [m
+ void RegisterPlugins(flutter::PluginRegistry* registry) {[m
+[32m+[m[32m  BonsoirWindowsPluginCApiRegisterWithRegistrar([m
+[32m+[m[32m      registry->GetRegistrarForPlugin("BonsoirWindowsPluginCApi"));[m
+   ConnectivityPlusWindowsPluginRegisterWithRegistrar([m
+       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));[m
+   FlutterWebRTCPluginRegisterWithRegistrar([m
+[1mdiff --git a/windows/flutter/generated_plugins.cmake b/windows/flutter/generated_plugins.cmake[m
+[1mindex 8d215dd..44356c9 100644[m
+[1m--- a/windows/flutter/generated_plugins.cmake[m
+[1m+++ b/windows/flutter/generated_plugins.cmake[m
+[36m@@ -3,6 +3,7 @@[m
+ #[m
+ [m
+ list(APPEND FLUTTER_PLUGIN_LIST[m
+[32m+[m[32m  bonsoir_windows[m
+   connectivity_plus[m
+   flutter_webrtc[m
+   nsd_windows[m
