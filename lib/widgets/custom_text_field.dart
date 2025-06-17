@@ -8,6 +8,8 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
   final String? errorText;
+  final TextInputType? keyboardType;
+  final Color? backgroundColor;
 
   const CustomTextField({
     super.key,
@@ -17,6 +19,8 @@ class CustomTextField extends StatelessWidget {
     this.obscure = false,
     this.enabled = true,
     this.errorText,
+    this.keyboardType,
+    this.backgroundColor,
   });
 
   @override
@@ -39,8 +43,9 @@ class CustomTextField extends StatelessWidget {
           controller: controller,
           obscureText: obscure,
           enabled: enabled,
+          keyboardType: keyboardType,
           style: AppTextStyles.body.copyWith(
-            color: AppColors.primary,
+            color: errorText != null ? AppColors.error : AppColors.primary,
           ),
           decoration: InputDecoration(
             hintText: hint,
@@ -48,7 +53,7 @@ class CustomTextField extends StatelessWidget {
               color: AppColors.gray,
             ),
             filled: true,
-            fillColor: AppColors.primaryLight,
+            fillColor: backgroundColor ?? AppColors.primaryLight,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.s,
               vertical: AppSpacing.m,
@@ -58,6 +63,15 @@ class CustomTextField extends StatelessWidget {
               borderSide: BorderSide.none,
             ),
             errorText: errorText,
+            errorStyle: AppTextStyles.error,
+            errorBorder: OutlineInputBorder(
+              borderRadius: AppBorderRadius.s,
+              borderSide: const BorderSide(color: AppColors.error, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: AppBorderRadius.s,
+              borderSide: const BorderSide(color: AppColors.error, width: 2),
+            ),
           ),
         ),
       ],

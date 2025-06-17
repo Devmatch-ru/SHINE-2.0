@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shine/screens/roles/role_select.dart';
 import '../../theme/main_design.dart';
-import '../BroadcasterScreen.dart';
+import 'BroadcasterScreen.dart';
 import '../../utils/broadcaster_manager.dart';
+import 'dart:async';
 
 class HostSelectionScreen extends StatefulWidget {
   const HostSelectionScreen({super.key});
@@ -15,36 +16,47 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedHost;
   bool _isSearching = false;
-  late final BroadcasterManager _manager;
+  final BroadcasterManager _manager = BroadcasterManager();
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _initManager();
     _searchController.addListener(_onSearchChanged);
+    _startPeriodicRefresh();
   }
 
-  Future<void> _initManager() async {
-    _manager = await BroadcasterManager.create(
-      onStateChange: () => setState(() {}),
-      onError: (error) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      ),
-    );
-    await _manager.init();
-    _searchReceivers();
+  void _startPeriodicRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (mounted) {
+        await _refreshList();
+      }
+    });
   }
 
-  Future<void> _searchReceivers() async {
+  Future<void> _refreshList() async {
+    if (!mounted) return;
+
     setState(() {
       _isSearching = true;
     });
 
-    await _manager.discoverReceivers();
+    try {
+      await _manager.refreshReceivers();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    }
+  }
 
-    setState(() {
-      _isSearching = false;
-    });
+  Future<void> _initManager() async {
+    await _manager.init();
+    _manager.onStateChange = (() => setState(() {}));
+    await _refreshList();
   }
 
   void _onSearchChanged() {
@@ -73,6 +85,7 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _manager.dispose();
     _searchController.dispose();
     super.dispose();
@@ -81,7 +94,7 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -143,24 +156,19 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
                 const Text(
                   'ВЫБЕРИ УЧАСТНИКА',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                    fontSize: 17,
+                    color: Colors.black,
                     letterSpacing: 0.5,
                   ),
                 ),
                 if (_isSearching)
-                  SizedBox(
+                  const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
                     ),
-                  )
-                else
-                  IconButton(
-                    icon: Icon(Icons.refresh, color: Colors.grey),
-                    onPressed: _searchReceivers,
                   ),
               ],
             ),

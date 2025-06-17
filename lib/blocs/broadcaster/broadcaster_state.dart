@@ -3,67 +3,153 @@ import 'package:camera/camera.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 abstract class BroadcasterState extends Equatable {
-  const BroadcasterState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class BroadcasterInitial extends BroadcasterState {}
-
-class BroadcasterLoading extends BroadcasterState {}
-
-class BroadcasterReady extends BroadcasterState {
-  final CameraController camera;
-  final MediaStream? localStream;
-  final bool isBroadcasting;
+  final bool isInitializing;
+  final bool isConnected;
   final bool isRecording;
-  final bool isFlashlightOn;
-  final String? connectedReceiver;
+  final bool isTimerActive;
+  final int timerSeconds;
+  final MediaStream? localStream;
+  final List<String> connectedReceivers;
+  final String? error;
+  final String? commandMessage;
+  final bool isPowerSaveMode;
+  final bool isVideoMode;
 
-  const BroadcasterReady({
-    required this.camera,
+  const BroadcasterState({
+    required this.isInitializing,
+    required this.isConnected,
+    required this.isRecording,
+    required this.isTimerActive,
+    required this.timerSeconds,
     this.localStream,
-    this.isBroadcasting = false,
-    this.isRecording = false,
-    this.isFlashlightOn = false,
-    this.connectedReceiver,
+    this.connectedReceivers = const [],
+    this.error,
+    this.commandMessage,
+    this.isPowerSaveMode = false,
+    this.isVideoMode = false,
   });
 
   @override
   List<Object?> get props => [
-        camera,
-        localStream,
-        isBroadcasting,
+        isInitializing,
+        isConnected,
         isRecording,
-        isFlashlightOn,
-        connectedReceiver,
+        isTimerActive,
+        timerSeconds,
+        localStream,
+        connectedReceivers,
+        error,
+        commandMessage,
+        isPowerSaveMode,
+        isVideoMode,
       ];
+}
 
-  BroadcasterReady copyWith({
-    CameraController? camera,
-    MediaStream? localStream,
-    bool? isBroadcasting,
-    bool? isRecording,
-    bool? isFlashlightOn,
-    String? connectedReceiver,
-  }) {
-    return BroadcasterReady(
-      camera: camera ?? this.camera,
-      localStream: localStream ?? this.localStream,
-      isBroadcasting: isBroadcasting ?? this.isBroadcasting,
-      isRecording: isRecording ?? this.isRecording,
-      isFlashlightOn: isFlashlightOn ?? this.isFlashlightOn,
-      connectedReceiver: connectedReceiver ?? this.connectedReceiver,
-    );
-  }
+class BroadcasterInitial extends BroadcasterState {
+  const BroadcasterInitial()
+      : super(
+          isInitializing: true,
+          isConnected: false,
+          isRecording: false,
+          isTimerActive: false,
+          timerSeconds: 0,
+          isVideoMode: false,
+        );
+}
+
+class BroadcasterReady extends BroadcasterState {
+  const BroadcasterReady({
+    required MediaStream stream,
+    List<String> connectedReceivers = const [],
+    String? commandMessage,
+    bool isPowerSaveMode = false,
+    bool isVideoMode = false,
+  }) : super(
+          isInitializing: false,
+          isConnected: true,
+          isRecording: false,
+          isTimerActive: false,
+          timerSeconds: 0,
+          localStream: stream,
+          connectedReceivers: connectedReceivers,
+          commandMessage: commandMessage,
+          isPowerSaveMode: isPowerSaveMode,
+          isVideoMode: isVideoMode,
+        );
+}
+
+class BroadcasterRecording extends BroadcasterState {
+  const BroadcasterRecording({
+    required MediaStream stream,
+    List<String> connectedReceivers = const [],
+    String? commandMessage,
+    bool isPowerSaveMode = false,
+  }) : super(
+          isInitializing: false,
+          isConnected: true,
+          isRecording: true,
+          isTimerActive: false,
+          timerSeconds: 0,
+          localStream: stream,
+          connectedReceivers: connectedReceivers,
+          commandMessage: commandMessage,
+          isPowerSaveMode: isPowerSaveMode,
+          isVideoMode: true,
+        );
+}
+
+class BroadcasterTimer extends BroadcasterState {
+  const BroadcasterTimer({
+    required MediaStream stream,
+    required int seconds,
+    List<String> connectedReceivers = const [],
+    String? commandMessage,
+    bool isPowerSaveMode = false,
+    bool isVideoMode = false,
+  }) : super(
+          isInitializing: false,
+          isConnected: true,
+          isRecording: false,
+          isTimerActive: true,
+          timerSeconds: seconds,
+          localStream: stream,
+          connectedReceivers: connectedReceivers,
+          commandMessage: commandMessage,
+          isPowerSaveMode: isPowerSaveMode,
+          isVideoMode: isVideoMode,
+        );
+}
+
+class BroadcasterCommandReceived extends BroadcasterState {
+  const BroadcasterCommandReceived({
+    required MediaStream stream,
+    required String message,
+    List<String> connectedReceivers = const [],
+    bool isPowerSaveMode = false,
+    bool isVideoMode = false,
+  }) : super(
+          isInitializing: false,
+          isConnected: true,
+          isRecording: false,
+          isTimerActive: false,
+          timerSeconds: 0,
+          localStream: stream,
+          connectedReceivers: connectedReceivers,
+          commandMessage: message,
+          isPowerSaveMode: isPowerSaveMode,
+          isVideoMode: isVideoMode,
+        );
 }
 
 class BroadcasterError extends BroadcasterState {
-  final String message;
-
-  const BroadcasterError(this.message);
-
-  @override
-  List<Object> get props => [message];
+  const BroadcasterError(String errorMessage)
+      : super(
+          isInitializing: false,
+          isConnected: false,
+          isRecording: false,
+          isTimerActive: false,
+          timerSeconds: 0,
+          error: errorMessage,
+          isVideoMode: false,
+        );
 }

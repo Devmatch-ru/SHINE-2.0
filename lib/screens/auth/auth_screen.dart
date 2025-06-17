@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shine/screens/roles/role_select.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../theme/main_design.dart';
-import '../../utils/device_enumeration_sample.dart';
-import '../../utils/get_user_media_sample.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../utils/validators.dart';
+import '../../services/api_service.dart';
+import '../../models/user_model/user_model.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+import 'verification_code_screen.dart';
+import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,6 +21,109 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
+  bool _isLoading = false;
+  String? _error;
+
+  String extractErrorText(Object e) {
+    var text = e.toString();
+
+    // Извлекаем сообщение об ошибке из JSON ответа
+    if (text.contains('"error":')) {
+      final errorStart = text.indexOf('"error":') + 8;
+      final errorEnd = text.indexOf('"', errorStart);
+      if (errorEnd > errorStart) {
+        return text.substring(errorStart, errorEnd);
+      }
+    }
+
+    // Убираем технические детали
+    text = text
+        .replaceAll('Exception: ', '')
+        .replaceAll('Network error: ', '')
+        .replaceAll('Request failed with status: ', '');
+
+    // Если это ответ сервера с ошибкой, извлекаем только сообщение
+    if (text.contains('Body:')) {
+      try {
+        final bodyStart = text.indexOf('Body:') + 5;
+        final jsonStr = text.substring(bodyStart).trim();
+        final Map<String, dynamic> response = json.decode(jsonStr);
+        if (response.containsKey('error')) {
+          return response['error'].toString();
+        }
+      } catch (_) {}
+    }
+
+    return text;
+  }
+
+  Future<void> _signIn() async {
+    // Валидация
+    final emailError = validateEmail(_email.text.trim());
+    final passwordError = validatePassword(_password.text);
+
+    if (emailError != null) {
+      setState(() => _error = emailError);
+      return;
+    }
+    if (passwordError != null) {
+      setState(() => _error = passwordError);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final api = ApiService();
+      // Пытаемся аутентифицироваться
+      final authResponse = await api.authenticate(UserModel(
+        email: _email.text.trim(),
+        password: _password.text,
+      ));
+
+      if (mounted) {
+        if (authResponse['success'] == true) {
+          // Отправляем код подтверждения только при успешной авторизации
+          final codeResponse = await api.sendCode(_email.text.trim());
+
+          if (mounted) {
+            if (codeResponse['success'] == true) {
+              // После успешной отправки кода переходим на экран ввода
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => VerificationCodeScreen(
+                    email: _email.text.trim(),
+                    type: VerificationType.enterAccount,
+                    skipCodeSending: true,
+                    onSuccess: (email, _) {
+                      // После успешной верификации входим в аккаунт
+                      context.read<AuthCubit>().signIn(
+                            email,
+                            _password.text,
+                          );
+                    },
+                  ),
+                ),
+              );
+            } else {
+              setState(() =>
+                  _error = codeResponse['error'] ?? 'Ошибка отправки кода');
+            }
+          }
+        } else {
+          setState(
+              () => _error = authResponse['error'] ?? 'Ошибка авторизации');
+        }
+      }
+    } catch (e) {
+      setState(() => _error = extractErrorText(e));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: 'ВВЕДИТЕ EMAIL',
                     hint: 'Ваш Email',
                     controller: _email,
+                    errorText: _error,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
@@ -54,11 +162,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.s),
                     child: TextButton(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => ForgotPasswordScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen()),
                       ),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
@@ -72,38 +182,55 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-
-
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.l),
               ElevatedButton(
-                onPressed: () => context.read<AuthCubit>().signIn(
-                  _email.text,
-                  _password.text,
-                ),
+                onPressed: _isLoading ? null : _signIn,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text(
-                  'Войти',
-                  style: TextStyle(color: Colors.white),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Войти',
+                        style: TextStyle(color: Colors.white),
+                      ),
+              ),
+              const SizedBox(height: AppSpacing.s),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Center(
+                  child: Text('или войдите с помощью',
+                      style: theme.textTheme.bodySmall),
                 ),
               ),
-
               const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-              child:
-              Center(
-                child: Text('или войдите с помощью', style: theme.textTheme.bodySmall),
-              ),
-          ),
-              const SizedBox(height: 16),
-
               OutlinedButton.icon(
                 onPressed: () => context.read<AuthCubit>().signInWithGoogle(),
-                icon: Image.asset('assets/images/google.png', width: 24, height: 24),
+                icon: Image.asset('assets/images/google.png',
+                    width: 24, height: 24),
+                label: const Text('Google'),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  side: BorderSide.none,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
+              ),
+                icon: Image.asset('assets/images/google.png',
+                    width: 24, height: 24),
                 label: const Text('Google'),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
@@ -113,7 +240,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const Spacer(),
-              Center(child: Text('Нет аккаунта?', style: theme.textTheme.bodySmall)),
+              Center(
+                  child:
+                      Text('Нет аккаунта?', style: theme.textTheme.bodySmall)),
               const SizedBox(height: 8),
               OutlinedButton(
                 onPressed: () => Navigator.push(
@@ -130,26 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Зарегистрироваться',
                   style: TextStyle(color: Colors.black),
                 ),
-
-              ),OutlinedButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => DeviceEnumerationSample()),
-                ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: const StadiumBorder(),
-                  side: BorderSide.none,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Зарегистрироваться',
-                  style: TextStyle(color: Colors.black),
-                ),
-
               ),
-              //test
-
               const SizedBox(height: 32),
             ],
           ),

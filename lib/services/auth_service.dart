@@ -15,21 +15,29 @@ abstract class AuthService {
 class _AuthServiceImpl implements AuthService {
   static const _keyIdToken = 'google_id_token';
   static const _keyAccessToken = 'google_access_token';
-
+  static const _keyEmail = 'user_email';
+  static const _keyIsLoggedIn = 'is_logged_in';
 
   @override
   Future<bool> isLoggedIn() async {
-    return false; // TODO: check secure storage
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyIsLoggedIn) ?? false;
   }
 
   @override
   Future<void> signInWithEmail(String email, String password) async {
     // TODO: call backend
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyEmail, email);
+    await prefs.setBool(_keyIsLoggedIn, true);
   }
 
   @override
   Future<void> signUpWithEmail(String email, String password) async {
     // TODO: call backend
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyEmail, email);
+    await prefs.setBool(_keyIsLoggedIn, true);
   }
 
   @override
@@ -44,6 +52,8 @@ class _AuthServiceImpl implements AuthService {
       if (user.accessToken != null) {
         await prefs.setString(_keyAccessToken, user.accessToken!);
       }
+      await prefs.setString(_keyEmail, user.email);
+      await prefs.setBool(_keyIsLoggedIn, true);
     }
     return user;
   }
@@ -53,9 +63,10 @@ class _AuthServiceImpl implements AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyIdToken);
     await prefs.remove(_keyAccessToken);
+    await prefs.remove(_keyEmail);
+    await prefs.remove(_keyIsLoggedIn);
 
     await GoogleAuthService.instance.signOut();
     await GoogleAuthService.instance.disconnect();
-
   }
 }

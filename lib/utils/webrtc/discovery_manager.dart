@@ -6,9 +6,17 @@ import 'package:network_info_plus/network_info_plus.dart';
 class DiscoveryManager {
   RawDatagramSocket? _udpSocket;
   Timer? _discoveryTimer;
+  Timer? _cleanupTimer;
   final Set<String> _receivers = {};
   final void Function(String) _onLog;
   final VoidCallback? onStateChange;
+
+  // Новые поля для оптимизации
+  final Map<String, DateTime> _lastSeenReceivers = {};
+  static const Duration _receiverTimeout = Duration(seconds: 30);
+  static const Duration _discoveryInterval = Duration(seconds: 5);
+  static const Duration _cleanupInterval = Duration(seconds: 10);
+  bool _isInitialScan = true;
 
   DiscoveryManager({
     required void Function(String) onLog,
@@ -19,7 +27,8 @@ class DiscoveryManager {
 
   Future<void> startDiscoveryListener() async {
     try {
-      _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 9000,
+          reuseAddress: true);
       _udpSocket!.broadcastEnabled = true;
 
       _udpSocket!.listen((event) {
@@ -28,29 +37,17 @@ class DiscoveryManager {
           if (datagram != null) {
             final message = String.fromCharCodes(datagram.data);
             if (message.startsWith('RECEIVER:')) {
-              _receivers.add(message);
-              _onLog('Found receiver: $message');
-              onStateChange?.call();
+              _handleReceiverResponse(message);
             }
           }
         }
       });
 
-      // Периодическая отправка discovery-сообщений
-      _discoveryTimer = Timer.periodic(Duration(seconds: 2), (_) async {
-        final wifiIP = await NetworkInfo().getWifiIP();
-        if (wifiIP != null) {
-          final parts = wifiIP.split('.');
-          if (parts.length == 4) {
-            final baseIP = '${parts[0]}.${parts[1]}.${parts[2]}';
-            for (int i = 1; i <= 254; i++) {
-              final address = '$baseIP.$i';
-              _udpSocket!
-                  .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
-            }
-          }
-        }
-      });
+      // Запускаем периодическое обнаружение
+      _startPeriodicDiscovery();
+
+      // Запускаем очистку устаревших получателей
+      _startCleanupTimer();
 
       _onLog('UDP discovery listener started');
     } catch (e) {
@@ -58,25 +55,111 @@ class DiscoveryManager {
     }
   }
 
-  Future<List<String>> discoverReceivers() async {
-    _receivers.clear();
-
-    if (_udpSocket == null) {
-      await startDiscoveryListener();
+  void _handleReceiverResponse(String message) {
+    if (_receivers.add(message)) {
+      _onLog('Found new receiver: $message');
+      onStateChange?.call();
     }
+    _lastSeenReceivers[message] = DateTime.now();
+  }
 
-    // Ждем 2 секунды, чтобы получить ответы от слушателей
-    await Future.delayed(Duration(seconds: 2));
+  void _startPeriodicDiscovery() {
+    _discoveryTimer?.cancel();
+    _discoveryTimer =
+        Timer.periodic(_discoveryInterval, (_) => _performDiscovery());
+    // Запускаем первое сканирование немедленно
+    _performDiscovery();
+  }
 
-    _onLog('Discovered receivers: ${_receivers.toList()}');
+  void _startCleanupTimer() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer =
+        Timer.periodic(_cleanupInterval, (_) => _cleanupStaleReceivers());
+  }
+
+  Future<void> _performDiscovery() async {
+    try {
+      final wifiIP = await NetworkInfo().getWifiIP();
+      if (wifiIP != null) {
+        final parts = wifiIP.split('.');
+        if (parts.length == 4) {
+          final baseIP = '${parts[0]}.${parts[1]}.${parts[2]}';
+
+          // Оптимизированное сканирование
+          if (_isInitialScan) {
+            // Полное сканирование при первом запуске
+            for (int i = 1; i <= 254; i++) {
+              final address = '$baseIP.$i';
+              _udpSocket!
+                  .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
+            }
+            _isInitialScan = false;
+          } else {
+            // Оптимизированное сканирование для последующих проверок
+            // Сканируем только известные адреса и небольшой диапазон вокруг них
+            final knownIPs = _receivers.map((r) {
+              final parts = r.split(':');
+              return parts[1];
+            }).toSet();
+
+            for (final ip in knownIPs) {
+              final lastPart = int.tryParse(ip.split('.').last) ?? 0;
+              // Сканируем 5 адресов до и после известного адреса
+              for (int i = -5; i <= 5; i++) {
+                final newLast = lastPart + i;
+                if (newLast > 0 && newLast < 255) {
+                  final address = '$baseIP.$newLast';
+                  _udpSocket!.send(
+                      'DISCOVER'.codeUnits, InternetAddress(address), 9000);
+                }
+              }
+            }
+
+            // Добавляем случайное сканирование для обнаружения новых устройств
+            final random = List.generate(10,
+                (i) => (DateTime.now().millisecondsSinceEpoch + i) % 254 + 1);
+            for (final i in random) {
+              final address = '$baseIP.$i';
+              _udpSocket!
+                  .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      _onLog('Error during discovery: $e');
+    }
+  }
+
+  void _cleanupStaleReceivers() {
+    final now = DateTime.now();
+    final staleReceivers = _lastSeenReceivers.entries
+        .where((entry) => now.difference(entry.value) > _receiverTimeout)
+        .map((entry) => entry.key)
+        .toList();
+
+    for (final receiver in staleReceivers) {
+      _receivers.remove(receiver);
+      _lastSeenReceivers.remove(receiver);
+      _onLog('Removed stale receiver: $receiver');
+      onStateChange?.call();
+    }
+  }
+
+  Future<List<String>> discoverReceivers() async {
+    _isInitialScan = true; // Форсируем полное сканирование
+    await _performDiscovery();
+    // Ждем немного, чтобы получить ответы
+    await Future.delayed(const Duration(seconds: 2));
     return _receivers.toList();
   }
 
   Future<void> dispose() async {
+    _discoveryTimer?.cancel();
+    _cleanupTimer?.cancel();
     _udpSocket?.close();
     _udpSocket = null;
-    _discoveryTimer?.cancel();
-    _discoveryTimer = null;
     _receivers.clear();
+    _lastSeenReceivers.clear();
   }
 }

@@ -1,18 +1,11 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:async';
-import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:network_info_plus/network_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:camera/camera.dart';
-import '../utils/broadcaster_manager.dart';
-import '../utils/video_size.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../blocs/broadcaster/broadcaster_cubit.dart';
-import '../blocs/broadcaster/broadcaster_state.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:shine/theme/main_design.dart';
+import 'dart:ui' as ui;
+
+import '../../blocs/broadcaster/broadcaster_cubit.dart';
+import '../../blocs/broadcaster/broadcaster_state.dart';
 
 class BroadcasterScreen extends StatelessWidget {
   final String receiverUrl;
@@ -25,7 +18,12 @@ class BroadcasterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => BroadcasterCubit(receiverUrl: receiverUrl)..initialize(),
+      create: (_) {
+        final cubit = BroadcasterCubit(receiverUrl: receiverUrl);
+        // Initialize asynchronously
+        Future.microtask(() => cubit.initialize());
+        return cubit;
+      },
       child: const _BroadcasterScreenContent(),
     );
   }
@@ -33,6 +31,14 @@ class BroadcasterScreen extends StatelessWidget {
 
 class _BroadcasterScreenContent extends StatelessWidget {
   const _BroadcasterScreenContent();
+
+  // Adaptive sizes
+  double _getIconSize(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.07;
+  double _getShutterSize(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.18;
+  double _getControlsPadding(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.1;
 
   void _handleError(BuildContext context, String error) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -49,235 +55,323 @@ class _BroadcasterScreenContent extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        final size = MediaQuery.of(context).size;
+        final isPortrait = size.height > size.width;
+
+        // Проверка ориентации экрана
+        if (!isPortrait) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: Text(
+                'Поверните устройство вертикально',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+          );
+        }
+
+        // Show loading state during initialization
+        if (state is BroadcasterInitial) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+              ),
+            ),
+          );
+        }
+
         return Scaffold(
           backgroundColor: Colors.black,
-          body: SafeArea(
-            child: Stack(
-              children: [
-                // Full-screen video view
-                Positioned.fill(
-                  child: state.isInitializing
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        )
-                      : RTCVideoView(
-                          context.read<BroadcasterCubit>().localRenderer,
-                          objectFit:
-                              RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                        ),
-                ),
-
-                // Top bar with title and close button
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.transparent,
-                        ],
+          body: Stack(
+            children: [
+              // Полноэкранное видео
+              Positioned.fill(
+                child: state.isInitializing
+                    ? Container(color: Colors.black)
+                    : RTCVideoView(
+                        context.read<BroadcasterCubit>().localRenderer,
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const SizedBox(width: 24),
-                          Column(
+              ),
+
+              // Размытый заголовок (10% от высоты экрана)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: size.height * 0.1,
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      color: AppColors.blur.withOpacity(0.3),
+                      child: SafeArea(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                state.connectedReceivers.isNotEmpty
-                                    ? 'Подключено к: ${state.connectedReceivers.join(", ")}'
-                                    : 'Ожидание подключения...',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                'Camera',
+                                style: AppTextStyles.lead
+                                    .copyWith(color: Colors.white),
                               ),
 
-                              // Индикатор энергосберегающего режима
-                              if (state.isPowerSaveMode)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withOpacity(0.8),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    '🔋 Энергосбережение',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 12),
-                                  ),
-                                ),
-
-                              // Индикатор записи видео
-                              if (state.isRecording)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.8),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    '🔴 Запись видео',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 12),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              // Индикатор фонарика
-                              BlocBuilder<BroadcasterCubit, BroadcasterState>(
-                                builder: (context, state) {
-                                  // Получаем состояние фонарика из cubit
-                                  final isFlashOn = context
-                                      .read<BroadcasterCubit>()
-                                      .isFlashOn;
-
-                                  return Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: isFlashOn
-                                          ? Colors.yellow.withOpacity(0.8)
-                                          : Colors.grey.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(8),
+                              // Индикаторы состояния
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (state.isPowerSaveMode)
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          top: 2, right: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        '🔋',
+                                        style: TextStyle(fontSize: 10),
+                                      ),
                                     ),
-                                    child: Icon(
-                                      Icons.flashlight_on,
-                                      color: isFlashOn
-                                          ? Colors.black
-                                          : Colors.white54,
-                                      size: 20,
+                                  if (state.isRecording)
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          top: 2, right: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        '🔴',
+                                        style: TextStyle(fontSize: 10),
+                                      ),
                                     ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.close,
-                                    color: Colors.white),
-                                onPressed: () => Navigator.pop(context),
+                                ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Кнопка закрытия в правом верхнем углу
+              Positioned(
+                top: 0,
+                right: 0,
+                child: SafeArea(
+                  child: IconButton(
+                    icon: Image.asset(
+                      'assets/icons/camera/trailing.png',
+                      width: _getIconSize(context),
+                      height: _getIconSize(context),
+                      color: Colors.white,
+                    ),
+                    onPressed: () async {
+                      await context.read<BroadcasterCubit>().disconnect();
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ),
+              ),
+
+              // Таймер в центре экрана
+              if (state.isTimerActive)
+                Center(
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${state.timerSeconds}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
 
-                // Timer overlay
-                if (state.isTimerActive)
-                  Center(
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(50),
+              // Сообщение команды
+              if (state.commandMessage != null)
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Text(
+                      state.commandMessage!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: Center(
-                        child: Text(
-                          '${state.timerSeconds}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
+                ),
 
-                // Command message overlay
-                if (state.commandMessage != null)
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      margin: const EdgeInsets.symmetric(horizontal: 40),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: Text(
-                        state.commandMessage!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+              // Нижние элементы управления
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: size.width * 0.1,
+                    vertical: 20,
                   ),
-
-                // Bottom controls
-                Positioned(
-                  bottom: 30,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  child: Column(
                     children: [
-                      FloatingActionButton(
-                        heroTag: 'timer',
-                        onPressed: state.isTimerActive
-                            ? null
-                            : () => context
-                                .read<BroadcasterCubit>()
-                                .startTimerCapture(),
-                        backgroundColor:
-                            state.isTimerActive ? Colors.grey : Colors.white,
-                        child: const Icon(Icons.timer, color: Colors.black),
+                      // Переключатель режимов
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () =>
+                                context.read<BroadcasterCubit>().setPhotoMode(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: !state.isVideoMode
+                                    ? Colors.black.withOpacity(0.4)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                'ФОТОГРАФИЯ',
+                                style: AppTextStyles.body.copyWith(
+                                  color: !state.isVideoMode
+                                      ? Colors.amber
+                                      : Colors.white.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () =>
+                                context.read<BroadcasterCubit>().setVideoMode(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: state.isVideoMode
+                                    ? Colors.black.withOpacity(0.4)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                'ВИДЕОЗАПИСЬ',
+                                style: AppTextStyles.body.copyWith(
+                                  color: state.isVideoMode
+                                      ? Colors.amber
+                                      : Colors.white.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      FloatingActionButton(
-                        heroTag: 'capture',
-                        onPressed: state.isTimerActive
-                            ? null
-                            : () =>
-                                context.read<BroadcasterCubit>().capturePhoto(),
-                        backgroundColor:
-                            state.isTimerActive ? Colors.grey : Colors.white,
-                        child: const Icon(Icons.camera, color: Colors.black),
-                      ),
-                      FloatingActionButton(
-                        heroTag: 'video',
-                        onPressed: state.isTimerActive
-                            ? null
-                            : () => context
-                                .read<BroadcasterCubit>()
-                                .toggleRecording(),
-                        backgroundColor: state.isRecording
-                            ? Colors.red
-                            : (state.isTimerActive
-                                ? Colors.grey
-                                : Colors.white),
-                        child: Icon(
-                          state.isRecording ? Icons.stop : Icons.videocam,
-                          color:
-                              state.isRecording ? Colors.white : Colors.black,
-                        ),
+
+                      const SizedBox(height: 40),
+
+                      // Основные элементы управления
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Кнопка фонарика
+                          BlocBuilder<BroadcasterCubit, BroadcasterState>(
+                            builder: (context, state) {
+                              final isFlashOn =
+                                  context.read<BroadcasterCubit>().isFlashOn;
+                              final iconSize = _getIconSize(context);
+
+                              return IconButton(
+                                icon: Image.asset(
+                                  isFlashOn
+                                      ? 'assets/icons/camera/flash.png'
+                                      : 'assets/icons/camera/_flash.png',
+                                  width: iconSize,
+                                  height: iconSize,
+                                ),
+                                onPressed: () => context
+                                    .read<BroadcasterCubit>()
+                                    .toggleFlash(),
+                              );
+                            },
+                          ),
+
+                          // Центральная кнопка захвата/записи
+                          GestureDetector(
+                            onTap: state.isTimerActive
+                                ? null
+                                : () {
+                                    if (state.isVideoMode) {
+                                      context
+                                          .read<BroadcasterCubit>()
+                                          .toggleRecording();
+                                    } else {
+                                      context
+                                          .read<BroadcasterCubit>()
+                                          .capturePhoto();
+                                    }
+                                  },
+                            child: Image.asset(
+                              (state.isVideoMode && state.isRecording)
+                                  ? 'assets/icons/camera/shutter.png'
+                                  : 'assets/icons/camera/_shutter.png',
+                              width: _getShutterSize(context),
+                              height: _getShutterSize(context),
+                              color: state.isTimerActive ? Colors.grey : null,
+                            ),
+                          ),
+
+                          // Кнопка таймера
+                          IconButton(
+                            icon: Image.asset(
+                              'assets/icons/camera/thunder.png',
+                              width: _getIconSize(context),
+                              height: _getIconSize(context),
+                              color: state.isTimerActive
+                                  ? Colors.grey
+                                  : Colors.white,
+                            ),
+                            onPressed: state.isTimerActive
+                                ? null
+                                : () => context
+                                    .read<BroadcasterCubit>()
+                                    .startTimerCapture(),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

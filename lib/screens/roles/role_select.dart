@@ -6,7 +6,7 @@ import '../../blocs/role/role_cubit.dart';
 import '../../blocs/wifi/wifi_cubit.dart';
 import '../../blocs/wifi/wifi_state.dart';
 import '../../theme/main_design.dart';
-import '../ReceiverScreen.dart';
+import 'ReceiverScreen.dart';
 import '../tip_screen/client_tip_screen.dart';
 import '../tip_screen/host_tip_screen.dart';
 
@@ -170,8 +170,8 @@ class _RoleList extends StatelessWidget {
 
         return _RoleCard(
           image: isHost
-              ? 'assets/images/camera.png'
-              : 'assets/images/camera2.png',
+              ? 'assets/images/camera2.png'
+              : 'assets/images/camera.png',
           label: isHost ? 'Я фотографирую' : 'Меня фотографируют',
           onTap: () async {
             final wifiState = context.read<WifiCubit>().state;
@@ -189,9 +189,9 @@ class _RoleList extends StatelessWidget {
               }
 
               context.read<RoleCubit>().selectHost();
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ReceiverScreen()),
+                MaterialPageRoute(builder: (_) => const ReceiverScreen()),
               );
             } else {
               final needClientTip = await HostTipScreen.shouldShow() ||
@@ -206,7 +206,7 @@ class _RoleList extends StatelessWidget {
               }
 
               context.read<RoleCubit>().selectClient();
-              Navigator.pushReplacement(
+             Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const HostSelectionScreen()),
               );

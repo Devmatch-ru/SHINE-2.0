@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import '../blocs/receiver/receiver_cubit.dart';
-import '../blocs/receiver/receiver_state.dart';
+import 'package:shine/theme/main_design.dart';
+import 'dart:ui' as ui;
+
+import '../../blocs/receiver/receiver_cubit.dart';
+import '../../blocs/receiver/receiver_state.dart';
 
 class ReceiverScreen extends StatelessWidget {
   const ReceiverScreen({super.key});
@@ -19,6 +22,14 @@ class ReceiverScreen extends StatelessWidget {
 class _ReceiverScreenContent extends StatelessWidget {
   const _ReceiverScreenContent();
 
+  // Adaptive sizes
+  double _getIconSize(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.07;
+  double _getShutterSize(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.18;
+  double _getControlsPadding(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.1;
+
   void _handleError(BuildContext context, String error) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(error)),
@@ -34,126 +45,194 @@ class _ReceiverScreenContent extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        final size = MediaQuery.of(context).size;
+        final isPortrait = size.height > size.width;
+
+        // Проверка ориентации экрана
+        if (!isPortrait) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: Text(
+                'Поверните устройство вертикально',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+          );
+        }
+
+        // Show loading state during initialization
+        if (state.isInitializing) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+              ),
+            ),
+          );
+        }
+
         return Scaffold(
           backgroundColor: Colors.black,
-          body: SafeArea(
-            child: Stack(
-              children: [
-                // Full-screen video view
-                Positioned.fill(
-                  child: state.isInitializing
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        )
-                      : state.isConnected && state.remoteStream != null
-                          ? RTCVideoView(
-                              context.read<ReceiverCubit>().remoteRenderer,
-                              objectFit: RTCVideoViewObjectFit
-                                  .RTCVideoViewObjectFitCover,
-                            )
-                          : Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(
-                                    Icons.wifi_tethering,
-                                    color: Colors.white54,
-                                    size: 48,
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'Ожидание подключения...',
-                                    style: TextStyle(
-                                      color: Colors.white54,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
+          body: Stack(
+            children: [
+              // Полноэкранное видео
+              Positioned.fill(
+                child: state.isConnected && state.remoteStream != null
+                    ? RTCVideoView(
+                        context.read<ReceiverCubit>().remoteRenderer,
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                      )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.wifi_tethering,
+                              color: Colors.white54,
+                              size: 48,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Ожидание подключения...',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 16,
                               ),
                             ),
-                ),
-
-                // Top bar with title and close button
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.transparent,
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+
+              // Размытый заголовок (10% от высоты экрана)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: size.height * 0.1,
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      color: AppColors.blur.withOpacity(0.3),
+                      child: SafeArea(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const SizedBox(width: 24),
                               Text(
                                 state.connectedBroadcaster != null
                                     ? 'Основной: ${state.connectedBroadcaster}'
                                     : 'Ожидание подключения',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                style: AppTextStyles.lead
+                                    .copyWith(color: Colors.white),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.close,
-                                    color: Colors.white),
-                                onPressed: () => Navigator.pop(context),
-                              ),
+
+                              // Индикатор подключенных устройств
+                              if (context
+                                      .read<ReceiverCubit>()
+                                      .connectedBroadcasters
+                                      .length >
+                                  0)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withOpacity(0.8),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '📱 ${context.read<ReceiverCubit>().connectedBroadcasters.length}/7',
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                ),
                             ],
                           ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
 
-                          // Показываем количество подключенных устройств
-                          if (context
-                                  .read<ReceiverCubit>()
-                                  .connectedBroadcasters
-                                  .length >
-                              1)
-                            Container(
-                              margin: const EdgeInsets.only(top: 8),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.7),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'Подключено устройств: ${context.read<ReceiverCubit>().connectedBroadcasters.length}/7',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 12),
-                              ),
-                            ),
+              // Новый селектор качества под шапкой
+              if (state.isConnected)
+                Positioned(
+                  top: size.height * 0.12, // Располагаем под шапкой
+                  left: 20,
+                  right: 20,
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildQualityButton(
+                            context,
+                            'Низкое',
+                            StreamQuality.low,
+                            state.streamQuality == StreamQuality.low,
+                          ),
+                          _buildQualityButton(
+                            context,
+                            'Среднее',
+                            StreamQuality.medium,
+                            state.streamQuality == StreamQuality.medium,
+                          ),
+                          _buildQualityButton(
+                            context,
+                            'Высокое',
+                            StreamQuality.high,
+                            state.streamQuality == StreamQuality.high,
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
 
-                // Control buttons
-                if (state.isConnected)
-                  Positioned(
-                    bottom: 30,
-                    left: 0,
-                    right: 0,
+              // Кнопка закрытия в правом верхнем углу
+              Positioned(
+                top: 0,
+                right: 0,
+                child: SafeArea(
+                  child: IconButton(
+                    icon: Image.asset(
+                      'assets/icons/camera/trailing.png',
+                      width: _getIconSize(context),
+                      height: _getIconSize(context),
+                      color: Colors.white,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
+
+              // Нижние элементы управления
+              if (state.isConnected)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: size.width * 0.1,
+                      vertical: 20,
+                    ),
                     child: Column(
                       children: [
-                        // Debug button
+                        // Кнопка отладки
                         Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ElevatedButton.icon(
-                            onPressed: () {
+                          margin: const EdgeInsets.only(bottom: 20),
+                          child: GestureDetector(
+                            onTap: () {
                               showModalBottomSheet(
                                 context: context,
                                 backgroundColor: Colors.black87,
@@ -202,109 +281,39 @@ class _ReceiverScreenContent extends StatelessWidget {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.bug_report),
-                            label: const Text('Отладка'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey.withOpacity(0.3),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                'ОТЛАДКА',
+                                style: AppTextStyles.body.copyWith(
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
                             ),
                           ),
                         ),
 
-                        // Quality selector
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'Качество: ',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              DropdownButton<StreamQuality>(
-                                value: state.streamQuality,
-                                dropdownColor: Colors.black87,
-                                style: const TextStyle(color: Colors.white),
-                                underline: Container(),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: StreamQuality.low,
-                                    child: Text('Низкое (640x360)'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: StreamQuality.medium,
-                                    child: Text('Среднее (1280x720)'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: StreamQuality.high,
-                                    child: Text('Высокое (1920x1080, 25fps)'),
-                                  ),
-                                ],
-                                onChanged: (quality) {
-                                  if (quality != null) {
-                                    context
-                                        .read<ReceiverCubit>()
-                                        .changeStreamQuality(quality);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            'Изменение качества на ${_getQualityName(quality)}'),
-                                        duration: const Duration(seconds: 2),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
+                        const SizedBox(height: 20),
 
-                        // Command buttons
+                        // Основные элементы управления в новом порядке
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            FloatingActionButton(
-                              heroTag: 'photo',
-                              onPressed: () {
-                                context
-                                    .read<ReceiverCubit>()
-                                    .sendCommand(CommandType.photo);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('📸 Команда: Сделать фото'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              backgroundColor: Colors.white,
-                              child: const Icon(Icons.camera_alt,
-                                  color: Colors.black),
-                            ),
-                            FloatingActionButton(
-                              heroTag: 'video',
-                              onPressed: () {
-                                context
-                                    .read<ReceiverCubit>()
-                                    .sendCommand(CommandType.video);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        '🎥 Команда: Переключить видеозапись'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              backgroundColor: Colors.white,
-                              child: const Icon(Icons.videocam,
-                                  color: Colors.black),
-                            ),
-                            FloatingActionButton(
-                              heroTag: 'flashlight',
+                            // Кнопка фонарика с динамической иконкой
+                            IconButton(
+                              icon: Image.asset(
+                                context.read<ReceiverCubit>().isFlashOn
+                                    ? 'assets/icons/camera/flash.png'
+                                    : 'assets/icons/camera/_flash.png',
+                                width: _getIconSize(context),
+                                height: _getIconSize(context),
+                                color: Colors.white,
+                              ),
                               onPressed: () {
                                 context
                                     .read<ReceiverCubit>()
@@ -317,12 +326,36 @@ class _ReceiverScreenContent extends StatelessWidget {
                                   ),
                                 );
                               },
-                              backgroundColor: Colors.white,
-                              child: const Icon(Icons.flashlight_on,
-                                  color: Colors.black),
                             ),
-                            FloatingActionButton(
-                              heroTag: 'timer',
+
+                            // Центральная кнопка фото
+                            GestureDetector(
+                              onTap: () {
+                                context
+                                    .read<ReceiverCubit>()
+                                    .sendCommand(CommandType.photo);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('📸 Команда: Сделать фото'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              child: Image.asset(
+                                'assets/icons/camera/_shutter.png',
+                                width: _getShutterSize(context),
+                                height: _getShutterSize(context),
+                              ),
+                            ),
+
+                            // Кнопка таймера
+                            IconButton(
+                              icon: Image.asset(
+                                'assets/icons/camera/thunder.png',
+                                width: _getIconSize(context),
+                                height: _getIconSize(context),
+                                color: Colors.white,
+                              ),
                               onPressed: () {
                                 context
                                     .read<ReceiverCubit>()
@@ -335,17 +368,14 @@ class _ReceiverScreenContent extends StatelessWidget {
                                   ),
                                 );
                               },
-                              backgroundColor: Colors.white,
-                              child:
-                                  const Icon(Icons.timer, color: Colors.black),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         );
       },
@@ -361,5 +391,40 @@ class _ReceiverScreenContent extends StatelessWidget {
       case StreamQuality.high:
         return 'Высокое (1920x1080, 25fps)';
     }
+  }
+
+  // Вспомогательный метод для создания кнопки качества
+  Widget _buildQualityButton(
+    BuildContext context,
+    String text,
+    StreamQuality quality,
+    bool isSelected,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        context.read<ReceiverCubit>().changeStreamQuality(quality);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Изменение качества на ${_getQualityName(quality)}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
   }
 }

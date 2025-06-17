@@ -5,6 +5,10 @@ import '../blocs/auth/auth_cubit.dart';
 import '../blocs/auth/auth_state.dart';
 import '../theme/main_design.dart';
 import '../widgets/custom_text_field.dart';
+import 'auth/verification_code_screen.dart';
+import '../services/api_service.dart';
+import '../blocs/onboarding/onboarding_cubit.dart' as onb;
+import '../blocs/role/role_cubit.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,10 +18,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _emailCtrl   = TextEditingController();
-  final _passwordCtrl= TextEditingController();
-  final _confirmCtrl = TextEditingController();
-  bool _showConfirm  = false;
+  final _emailCtrl = TextEditingController();
+  String? _error;
 
   @override
   void initState() {
@@ -26,97 +28,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (state is Authenticated) {
       _emailCtrl.text = state.email;
     }
-    _passwordCtrl.addListener(() {
-      setState(() {
-        _showConfirm = _passwordCtrl.text.isNotEmpty;
-      });
-    });
   }
 
   @override
   void dispose() {
     _emailCtrl.dispose();
-    _passwordCtrl.dispose();
-    _confirmCtrl.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgMain,
-      appBar: AppBar(
-        backgroundColor: AppColors.bgMain,
-        elevation: 0,
-        leading: const BackButton(color: AppColors.primary),
-        title: const Text('Мой профиль', style: AppTextStyles.lead),
-        centerTitle: true,
-      ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const SizedBox(height: AppSpacing.l),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: AppSpacing.s),
-                  child: Text(
-                    'Данные для входа',
-                    style: AppTextStyles.lead,
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.m),
-
-                CustomTextField(
-                  label: 'ВВЕДИТЕ EMAIL',
-                  hint: 'Ваш Email',
-                  controller: _emailCtrl,
-                ),
-                const SizedBox(height: AppSpacing.s),
-
-                CustomTextField(
-                  label: 'ВВЕДИТЕ ПАРОЛЬ',
-                  hint: 'Введите пароль',
-                  controller: _passwordCtrl,
-                  obscure: true,
-                ),
-                if (_showConfirm) ...[
-                  const SizedBox(height: AppSpacing.s),
-                  CustomTextField(
-                    label: 'ПОВТОРИТЕ ПАРОЛЬ',
-                    hint: 'Повторите пароль',
-                    controller: _confirmCtrl,
-                    obscure: true,
-
-                  ),
-                ],
-
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  title: Text(
-                    'Удалить аккаунт',
-                    style: AppTextStyles.body.copyWith(color: AppColors.error),
-                  ),
-                  onTap: _showDeleteDialog,
-                ),
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  title: const Text('Выйти из аккаунта', style: AppTextStyles.body),
-                  onTap: () => context.read<AuthCubit>().signOut(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showDeleteDialog() {
@@ -138,8 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('Удалить аккаунт?',
-                style: AppTextStyles.h2),
+            Text('Удалить аккаунт?', style: AppTextStyles.h2),
             const SizedBox(height: AppSpacing.s),
             Text('Отменить действие будет невозможно',
                 style: AppTextStyles.body, textAlign: TextAlign.center),
@@ -156,7 +72,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Text(
                   'Нет, отменить',
-                  style: AppTextStyles.lead.copyWith(color: AppColors.primaryLight),
+                  style: AppTextStyles.lead
+                      .copyWith(color: AppColors.primaryLight),
                 ),
               ),
             ),
@@ -166,7 +83,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  context.read<AuthCubit>().signOut();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => VerificationCodeScreen(
+                        email: _emailCtrl.text,
+                        type: VerificationType.accountDeletion,
+                        onSuccess: (_, __) {
+                          context.read<AuthCubit>().signOut();
+                          Navigator.of(context)
+                              .popUntil((route) => route.isFirst);
+                        },
+                      ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
@@ -176,13 +105,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Text(
                   'Да, удалить',
-                  style: AppTextStyles.lead.copyWith(color: AppColors.primaryLight),
+                  style: AppTextStyles.lead
+                      .copyWith(color: AppColors.primaryLight),
                 ),
-
               ),
             ),
           ]),
         ),
+      ),
+    );
+  }
+
+  void _resetPassword() async {
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VerificationCodeScreen(
+            email: _emailCtrl.text,
+            type: VerificationType.passwordReset,
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgMain,
+      appBar: AppBar(
+        backgroundColor: AppColors.bgMain,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leadingWidth: 100,
+        leading: TextButton.icon(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          label: Text('Назад',
+              style: AppTextStyles.body.copyWith(color: AppColors.primary)),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Мой профиль', style: AppTextStyles.lead),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const SizedBox(height: AppSpacing.l),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s),
+                  child: Text(
+                    'Данные для входа',
+                    style: AppTextStyles.lead,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.m),
+                CustomTextField(
+                  label: 'EMAIL',
+                  hint: 'Ваш Email',
+                  controller: _emailCtrl,
+                  enabled: false,
+                ),
+                ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  minVerticalPadding: 0,
+                  title:
+                      const Text('Сбросить пароль', style: AppTextStyles.body),
+                  onTap: _resetPassword,
+                ),
+                ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  minVerticalPadding: 0,
+                  title: Text(
+                    'Удалить аккаунт',
+                    style: AppTextStyles.body.copyWith(color: AppColors.error),
+                  ),
+                  onTap: _showDeleteDialog,
+                ),
+                ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  minVerticalPadding: 0,
+                  title: const Text('Выйти из аккаунта',
+                      style: AppTextStyles.body),
+                  onTap: () {
+                    context.read<AuthCubit>().signOut();
+                    context.read<RoleCubit>().reset();
+                    context.read<onb.OnboardingCubit>().reset();
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

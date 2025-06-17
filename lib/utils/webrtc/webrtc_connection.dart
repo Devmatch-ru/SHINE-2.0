@@ -6,6 +6,11 @@ import 'package:camera/camera.dart';
 import './types.dart';
 
 class WebRTCConnection {
+  static const int _maxChunkSize = 16 * 1024; // 16KB chunks
+  static const int _maxRetries = 3;
+  static const int _chunkDelayMs = 50;
+  static const int _retryDelayBaseMs = 100;
+
   RTCPeerConnection? _pc;
   final List<RTCIceCandidate> _candidates = [];
   RTCSessionDescription? _offer;
@@ -21,6 +26,10 @@ class WebRTCConnection {
   final void Function()? onConnectionFailed;
   final void Function(MediaType type, String base64Data)? onMediaReceived;
   final void Function(MediaStream)? onRemoteStream;
+  final void Function(String command)? onCommandReceived;
+  final void Function(String quality)? onQualityChangeRequested;
+  final void Function(String fileName, String mediaType, int sentChunks,
+      int totalChunks, bool isCompleted)? onTransferProgress;
 
   WebRTCConnection({
     required void Function(String) onLog,
@@ -32,6 +41,9 @@ class WebRTCConnection {
     this.onConnectionFailed,
     this.onMediaReceived,
     this.onRemoteStream,
+    this.onCommandReceived,
+    this.onQualityChangeRequested,
+    this.onTransferProgress,
   }) : _onLog = onLog;
 
   RTCSessionDescription? get offer => _offer;
@@ -59,13 +71,12 @@ class WebRTCConnection {
         'iceTransportPolicy': 'all',
         'bundlePolicy': 'max-bundle',
         'rtcpMuxPolicy': 'require',
-        'mandatory': {
-          'OfferToReceiveAudio': true,
-          'OfferToReceiveVideo': true,
-        },
+        'iceCandidatePoolSize': 1,
+        'enableDtlsSrtp': true,
+        'enableRtpDataChannels': false, // Используем SCTP data channels
       };
 
-      _onLog('Creating peer connection with config: $config');
+      _onLog('Creating peer connection with optimized config');
       _pc = await createPeerConnection(config);
       _setupConnectionHandlers();
 
@@ -75,36 +86,44 @@ class WebRTCConnection {
         _onLog('Local stream tracks: ${tracks.length}');
 
         for (var track in tracks) {
-          _onLog(
-              'Adding track: ${track.kind}, enabled: ${track.enabled}, muted: ${track.muted}');
-          _onLog('Track settings: ${track.getSettings()}');
+          _onLog('Adding track: ${track.kind}, enabled: ${track.enabled}');
           var rtpSender = await _pc!.addTrack(track, localStream);
           _senders.add(rtpSender!);
+          await _optimizeSenderParameters(rtpSender);
         }
 
-        _onLog('Creating offer...');
+        // Создаем data channel с надежной доставкой для команд
+        _onLog('Creating reliable data channel for commands...');
+        final dataChannel = await _pc!.createDataChannel(
+          'commands',
+          RTCDataChannelInit()
+            ..ordered = true
+            ..maxRetransmits =
+                3 // Небольшое количество повторных передач для надежности
+            ..protocol = 'sctp'
+            ..negotiated = false, // Позволяем автоматическое согласование
+        );
+
+        _dataChannels[_pc!] = dataChannel;
+        _setupDataChannel(dataChannel);
+        _onLog('Data channel created and setup completed');
+
+        _onLog('Creating optimized offer...');
         _offer = await _pc!.createOffer({
           'offerToReceiveVideo': true,
-          'offerToReceiveAudio': true,
-          'voiceActivityDetection': true,
-          'iceRestart': true,
+          'offerToReceiveAudio': false,
+          'voiceActivityDetection': false,
+          'iceRestart': false,
+          'enableDtlsSrtp': true,
         });
+
+        var sdp = _offer!.sdp;
+        sdp = _modifySdpForHighQuality(sdp!);
+        _offer = RTCSessionDescription(sdp, _offer!.type);
 
         _onLog('Setting local description...');
         await _pc!.setLocalDescription(_offer!);
         _onLog('Local description set successfully');
-
-        final dataChannel = await _pc!.createDataChannel(
-          'media',
-          RTCDataChannelInit()
-            ..ordered = true
-            ..maxRetransmits = 30
-            ..protocol = 'sctp'
-            ..negotiated = false,
-        );
-        _dataChannels[_pc!] = dataChannel;
-        _setupDataChannel(dataChannel);
-        _onLog('Data channel created');
       }
     } catch (e) {
       _onLog('Error creating connection: $e');
@@ -112,26 +131,121 @@ class WebRTCConnection {
     }
   }
 
+  String _modifySdpForHighQuality(String sdp) {
+    var lines = sdp.split('\r\n');
+    var newLines = <String>[];
+
+    for (var line in lines) {
+      // Увеличиваем битрейт для видео
+      if (line.startsWith('b=AS:')) {
+        newLines.add('b=AS:2500'); // Увеличиваем до 2.5 Mbps
+        continue;
+      }
+
+      // Устанавливаем высокий приоритет для видео
+      if (line.startsWith('m=video')) {
+        newLines.add(line);
+        newLines.add('b=AS:2500');
+        newLines.add('a=content:main');
+        newLines.add('a=priority:high');
+        continue;
+      }
+
+      // Оптимизируем параметры кодека
+      if (line.startsWith('a=fmtp:')) {
+        if (line.contains('VP8')) {
+          newLines.add('$line;max-fs=12288;max-fr=30');
+          continue;
+        } else if (line.contains('H264')) {
+          newLines.add(
+              '$line;profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1');
+          continue;
+        }
+      }
+
+      newLines.add(line);
+    }
+
+    return newLines.join('\r\n');
+  }
+
+  Future<void> _optimizeSenderParameters(RTCRtpSender sender) async {
+    try {
+      var params = sender.parameters;
+
+      if (params.encodings != null && params.encodings!.isNotEmpty) {
+        for (var encoding in params.encodings!) {
+          // Увеличиваем битрейт
+          encoding.maxBitrate = 2500000; // 2.5 Mbps
+          encoding.minBitrate = 500000; // 500 Kbps минимум
+
+          // Оптимизируем FPS
+          encoding.maxFramerate = 30;
+
+          // Отключаем масштабирование для сохранения качества
+          encoding.scaleResolutionDownBy = 1.0;
+        }
+
+        await sender.setParameters(params);
+        _onLog('Optimized sender parameters for high quality');
+      }
+    } catch (e) {
+      _onLog('Error optimizing sender parameters: $e');
+    }
+  }
+
   void _setupDataChannel(RTCDataChannel channel) {
+    _onLog('Setting up data channel: ${channel.label}');
+
+    channel.onDataChannelState = (state) {
+      _onLog('Data channel state changed to: $state');
+      if (state == RTCDataChannelState.RTCDataChannelOpen) {
+        _onLog('Data channel is now OPEN and ready for communication');
+      } else if (state == RTCDataChannelState.RTCDataChannelClosed) {
+        _onLog('Data channel is now CLOSED');
+        // Пробуем пересоздать data channel при закрытии
+        if (_pc?.connectionState ==
+            RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+          _recreateDataChannel();
+        }
+      }
+    };
+
     channel.onMessage = (message) {
       if (message.type == MessageType.text) {
         try {
-          if (message.text == 'capture_photo') {
-            onCapturePhoto?.call();
-          } else if (message.text == 'start_video') {
-            onStartVideo?.call();
-          } else if (message.text == 'stop_video') {
-            onStopVideo?.call();
-          } else {
-            final data = jsonDecode(message.text);
-            if (data['type'] == 'media') {
-              onMediaReceived?.call(
-                data['mediaType'] == 'photo'
-                    ? MediaType.photo
-                    : MediaType.video,
-                data['data'],
-              );
+          _onLog('Received message: ${message.text}');
+          final data = jsonDecode(message.text);
+
+          if (data['type'] == 'command') {
+            final command = data['action'];
+            _onLog('Received command: $command');
+            onCommandReceived?.call(command);
+
+            // Handle specific commands
+            switch (command) {
+              case 'capture_photo':
+                onCapturePhoto?.call();
+                break;
+              case 'toggle_video':
+                // This will be handled by the broadcaster
+                break;
+              case 'toggle_flashlight':
+                // This will be handled by the broadcaster
+                break;
+              case 'start_timer':
+                // This will be handled by the broadcaster
+                break;
             }
+          } else if (data['type'] == 'quality_change') {
+            final quality = data['quality'];
+            _onLog('Received quality change request: $quality');
+            onQualityChangeRequested?.call(quality);
+          } else if (data['type'] == 'media') {
+            onMediaReceived?.call(
+              data['mediaType'] == 'photo' ? MediaType.photo : MediaType.video,
+              data['data'],
+            );
           }
         } catch (e) {
           _onLog('Error processing message: $e');
@@ -140,20 +254,112 @@ class WebRTCConnection {
     };
   }
 
+  Future<void> _recreateDataChannel() async {
+    try {
+      _onLog('Attempting to recreate data channel...');
+      final dataChannel = await _pc!.createDataChannel(
+        'commands',
+        RTCDataChannelInit()
+          ..ordered = true
+          ..maxRetransmits = 3
+          ..protocol = 'sctp'
+          ..negotiated = false,
+      );
+
+      _dataChannels[_pc!] = dataChannel;
+      _setupDataChannel(dataChannel);
+      _onLog('Data channel recreated successfully');
+    } catch (e) {
+      _onLog('Error recreating data channel: $e');
+    }
+  }
+
   Future<bool> sendMedia(MediaType type, XFile media) async {
     try {
       final bytes = await media.readAsBytes();
-      final base64Data = base64Encode(bytes);
+      final int totalChunks = (bytes.length / _maxChunkSize).ceil();
+
+      _onLog('Sending ${type.name} in $totalChunks chunks...');
+
+      // Отправляем метаданные сначала
+      final metadataMessage = jsonEncode({
+        'type': 'media_metadata',
+        'mediaType': type == MediaType.photo ? 'photo' : 'video',
+        'fileName': media.name,
+        'fileSize': bytes.length,
+        'totalChunks': totalChunks,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+
+      bool sentToAny = false;
 
       for (var channel in _dataChannels.values) {
         if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
-          await channel.send(RTCDataChannelMessage(jsonEncode({
-            'type': 'media',
-            'mediaType': type == MediaType.photo ? 'photo' : 'video',
-            'data': base64Data,
-          })));
+          try {
+            // Сначала отправляем метаданные
+            await channel.send(RTCDataChannelMessage(metadataMessage));
+            _onLog('Sent metadata for ${type.name}');
+
+            // Отправляем файл по частям
+            for (var i = 0; i < totalChunks; i++) {
+              var retryCount = 0;
+              bool chunkSent = false;
+
+              while (!chunkSent && retryCount < _maxRetries) {
+                try {
+                  final start = i * _maxChunkSize;
+                  final end = (i + 1) * _maxChunkSize;
+                  final chunk = bytes.sublist(
+                      start, end > bytes.length ? bytes.length : end);
+
+                  // Отправляем чанк
+                  await channel.send(RTCDataChannelMessage.fromBinary(chunk));
+                  _onLog('Sent chunk ${i + 1}/$totalChunks');
+
+                  // Уведомляем о прогрессе
+                  onTransferProgress?.call(
+                    media.name,
+                    type == MediaType.photo ? 'photo' : 'video',
+                    i + 1,
+                    totalChunks,
+                    i + 1 == totalChunks,
+                  );
+
+                  chunkSent = true;
+                } catch (e) {
+                  retryCount++;
+                  _onLog(
+                      'Error sending chunk ${i + 1}, attempt $retryCount: $e');
+
+                  if (retryCount >= _maxRetries) {
+                    throw Exception(
+                        'Failed to send chunk after $_maxRetries attempts');
+                  }
+
+                  // Ждем перед повторной попыткой
+                  await Future.delayed(
+                      Duration(milliseconds: _retryDelayBaseMs * retryCount));
+                }
+              }
+
+              // Небольшая задержка между чанками
+              await Future.delayed(Duration(milliseconds: _chunkDelayMs));
+            }
+
+            _onLog('${type.name} sent successfully');
+            sentToAny = true;
+          } catch (e) {
+            _onLog('Error sending to channel: $e');
+            continue; // Пробуем следующий канал если есть
+          }
         }
       }
+
+      if (!sentToAny) {
+        _onLog('No open data channels available for sending media');
+        return false;
+      }
+
       return true;
     } catch (e) {
       _onLog('Error sending media: $e');
@@ -287,15 +493,56 @@ class WebRTCConnection {
   }
 
   Future<void> updateTrack(MediaStreamTrack newTrack) async {
-    var sender = _senders
-        .firstWhereOrNull((sender) => sender.track?.kind == newTrack.kind);
-    if (sender != null) {
-      var params = sender.parameters;
-      params.degradationPreference =
-          RTCDegradationPreference.MAINTAIN_RESOLUTION;
-      await sender.setParameters(params);
-      await sender.replaceTrack(newTrack);
-      _onLog('Track replaced: ${newTrack.kind}');
+    try {
+      _onLog('Updating track: ${newTrack.kind}');
+
+      var sender = _senders
+          .firstWhereOrNull((sender) => sender.track?.kind == newTrack.kind);
+
+      if (sender != null) {
+        _onLog(
+            'Found existing sender for ${newTrack.kind}, replacing track...');
+
+        // Получаем текущие параметры
+        var params = sender.parameters;
+
+        // Настраиваем параметры для лучшего качества
+        params.degradationPreference =
+            RTCDegradationPreference.MAINTAIN_RESOLUTION;
+
+        // Применяем параметры
+        await sender.setParameters(params);
+
+        // Заменяем трек
+        await sender.replaceTrack(newTrack);
+
+        _onLog('Track replaced successfully: ${newTrack.kind}');
+        _onLog('New track settings: ${newTrack.getSettings()}');
+      } else {
+        _onLog('No existing sender found for ${newTrack.kind}');
+      }
+    } catch (e) {
+      _onLog('Error updating track: $e');
+      throw e;
+    }
+  }
+
+  // Метод для обновления всего потока
+  Future<void> updateStream(MediaStream newStream) async {
+    try {
+      _onLog('Updating entire stream...');
+
+      final newTracks = newStream.getTracks();
+      _onLog('New stream has ${newTracks.length} tracks');
+
+      for (var track in newTracks) {
+        await updateTrack(track);
+      }
+
+      _onLog('Stream updated successfully');
+    } catch (e) {
+      _onLog('Error updating stream: $e');
+      throw e;
     }
   }
 
@@ -322,5 +569,24 @@ class WebRTCConnection {
       _pc = null;
     }
     _onLog('WebRTC connection closed');
+  }
+
+  // Метод для отправки команд через Data Channel
+  Future<bool> sendCommand(String command, Map<String, dynamic> data) async {
+    try {
+      for (var channel in _dataChannels.values) {
+        if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
+          final message = jsonEncode(data);
+          await channel.send(RTCDataChannelMessage(message));
+          _onLog('Sent command via data channel: $command');
+          return true;
+        }
+      }
+      _onLog('No open data channels available for sending command');
+      return false;
+    } catch (e) {
+      _onLog('Error sending command via data channel: $e');
+      return false;
+    }
   }
 }

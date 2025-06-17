@@ -1,10 +1,12 @@
 // lib/blocs/auth/auth_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthService _authService;
+  static const _keyEmail = 'user_email';
 
   AuthCubit(this._authService) : super(AuthLoading()) {
     _init();
@@ -15,11 +17,11 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final loggedIn = await _authService.isLoggedIn();
       if (loggedIn) {
-        // Если у вас есть способ восстановить данные пользователя из хранилища, сделайте это здесь.
-        // Пока просто переходим в состояние Authenticated без деталей.
+        final prefs = await SharedPreferences.getInstance();
+        final email = prefs.getString(_keyEmail) ?? '';
         emit(Authenticated(
-          id: '',
-          email: '',
+          id: email,
+          email: email,
           name: null,
           photoUrl: null,
         ));

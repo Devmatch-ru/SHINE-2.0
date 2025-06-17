@@ -6,8 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shine/blocs/auth/auth_cubit.dart';
 import 'package:shine/blocs/auth/auth_state.dart';
-import 'package:shine/blocs/broadcaster/broadcaster_cubit.dart';
-import 'package:shine/blocs/receiver/receiver_cubit.dart';
 import 'package:shine/blocs/role/role_cubit.dart';
 import 'package:shine/blocs/role/role_state.dart';
 import 'package:shine/blocs/onboarding/onboarding_cubit.dart' as onb;
@@ -17,21 +15,11 @@ import 'package:shine/screens/onboarding_screen.dart';
 import 'package:shine/screens/roles/role_select.dart';
 import 'package:shine/theme/main_design.dart';
 import 'package:shine/services/auth_service.dart';
-import 'package:shine/utils/broadcaster_manager.dart';
-import 'package:shine/utils/receiver_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _requestPermissions();
   debugPaintBaselinesEnabled = false;
-
-  final broadcasterManager = await BroadcasterManager.create(
-    onStateChange: () {}, // Empty callback for state changes
-    onError: (error) => debugPrint('Broadcaster error: $error'),
-    onMediaCaptured: (media) => debugPrint('Media captured: ${media.path}'),
-  );
-
-  final receiverManager = ReceiverManager();
 
   runApp(
     MultiBlocProvider(
@@ -40,16 +28,6 @@ Future<void> main() async {
         BlocProvider(create: (_) => WifiCubit(connectivity: Connectivity())),
         BlocProvider(create: (_) => onb.OnboardingCubit()),
         BlocProvider(create: (_) => RoleCubit()),
-        BlocProvider(
-          create: (_) => BroadcasterCubit(
-            broadcasterManager: broadcasterManager,
-          ),
-        ),
-        BlocProvider(
-          create: (_) => ReceiverCubit(
-            receiverManager: receiverManager,
-          ),
-        ),
       ],
       child: const ShineApp(),
     ),
@@ -153,29 +131,25 @@ class ShineApp extends StatelessWidget {
             );
           } else if (authState is Unauthenticated) {
             return const LoginScreen();
-          } else {
+          } else if (authState is Authenticated) {
             return BlocBuilder<onb.OnboardingCubit, onb.OnboardingState>(
               builder: (context, onbState) {
                 if (onbState is onb.OnboardingRequired) {
                   return const OnboardingScreen();
                 }
-                // onboarding complete:
                 return BlocBuilder<RoleCubit, RoleState>(
                   builder: (context, roleState) {
                     if (roleState is RoleInitial) {
                       return const RoleSelectScreen();
                     }
-                    // else if (roleState is RoleHost) {
-                    //   return const HostScreen();
-                    // } else if (roleState is RoleClient) {
-                    //   return const ClientScreen();
-                    // }
                     return const RoleSelectScreen();
                   },
                 );
               },
             );
           }
+          // В случае ошибки аутентификации тоже показываем экран входа
+          return const LoginScreen();
         },
       ),
     );

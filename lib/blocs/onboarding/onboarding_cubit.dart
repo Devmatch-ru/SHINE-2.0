@@ -2,8 +2,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class OnboardingState {}
+
 class OnboardingInitial extends OnboardingState {}
+
 class OnboardingRequired extends OnboardingState {}
+
 class OnboardingComplete extends OnboardingState {}
 
 class OnboardingCubit extends Cubit<OnboardingState> {
@@ -23,5 +26,11 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_shownKey, true);
     emit(OnboardingComplete());
+  }
+
+  Future<void> reset() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_shownKey);
+    emit(OnboardingRequired());
   }
 }

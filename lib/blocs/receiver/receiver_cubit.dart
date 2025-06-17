@@ -1,168 +1,198 @@
-import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../../utils/receiver_manager.dart';
-import './receiver_state.dart';
+import 'receiver_state.dart';
+import 'package:gallery_saver_plus/gallery_saver.dart';
+import 'dart:async';
+
+enum CommandType { photo, video, flashlight, timer }
 
 class ReceiverCubit extends Cubit<ReceiverState> {
-  final ReceiverManager _receiverManager;
-  StreamSubscription? _broadcastersSubscription;
-  Timer? _reconnectionTimer;
-  bool _isListening = false;
+  final ReceiverManager _manager;
+  final RTCVideoRenderer _remoteRenderer;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  static const int maxReconnectAttempts = 5;
+  bool _isFlashOn = false;
 
-  ReceiverCubit({required ReceiverManager receiverManager})
-      : _receiverManager = receiverManager,
-        super(ReceiverInitial());
+  ReceiverCubit()
+      : _remoteRenderer = RTCVideoRenderer(),
+        _manager = ReceiverManager(),
+        super(const ReceiverInitial());
 
-  Future<void> startListening() async {
-    if (_isListening) return;
-
+  Future<void> initialize() async {
     try {
-      final currentLogs = state.debugLogs;
-      emit(ReceiverLoading(debugLogs: currentLogs)
-        ..addLog('Starting receiver...'));
+      await _remoteRenderer.initialize();
 
-      _isListening = true;
-      await _receiverManager.init();
+      _manager
+        ..onStateChange = _handleStateChange
+        ..onStreamChanged = _handleStreamChanged
+        ..onError = _handleError
+        ..onMediaReceived = _handleMediaReceived;
 
-      _broadcastersSubscription = _receiverManager.connectedBroadcasters.listen(
-        (broadcasters) {
-          if (state is ReceiverListening) {
-            final currentState = state as ReceiverListening;
-            currentState.addLog(
-                'Broadcasters updated: ${broadcasters.length} connected');
-            emit(currentState.copyWith(connectedBroadcasters: broadcasters));
-          } else {
-            final newState = ReceiverListening(
-              connectedBroadcasters: broadcasters,
-              debugLogs: state.debugLogs,
-            )..addLog('Initial broadcasters: ${broadcasters.length}');
-            emit(newState);
-          }
-        },
-        onError: (error) {
-          final currentLogs = state.debugLogs;
-          emit(ReceiverError('Broadcaster subscription error: $error',
-              debugLogs: currentLogs)
-            ..addLog('Error in broadcaster subscription: $error'));
-          _startReconnectionTimer();
-        },
-      );
-
-      emit(ReceiverListening(debugLogs: state.debugLogs)
-        ..addLog('Receiver started successfully'));
+      await _manager.init();
+      emit(const ReceiverReady());
     } catch (e) {
-      final currentLogs = state.debugLogs;
-      emit(ReceiverError('Failed to start receiver: $e', debugLogs: currentLogs)
-        ..addLog('Startup error: $e'));
-      _startReconnectionTimer();
+      _handleError(e.toString());
     }
   }
 
-  void _startReconnectionTimer() {
-    final currentLogs = state.debugLogs;
-    currentLogs.add('Starting reconnection timer...');
+  void _handleStateChange() {
+    _reconnectTimer
+        ?.cancel(); // Отменяем таймер переподключения при изменении состояния
 
-    _reconnectionTimer?.cancel();
-    _reconnectionTimer = Timer(const Duration(seconds: 5), () {
-      if (state is ReceiverError) {
-        currentLogs.add('Attempting to reconnect...');
-        startListening();
+    if (_manager.isConnected && _manager.remoteStream != null) {
+      _reconnectAttempts =
+          0; // Сбрасываем счетчик попыток при успешном подключении
+
+      emit(ReceiverConnected(
+        stream: _manager.remoteStream!,
+        broadcaster: _manager.connectedBroadcaster!,
+        streamQuality: state.streamQuality,
+      ));
+    } else {
+      _startReconnection();
+    }
+  }
+
+  void _handleStreamChanged(MediaStream? stream) {
+    _remoteRenderer.srcObject = stream;
+    if (stream != null && _manager.connectedBroadcaster != null) {
+      _reconnectAttempts = 0; // Сбрасываем счетчик попыток при получении стрима
+      _reconnectTimer?.cancel();
+
+      emit(ReceiverConnected(
+        stream: stream,
+        broadcaster: _manager.connectedBroadcaster!,
+        streamQuality: state.streamQuality,
+      ));
+    } else {
+      _startReconnection();
+    }
+  }
+
+  void _handleError(String error) {
+    print('Receiver error: $error');
+
+    if (!error.contains('Max reconnection attempts reached')) {
+      _startReconnection();
+    }
+
+    emit(ReceiverError(error));
+  }
+
+  void _startReconnection() {
+    if (_reconnectAttempts >= maxReconnectAttempts) {
+      emit(ReceiverError('Max reconnection attempts reached'));
+      return;
+    }
+
+    _reconnectAttempts++;
+    final delay =
+        Duration(seconds: _reconnectAttempts * 2); // Экспоненциальная задержка
+
+    print(
+        'Starting reconnection attempt $_reconnectAttempts after ${delay.inSeconds} seconds');
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(delay, () {
+      if (state is! ReceiverConnected) {
+        emit(ReceiverDisconnected(streamQuality: state.streamQuality));
+        // Попытка переподключения к последнему известному broadcaster
+        if (_manager.connectedBroadcaster != null) {
+          _manager.switchToPrimaryBroadcaster(_manager.connectedBroadcaster!);
+        }
       }
     });
   }
 
-  Future<void> requestPhoto(String broadcasterId) async {
+  void _handleMediaReceived(String mediaType, String filePath) {
     try {
-      await _receiverManager.requestPhoto(broadcasterId);
+      // Сохраняем медиафайл в галерею
+      if (mediaType.toLowerCase() == 'photo') {
+        GallerySaver.saveImage(filePath, albumName: 'Shine')
+            .then((_) => print('Photo saved to gallery: $filePath'))
+            .catchError((e) => print('Error saving photo: $e'));
+      } else if (mediaType.toLowerCase() == 'video') {
+        GallerySaver.saveVideo(filePath, albumName: 'Shine')
+            .then((_) => print('Video saved to gallery: $filePath'))
+            .catchError((e) => print('Error saving video: $e'));
+      }
     } catch (e) {
-      emit(ReceiverError(e.toString()));
+      print('Error handling media: $e');
     }
   }
 
-  Future<void> requestVideo(String broadcasterId) async {
+  Future<void> changeStreamQuality(StreamQuality quality) async {
     try {
-      await _receiverManager.requestVideo(broadcasterId);
+      await _manager.changeStreamQuality(quality);
+
+      if (state is ReceiverConnected) {
+        final currentState = state as ReceiverConnected;
+        emit(ReceiverConnected(
+          stream: currentState.remoteStream!,
+          broadcaster: currentState.connectedBroadcaster!,
+          streamQuality: quality,
+        ));
+      } else if (state is ReceiverReady) {
+        emit(ReceiverReady(streamQuality: quality));
+      } else if (state is ReceiverDisconnected) {
+        emit(ReceiverDisconnected(streamQuality: quality));
+      }
     } catch (e) {
-      emit(ReceiverError(e.toString()));
+      _handleError(e.toString());
     }
   }
 
-  void _handleBroadcasterStream(MediaStream stream, String broadcasterId) {
-    if (state is ReceiverListening) {
-      final currentState = state as ReceiverListening;
-      final updatedStreams =
-          Map<String, MediaStream>.from(currentState.broadcasterStreams);
+  Future<void> sendCommand(CommandType command) async {
+    if (!_manager.isConnected) {
+      _handleError('Нет подключения к транслирующему');
+      return;
+    }
 
-      currentState
-          .addLog('Handling new stream from broadcaster: $broadcasterId');
-      currentState.addLog('Stream tracks: ${stream.getTracks().length}');
-      stream.getTracks().forEach((track) {
-        currentState.addLog(
-            'Track: ${track.kind}, enabled: ${track.enabled}, muted: ${track.muted}');
-      });
-
-      // Dispose old stream if exists
-      if (updatedStreams.containsKey(broadcasterId)) {
-        final oldStream = updatedStreams[broadcasterId]!;
-        currentState.addLog('Disposing old stream from $broadcasterId');
-        oldStream.getTracks().forEach((track) => track.stop());
-        oldStream.dispose();
+    try {
+      String commandString;
+      switch (command) {
+        case CommandType.photo:
+          commandString = 'capture_photo';
+          break;
+        case CommandType.video:
+          commandString = 'toggle_video';
+          break;
+        case CommandType.flashlight:
+          _isFlashOn = !_isFlashOn;
+          commandString = 'toggle_flashlight';
+          break;
+        case CommandType.timer:
+          commandString = 'start_timer';
+          break;
       }
 
-      updatedStreams[broadcasterId] = stream;
-      emit(currentState.copyWith(
-        broadcasterStreams: updatedStreams,
-        debugLogs: currentState.debugLogs,
-      ));
+      await _manager.sendCommandToAll(commandString);
+    } catch (e) {
+      _handleError(e.toString());
     }
   }
 
-  void _handleBroadcasterDisconnect(String broadcasterId) {
-    if (state is ReceiverListening) {
-      final currentState = state as ReceiverListening;
-      final updatedStreams =
-          Map<String, MediaStream>.from(currentState.broadcasterStreams);
-
-      currentState.addLog('Broadcaster disconnected: $broadcasterId');
-
-      // Cleanup disconnected broadcaster's stream
-      if (updatedStreams.containsKey(broadcasterId)) {
-        final stream = updatedStreams[broadcasterId]!;
-        currentState.addLog('Cleaning up stream from disconnected broadcaster');
-        stream.getTracks().forEach((track) => track.stop());
-        stream.dispose();
-        updatedStreams.remove(broadcasterId);
-      }
-
-      emit(currentState.copyWith(
-        broadcasterStreams: updatedStreams,
-        debugLogs: currentState.debugLogs,
-      ));
+  void switchBroadcaster(String broadcasterUrl) {
+    try {
+      _manager.switchToPrimaryBroadcaster(broadcasterUrl);
+      _reconnectAttempts = 0; // Сбрасываем счетчик при ручном переключении
+    } catch (e) {
+      _handleError(e.toString());
     }
   }
+
+  List<String> get connectedBroadcasters => _manager.connectedBroadcasters;
+  List<String> get debugMessages => _manager.messages;
+  RTCVideoRenderer get remoteRenderer => _remoteRenderer;
+  bool get isFlashOn => _isFlashOn;
 
   @override
   Future<void> close() async {
-    state.addLog('Closing receiver cubit...');
-    _isListening = false;
-    await _broadcastersSubscription?.cancel();
-    _reconnectionTimer?.cancel();
-
-    // Cleanup all streams
-    if (state is ReceiverListening) {
-      final currentState = state as ReceiverListening;
-      currentState.addLog('Cleaning up all streams...');
-      for (var entry in currentState.broadcasterStreams.entries) {
-        currentState.addLog('Disposing stream from ${entry.key}');
-        final stream = entry.value;
-        stream.getTracks().forEach((track) => track.stop());
-        stream.dispose();
-      }
-    }
-
-    await _receiverManager.dispose();
-    state.addLog('Receiver cubit closed');
-    return super.close();
+    _reconnectTimer?.cancel();
+    await _remoteRenderer.dispose();
+    await _manager.dispose();
+    super.close();
   }
 }
