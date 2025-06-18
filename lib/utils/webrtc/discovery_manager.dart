@@ -11,7 +11,6 @@ class DiscoveryManager {
   final void Function(String) _onLog;
   final VoidCallback? onStateChange;
 
-  // Новые поля для оптимизации
   final Map<String, DateTime> _lastSeenReceivers = {};
   static const Duration _receiverTimeout = Duration(seconds: 30);
   static const Duration _discoveryInterval = Duration(seconds: 5);
@@ -43,10 +42,8 @@ class DiscoveryManager {
         }
       });
 
-      // Запускаем периодическое обнаружение
       _startPeriodicDiscovery();
 
-      // Запускаем очистку устаревших получателей
       _startCleanupTimer();
 
       _onLog('UDP discovery listener started');
@@ -67,7 +64,6 @@ class DiscoveryManager {
     _discoveryTimer?.cancel();
     _discoveryTimer =
         Timer.periodic(_discoveryInterval, (_) => _performDiscovery());
-    // Запускаем первое сканирование немедленно
     _performDiscovery();
   }
 
@@ -85,9 +81,7 @@ class DiscoveryManager {
         if (parts.length == 4) {
           final baseIP = '${parts[0]}.${parts[1]}.${parts[2]}';
 
-          // Оптимизированное сканирование
           if (_isInitialScan) {
-            // Полное сканирование при первом запуске
             for (int i = 1; i <= 254; i++) {
               final address = '$baseIP.$i';
               _udpSocket!
@@ -95,8 +89,6 @@ class DiscoveryManager {
             }
             _isInitialScan = false;
           } else {
-            // Оптимизированное сканирование для последующих проверок
-            // Сканируем только известные адреса и небольшой диапазон вокруг них
             final knownIPs = _receivers.map((r) {
               final parts = r.split(':');
               return parts[1];
@@ -104,7 +96,6 @@ class DiscoveryManager {
 
             for (final ip in knownIPs) {
               final lastPart = int.tryParse(ip.split('.').last) ?? 0;
-              // Сканируем 5 адресов до и после известного адреса
               for (int i = -5; i <= 5; i++) {
                 final newLast = lastPart + i;
                 if (newLast > 0 && newLast < 255) {
@@ -115,7 +106,6 @@ class DiscoveryManager {
               }
             }
 
-            // Добавляем случайное сканирование для обнаружения новых устройств
             final random = List.generate(10,
                 (i) => (DateTime.now().millisecondsSinceEpoch + i) % 254 + 1);
             for (final i in random) {
@@ -147,9 +137,8 @@ class DiscoveryManager {
   }
 
   Future<List<String>> discoverReceivers() async {
-    _isInitialScan = true; // Форсируем полное сканирование
+    _isInitialScan = true;
     await _performDiscovery();
-    // Ждем немного, чтобы получить ответы
     await Future.delayed(const Duration(seconds: 2));
     return _receivers.toList();
   }

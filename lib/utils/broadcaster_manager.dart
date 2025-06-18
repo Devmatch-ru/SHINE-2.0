@@ -19,6 +19,7 @@ import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 
+
 class BroadcasterManager {
   final List<String> _messages = [];
   bool _inCalling = false;
@@ -33,7 +34,6 @@ class BroadcasterManager {
   Timer? _connectionTimer;
   CameraController? _cameraController;
 
-  // Callbacks
   late final VoidCallback? onStateChange;
   final VoidCallback? onCapturePhoto;
   final void Function(String error)? onError;
@@ -111,7 +111,6 @@ class BroadcasterManager {
     _settings = await SettingsManager.getInstance();
   }
 
-  // Getters
   MediaStream? get localStream => _mediaManager.localStream;
   bool get isBroadcasting => _inCalling;
   List<String> get messages => List.unmodifiable(_messages);
@@ -147,7 +146,6 @@ class BroadcasterManager {
 
       final videoTrack = videoTracks.first;
 
-      // Проверяем поддержку фонарика
       final hasTorch = await videoTrack.hasTorch();
       _addMessage('Camera torch support: $hasTorch');
 
@@ -157,10 +155,8 @@ class BroadcasterManager {
         return;
       }
 
-      // Переключаем состояние
       _isFlashOn = !_isFlashOn;
 
-      // Используем правильный API из примера
       await videoTrack.setTorch(_isFlashOn);
       _addMessage('Torch set to: $_isFlashOn');
 
@@ -175,7 +171,7 @@ class BroadcasterManager {
   }
 
   Future<void> captureWithTimer() async {
-    onStateChange?.call(); // Start timer UI
+    onStateChange?.call();
     await Future.delayed(Duration(seconds: 3));
     await capturePhoto();
   }
@@ -186,10 +182,8 @@ class BroadcasterManager {
     try {
       await stopBroadcast();
 
-      // Останавливаем мониторинг
       _thermalMonitor?.cancel();
 
-      // Небольшая задержка для завершения операций
       await Future.delayed(const Duration(milliseconds: 300));
 
       await _discovery.dispose();
@@ -236,7 +230,6 @@ class BroadcasterManager {
 
       _currentReceiverUrl = receiverUrl;
 
-      // Улучшенные настройки медиа-потока
       final mediaConstraints = {
         'audio': false,
         'video': {
@@ -245,7 +238,6 @@ class BroadcasterManager {
           'height': selectedVideoSize.height,
           'frameRate': int.tryParse(selectedVideoFPS ?? '') ?? 30,
           'aspectRatio': 16.0 / 9.0,
-          // Дополнительные параметры для улучшения качества
           'advanced': [
             {
               'width': {
@@ -272,78 +264,110 @@ class BroadcasterManager {
         },
       };
 
-      // Create media stream
-      await _mediaManager.createStream(mediaConstraints);
+      // Создание media stream с повторными попытками
+      int retryCount = 0;
+      while (retryCount < 3) {
+        try {
+          await _mediaManager.createStream(mediaConstraints);
+          if (_mediaManager.localStream != null) break;
+          retryCount++;
+        } catch (e) {
+          _addMessage('Attempt ${retryCount + 1} to create stream failed: $e');
+          if (retryCount >= 2) throw e;
+          await Future.delayed(Duration(seconds: 1));
+        }
+      }
+
       if (_mediaManager.localStream == null) {
-        throw Exception('Failed to create media stream');
+        throw Exception(
+            'Failed to create media stream after multiple attempts');
       }
 
-      // Create WebRTC connection
-      await _webrtc.createConnection(_mediaManager.localStream!);
+      // Создание WebRTC подключения с повторными попытками
+      retryCount = 0;
+      while (retryCount < 3) {
+        try {
+          await _webrtc.createConnection(_mediaManager.localStream!);
+          if (_webrtc.offer != null) break;
+          retryCount++;
+        } catch (e) {
+          _addMessage(
+              'Attempt ${retryCount + 1} to create WebRTC connection failed: $e');
+          if (retryCount >= 2) throw e;
+          await Future.delayed(Duration(seconds: 1));
+        }
+      }
 
-      // Verify offer was created
       if (_webrtc.offer == null) {
-        throw Exception('WebRTC offer is null');
+        throw Exception('WebRTC offer is null after multiple attempts');
       }
 
-      // Start signaling server
       await _signaling.start();
 
       _inCalling = true;
       onStateChange?.call();
 
-      // Set connection timeout
       bool hasResponse = false;
-      _connectionTimer = Timer(Duration(seconds: 10), () {
+      _connectionTimer = Timer(Duration(seconds: 15), () {
         if (!hasResponse) {
-          _addMessage('Connection timeout');
+          _addMessage('Connection timeout after 15 seconds');
           stopBroadcast();
         }
       });
 
-      // Verify receiver URL format
       final uri = Uri.parse(receiverUrl);
       if (!uri.hasScheme || !uri.hasAuthority) {
         throw Exception('Invalid receiver URL format');
       }
 
-      // Send offer to receiver
-      try {
-        _addMessage('Sending offer to receiver at $receiverUrl');
-        _addMessage('Broadcaster URL: http://$wifiIP:8080');
+      // Отправка offer с повторными попытками
+      retryCount = 0;
+      Exception? lastError;
 
-        final response = await http.post(
-          Uri.parse('$receiverUrl/offer'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode({
-            'sdp': _webrtc.offer!.sdp,
-            'type': _webrtc.offer!.type,
-            'broadcasterUrl': 'http://$wifiIP:8080',
-          }),
-        );
+      while (retryCount < 3) {
+        try {
+          _addMessage('Attempt ${retryCount + 1} to send offer to receiver');
 
-        hasResponse = true;
-        _connectionTimer?.cancel();
+          final response = await http
+              .post(
+                Uri.parse('$receiverUrl/offer'),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                },
+                body: jsonEncode({
+                  'sdp': _webrtc.offer!.sdp,
+                  'type': _webrtc.offer!.type,
+                  'broadcasterUrl': 'http://$wifiIP:8080',
+                }),
+              )
+              .timeout(Duration(seconds: 5));
 
-        if (response.statusCode != 200) {
-          _addMessage(
-              'Failed to send offer. Status: ${response.statusCode}, Body: ${response.body}');
-          throw Exception(
-              'Failed to send offer: ${response.statusCode} - ${response.body}');
+          hasResponse = true;
+          _connectionTimer?.cancel();
+
+          if (response.statusCode == 200) {
+            _addMessage('Offer sent successfully');
+            return;
+          } else {
+            lastError = Exception(
+                'Failed to send offer: ${response.statusCode} - ${response.body}');
+          }
+        } catch (e) {
+          lastError = Exception('Error sending offer: $e');
         }
 
-        _addMessage('Offer sent successfully to receiver at $receiverUrl');
-      } catch (e) {
-        _addMessage('Error sending offer: $e');
-        await stopBroadcast(); // Clean up on error
-        throw e;
+        retryCount++;
+        if (retryCount < 3) {
+          await Future.delayed(Duration(seconds: 1));
+        }
       }
+
+      throw lastError ??
+          Exception('Failed to send offer after multiple attempts');
     } catch (e) {
       _addMessage('Error starting broadcast: $e');
-      await stopBroadcast(); // Clean up on error
+      await stopBroadcast();
       onError?.call('Ошибка при запуске трансляции: $e');
       rethrow;
     }
@@ -353,7 +377,6 @@ class BroadcasterManager {
     try {
       _addMessage('Starting photo capture process...');
 
-      // Получаем текущий кадр из WebRTC потока
       if (_mediaManager.localStream != null) {
         _addMessage('Media stream available, getting video track...');
         final videoTracks = _mediaManager.localStream!.getVideoTracks();
@@ -367,25 +390,21 @@ class BroadcasterManager {
         _addMessage(
             'Video track found: ${videoTrack.id}, enabled: ${videoTrack.enabled}');
 
-        // Используем flutter_webrtc для создания снимка
         _addMessage('Capturing frame from video track...');
         final frame = await videoTrack.captureFrame();
         _addMessage('Frame captured successfully');
 
-        // Сохраняем изображение
         final directory = await getTemporaryDirectory();
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final fileName = 'photo_$timestamp.jpg';
         final filePath = '${directory.path}/$fileName';
 
-        // Конвертируем frame в файл
         final file = File(filePath);
         final bytes = frame.asUint8List();
         _addMessage('Converting frame to bytes: ${bytes.length} bytes');
         await file.writeAsBytes(bytes);
         _addMessage('Photo saved to: $filePath');
 
-        // Сохраняем в галерею
         await GallerySaver.saveImage(
           filePath,
           albumName: 'Shine',
@@ -395,7 +414,6 @@ class BroadcasterManager {
         final xFile = XFile(filePath);
         onMediaCaptured?.call(xFile);
 
-        // Отправляем фото через WebRTC Data Channel
         _addMessage('Sending photo to receiver...');
         await _sendMediaToReceiver(MediaType.photo, xFile);
       } else {
@@ -415,22 +433,18 @@ class BroadcasterManager {
         throw Exception('No video stream available');
       }
 
-      // Создаем путь для видеофайла
       final directory = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'video_$timestamp.mp4';
       _currentVideoPath = '${directory.path}/$fileName';
 
-      // Создаем MediaRecorder с правильными параметрами
       _mediaRecorder = MediaRecorder(albumName: 'Shine');
 
-      // Начинаем запись
       final videoTrack = _mediaManager.localStream!.getVideoTracks().first;
       await _mediaRecorder!.start(
         _currentVideoPath!,
         videoTrack: videoTrack,
-        audioChannel: RecorderAudioChannel
-            .OUTPUT, // Используем OUTPUT для лучшего качества
+        audioChannel: RecorderAudioChannel.OUTPUT,
       );
 
       _isRecording = true;
@@ -451,13 +465,11 @@ class BroadcasterManager {
         return;
       }
 
-      // Останавливаем запись
       await _mediaRecorder!.stop();
       _mediaRecorder = null;
       _isRecording = false;
 
       if (_currentVideoPath != null) {
-        // Сохраняем видео в галерею
         await GallerySaver.saveVideo(
           _currentVideoPath!,
           albumName: 'Shine',
@@ -468,7 +480,6 @@ class BroadcasterManager {
         _addMessage('Video recorded: $_currentVideoPath');
         onMediaCaptured?.call(xFile);
 
-        // Отправляем видео через WebRTC Data Channel
         await _sendMediaToReceiver(MediaType.video, xFile);
 
         _currentVideoPath = null;
@@ -485,7 +496,6 @@ class BroadcasterManager {
     try {
       _addMessage('Sending ${type.name} to receiver...');
 
-      // Отправляем через WebRTC Data Channel
       final success = await _webrtc.sendMedia(type, media);
 
       if (success) {
@@ -523,76 +533,130 @@ class BroadcasterManager {
     try {
       _addMessage('Changing stream quality to: $quality');
 
-      // Определяем параметры качества с учетом битрейта
-      String videoSize;
-      String fps;
       Map<String, dynamic> constraints;
+      int targetBitrate;
 
       switch (quality) {
         case 'low':
-          videoSize = '640x360';
-          fps = '30';
           constraints = {
-            'width': {'min': 640, 'ideal': 640},
-            'height': {'min': 360, 'ideal': 360},
-            'frameRate': {'min': 24, 'ideal': 30},
-            'facingMode': 'environment',
-            'aspectRatio': 16.0 / 9.0,
+            'video': {
+              'facingMode': 'environment',
+              'width': 640,
+              'height': 360,
+              'frameRate': 24,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 640, 'ideal': 640, 'max': 640},
+                  'height': {'min': 360, 'ideal': 360, 'max': 360},
+                  'frameRate': {'min': 24, 'ideal': 24, 'max': 24},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
           };
+          targetBitrate = 800000; // 800 Kbps
           break;
         case 'medium':
-          videoSize = '1280x720';
-          fps = '30';
           constraints = {
-            'width': {'min': 1280, 'ideal': 1280},
-            'height': {'min': 720, 'ideal': 720},
-            'frameRate': {'min': 24, 'ideal': 30},
-            'facingMode': 'environment',
-            'aspectRatio': 16.0 / 9.0,
+            'video': {
+              'facingMode': 'environment',
+              'width': 1280,
+              'height': 720,
+              'frameRate': 30,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 1280, 'ideal': 1280, 'max': 1280},
+                  'height': {'min': 720, 'ideal': 720, 'max': 720},
+                  'frameRate': {'min': 30, 'ideal': 30, 'max': 30},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
           };
+          targetBitrate = 1500000; // 1.5 Mbps
           break;
         case 'high':
-          videoSize = '1920x1080';
-          fps = '30';
           constraints = {
-            'width': {'min': 1920, 'ideal': 1920},
-            'height': {'min': 1080, 'ideal': 1080},
-            'frameRate': {'min': 24, 'ideal': 30},
-            'facingMode': 'environment',
-            'aspectRatio': 16.0 / 9.0,
+            'video': {
+              'facingMode': 'environment',
+              'width': 1920,
+              'height': 1080,
+              'frameRate': 30,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 1920, 'ideal': 1920, 'max': 1920},
+                  'height': {'min': 1080, 'ideal': 1080, 'max': 1080},
+                  'frameRate': {'min': 30, 'ideal': 30, 'max': 30},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
           };
+          targetBitrate = 2000000; // 2 Mbps
           break;
         default:
-          videoSize = '1280x720';
-          fps = '30';
           constraints = {
-            'width': {'min': 1280, 'ideal': 1280},
-            'height': {'min': 720, 'ideal': 720},
-            'frameRate': {'min': 24, 'ideal': 30},
-            'facingMode': 'environment',
-            'aspectRatio': 16.0 / 9.0,
+            'video': {
+              'facingMode': 'environment',
+              'width': 1280,
+              'height': 720,
+              'frameRate': 30,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 1280, 'ideal': 1280, 'max': 1280},
+                  'height': {'min': 720, 'ideal': 720, 'max': 720},
+                  'frameRate': {'min': 30, 'ideal': 30, 'max': 30},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
           };
+          targetBitrate = 1500000; // 1.5 Mbps
       }
 
-      // Добавляем дополнительные параметры для улучшения качества
-      constraints['advanced'] = [
-        {
-          'exposureMode': 'continuous',
-          'focusMode': 'continuous',
-          'whiteBalanceMode': 'continuous',
+      // Применяем новые ограничения к существующему потоку
+      await _mediaManager.updateStreamWithConstraints(constraints);
+
+      // Обновляем WebRTC соединение с новым потоком
+      if (_mediaManager.localStream != null) {
+        await _webrtc.updateStream(_mediaManager.localStream!);
+
+        // Применяем новый битрейт
+        final senders = await _webrtc.getSenders();
+        for (var sender in senders) {
+          if (sender.track?.kind == 'video') {
+            final parameters = sender.parameters;
+            if (parameters.encodings != null) {
+              parameters.encodings![0].maxBitrate = targetBitrate;
+              parameters.encodings![0].minBitrate = targetBitrate ~/ 2;
+              await sender.setParameters(parameters);
+            }
+          }
         }
-      ];
+      }
 
-      // Создаем новый поток с улучшенными настройками
-      final mediaConstraints = {
-        'audio': false,
-        'video': constraints,
-      };
-
-      // Обновляем поток через медиа-менеджер
-      await _mediaManager.updateStreamWithConstraints(mediaConstraints);
-
-      _addMessage('Stream quality changed successfully to: $quality');
+      _addMessage(
+          'Stream quality changed successfully to: $quality with bitrate ${targetBitrate ~/ 1000}kbps');
       onQualityChanged?.call(quality);
       onStateChange?.call();
     } catch (e) {
@@ -608,13 +672,10 @@ class BroadcasterManager {
       _addMessage('Stopping broadcast...');
       _inCalling = false;
 
-      // Останавливаем WebRTC соединение
       await _webrtc.close();
 
-      // Останавливаем сервер сигналинга
       await _signaling.stop();
 
-      // Очищаем data channels
       _dataChannels.clear();
 
       _currentReceiverUrl = null;
@@ -635,7 +696,6 @@ class BroadcasterManager {
     try {
       _addMessage('Stream updated, updating WebRTC connection...');
 
-      // Обновляем поток в WebRTC соединении
       await _webrtc.updateStream(stream);
 
       _addMessage('WebRTC connection updated with new stream');
@@ -656,8 +716,6 @@ class BroadcasterManager {
     final now = DateTime.now();
     final timeSinceLastCheck = now.difference(_lastThermalCheck);
 
-    // Простая эвристика: если прошло много времени с начала трансляции
-    // и устройство может нагреваться, включаем энергосберегающий режим
     if (timeSinceLastCheck.inMinutes > 3 && _inCalling && !_isPowerSaveMode) {
       _addMessage('Enabling power save mode to prevent overheating');
       _enablePowerSaveMode();
@@ -673,10 +731,8 @@ class BroadcasterManager {
       _isPowerSaveMode = true;
       _addMessage('Power save mode enabled');
 
-      // Автоматически снижаем качество до среднего
       _handleQualityChange('medium');
 
-      // Уведомляем о включении энергосберегающего режима
       onQualityChanged?.call('power_save');
       onStateChange?.call();
     } catch (e) {

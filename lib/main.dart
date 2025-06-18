@@ -148,7 +148,6 @@ class ShineApp extends StatelessWidget {
               },
             );
           }
-          // В случае ошибки аутентификации тоже показываем экран входа
           return const LoginScreen();
         },
       ),

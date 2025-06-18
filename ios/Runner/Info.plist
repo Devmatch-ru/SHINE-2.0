@@ -3,9 +3,27 @@
 <plist version="1.0">
 <dict>
     <key>NSCameraUsageDescription</key>
-    <string>Приложение Shine использует камеру для съёмки</string>
+    <string>Приложению требуется доступ к камере для трансляции видео</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Приложению требуется доступ к микрофону для записи видео</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Приложению требуется доступ к галерее для сохранения фото и видео</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Приложение Shine сохраняет фото в галерею</string>
+    <string>Приложению требуется доступ к галерее для сохранения фото и видео</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Приложению требуется доступ к локальной сети для поиска устройств и трансляции</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_shine._tcp</string>
+        <string>_shine._udp</string>
+    </array>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Требуется для обнаружения Wi-Fi сетей в локальной сети</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

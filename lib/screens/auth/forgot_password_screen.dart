@@ -21,7 +21,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   String extractErrorText(Object e) {
     var text = e.toString();
 
-    // Извлекаем сообщение об ошибке из JSON ответа
     if (text.contains('"error":')) {
       final errorStart = text.indexOf('"error":') + 8;
       final errorEnd = text.indexOf('"', errorStart);
@@ -30,13 +29,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       }
     }
 
-    // Убираем технические детали
     text = text
         .replaceAll('Exception: ', '')
         .replaceAll('Network error: ', '')
         .replaceAll('Request failed with status: ', '');
 
-    // Если это ответ сервера с ошибкой, извлекаем только сообщение
     if (text.contains('Body:')) {
       try {
         final bodyStart = text.indexOf('Body:') + 5;

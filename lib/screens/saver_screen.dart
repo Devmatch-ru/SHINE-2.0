@@ -6,7 +6,7 @@ class SaverScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFDBD4FF), // запасной цвет фона
+      backgroundColor: const Color(0xFFDBD4FF),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

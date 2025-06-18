@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String extractErrorText(Object e) {
     var text = e.toString();
 
-    // Извлекаем сообщение об ошибке из JSON ответа
     if (text.contains('"error":')) {
       final errorStart = text.indexOf('"error":') + 8;
       final errorEnd = text.indexOf('"', errorStart);
@@ -36,13 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
 
-    // Убираем технические детали
     text = text
         .replaceAll('Exception: ', '')
         .replaceAll('Network error: ', '')
         .replaceAll('Request failed with status: ', '');
 
-    // Если это ответ сервера с ошибкой, извлекаем только сообщение
     if (text.contains('Body:')) {
       try {
         final bodyStart = text.indexOf('Body:') + 5;
@@ -58,7 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signIn() async {
-    // Валидация
     final emailError = validateEmail(_email.text.trim());
     final passwordError = validatePassword(_password.text);
 
@@ -78,7 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final api = ApiService();
-      // Пытаемся аутентифицироваться
       final authResponse = await api.authenticate(UserModel(
         email: _email.text.trim(),
         password: _password.text,
@@ -86,12 +81,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         if (authResponse['success'] == true) {
-          // Отправляем код подтверждения только при успешной авторизации
           final codeResponse = await api.sendCode(_email.text.trim());
 
           if (mounted) {
             if (codeResponse['success'] == true) {
-              // После успешной отправки кода переходим на экран ввода
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => VerificationCodeScreen(
@@ -99,7 +92,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     type: VerificationType.enterAccount,
                     skipCodeSending: true,
                     onSuccess: (email, _) {
-                      // После успешной верификации входим в аккаунт
                       context.read<AuthCubit>().signIn(
                             email,
                             _password.text,

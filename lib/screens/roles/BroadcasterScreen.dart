@@ -32,7 +32,6 @@ class BroadcasterScreen extends StatelessWidget {
 class _BroadcasterScreenContent extends StatelessWidget {
   const _BroadcasterScreenContent();
 
-  // Adaptive sizes
   double _getIconSize(BuildContext context) =>
       MediaQuery.of(context).size.width * 0.07;
   double _getShutterSize(BuildContext context) =>
@@ -71,7 +70,6 @@ class _BroadcasterScreenContent extends StatelessWidget {
           );
         }
 
-        // Show loading state during initialization
         if (state is BroadcasterInitial) {
           return const Scaffold(
             backgroundColor: Colors.black,
@@ -87,7 +85,6 @@ class _BroadcasterScreenContent extends StatelessWidget {
           backgroundColor: Colors.black,
           body: Stack(
             children: [
-              // Полноэкранное видео
               Positioned.fill(
                 child: state.isInitializing
                     ? Container(color: Colors.black)
@@ -98,7 +95,7 @@ class _BroadcasterScreenContent extends StatelessWidget {
                       ),
               ),
 
-              // Размытый заголовок (10% от высоты экрана)
+              // Хэдэр
               Positioned(
                 top: 0,
                 left: 0,
@@ -324,7 +321,7 @@ class _BroadcasterScreenContent extends StatelessWidget {
                             },
                           ),
 
-                          // Центральная кнопка захвата/записи
+                          // Центральная кнопка
                           GestureDetector(
                             onTap: state.isTimerActive
                                 ? null

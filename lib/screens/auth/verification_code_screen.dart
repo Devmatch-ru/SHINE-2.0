@@ -19,10 +19,10 @@ enum VerificationType {
 
 class VerificationCodeScreen extends StatefulWidget {
   final String email;
-  final String? password; // Используется только для регистрации
+  final String? password;
   final VerificationType type;
   final Function(String email, String? password)? onSuccess;
-  final bool skipCodeSending; // Пропустить отправку кода при открытии экрана
+  final bool skipCodeSending;
 
   const VerificationCodeScreen({
     super.key,
@@ -121,7 +121,6 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
   String extractErrorText(Object e) {
     var text = e.toString();
 
-    // Обработка известных ошибок
     if (text.contains('Invalid verification code')) {
       return 'Неверный код подтверждения';
     }
@@ -132,7 +131,6 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
       return 'Слишком много попыток. Попробуйте позже';
     }
 
-    // Извлекаем сообщение об ошибке из JSON ответа
     if (text.contains('"error":')) {
       final errorStart = text.indexOf('"error":') + 8;
       final errorEnd = text.indexOf('"', errorStart);
@@ -141,13 +139,11 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
       }
     }
 
-    // Убираем технические детали
     text = text
         .replaceAll('Exception: ', '')
         .replaceAll('Network error: ', '')
         .replaceAll('Request failed with status: ', '');
 
-    // Если это ответ сервера с ошибкой, извлекаем только сообщение
     if (text.contains('Body:')) {
       try {
         final bodyStart = text.indexOf('Body:') + 5;
@@ -185,7 +181,7 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         case VerificationType.registration:
           await api.verifyCode(codeInt);
           if (mounted) {
-            _resendTimer?.cancel(); // Останавливаем таймер
+            _resendTimer?.cancel();
             if (widget.onSuccess != null) {
               widget.onSuccess!(widget.email, widget.password);
             }
@@ -194,9 +190,8 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
           break;
 
         case VerificationType.passwordReset:
-          // Для сброса пароля не нужно верифицировать код
           if (mounted) {
-            _resendTimer?.cancel(); // Останавливаем таймер
+            _resendTimer?.cancel();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => ResetPasswordScreen(
@@ -212,11 +207,10 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         case VerificationType.accountDeletion:
           await api.deleteAccountWithCode(codeInt);
           if (mounted) {
-            _resendTimer?.cancel(); // Останавливаем таймер
+            _resendTimer?.cancel();
             if (widget.onSuccess != null) {
               widget.onSuccess!(widget.email, null);
             } else {
-              // Сбрасываем все состояния
               context.read<AuthCubit>().signOut();
               context.read<RoleCubit>().reset();
               context.read<onb.OnboardingCubit>().reset();

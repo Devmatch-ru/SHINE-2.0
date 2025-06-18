@@ -22,7 +22,6 @@ class ReceiverScreen extends StatelessWidget {
 class _ReceiverScreenContent extends StatelessWidget {
   const _ReceiverScreenContent();
 
-  // Adaptive sizes
   double _getIconSize(BuildContext context) =>
       MediaQuery.of(context).size.width * 0.07;
   double _getShutterSize(BuildContext context) =>
@@ -32,7 +31,55 @@ class _ReceiverScreenContent extends StatelessWidget {
 
   void _handleError(BuildContext context, String error) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error)),
+      SnackBar(
+        content: Text(error),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showConnectionStatus(BuildContext context, ReceiverState state) {
+    final messages = context.read<ReceiverCubit>().debugMessages;
+    if (messages.isNotEmpty) {
+      print('Last debug message: ${messages.last}');
+    }
+
+    String status = 'Статус подключения:\n';
+    status +=
+        state.isConnected ? '✅ Соединение активно\n' : '❌ Нет соединения\n';
+    status += state.remoteStream != null
+        ? '✅ Видео поток активен\n'
+        : '❌ Нет видео потока\n';
+    status += state.connectedBroadcaster != null
+        ? '✅ Broadcaster подключен\n'
+        : '❌ Нет подключенного broadcaster\n';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Статус подключения'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(status),
+              const Divider(),
+              const Text('Последние события:'),
+              const SizedBox(height: 8),
+              ...messages.reversed.take(5).map((msg) =>
+                  Text('• $msg', style: const TextStyle(fontSize: 12))),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Закрыть'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -48,7 +95,6 @@ class _ReceiverScreenContent extends StatelessWidget {
         final size = MediaQuery.of(context).size;
         final isPortrait = size.height > size.width;
 
-        // Проверка ориентации экрана
         if (!isPortrait) {
           return const Scaffold(
             backgroundColor: Colors.black,
@@ -61,7 +107,6 @@ class _ReceiverScreenContent extends StatelessWidget {
           );
         }
 
-        // Show loading state during initialization
         if (state.isInitializing) {
           return const Scaffold(
             backgroundColor: Colors.black,
@@ -77,7 +122,6 @@ class _ReceiverScreenContent extends StatelessWidget {
           backgroundColor: Colors.black,
           body: Stack(
             children: [
-              // Полноэкранное видео
               Positioned.fill(
                 child: state.isConnected && state.remoteStream != null
                     ? RTCVideoView(
@@ -88,18 +132,29 @@ class _ReceiverScreenContent extends StatelessWidget {
                     : Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
+                          children: [
+                            const Icon(
                               Icons.wifi_tethering,
                               color: Colors.white54,
                               size: 48,
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             Text(
-                              'Ожидание подключения...',
-                              style: TextStyle(
+                              state.isConnected
+                                  ? 'Подключено, ожидание видео потока...'
+                                  : 'Ожидание подключения...',
+                              style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () =>
+                                  _showConnectionStatus(context, state),
+                              child: const Text(
+                                'Показать статус подключения',
+                                style: TextStyle(color: Colors.blue),
                               ),
                             ),
                           ],
@@ -107,7 +162,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                       ),
               ),
 
-              // Размытый заголовок (10% от высоты экрана)
+              // Хэдэр
               Positioned(
                 top: 0,
                 left: 0,
@@ -162,7 +217,7 @@ class _ReceiverScreenContent extends StatelessWidget {
               // Новый селектор качества под шапкой
               if (state.isConnected)
                 Positioned(
-                  top: size.height * 0.12, // Располагаем под шапкой
+                  top: size.height * 0.12,
                   left: 20,
                   right: 20,
                   child: Center(
@@ -228,83 +283,11 @@ class _ReceiverScreenContent extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // Кнопка отладки
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          child: GestureDetector(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.black87,
-                                builder: (ctx) => Container(
-                                  padding: const EdgeInsets.all(16),
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.5,
-                                  child: Column(
-                                    children: [
-                                      const Text(
-                                        'Отладочные сообщения',
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 18),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Expanded(
-                                        child: ListView.builder(
-                                          itemCount: context
-                                              .read<ReceiverCubit>()
-                                              .debugMessages
-                                              .length,
-                                          reverse: true,
-                                          itemBuilder: (context, index) {
-                                            final messages = context
-                                                .read<ReceiverCubit>()
-                                                .debugMessages;
-                                            final message = messages[
-                                                messages.length - 1 - index];
-                                            return Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 2),
-                                              child: Text(
-                                                message,
-                                                style: const TextStyle(
-                                                  color: Colors.white70,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                'ОТЛАДКА',
-                                style: AppTextStyles.body.copyWith(
-                                  color: Colors.white.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Основные элементы управления в новом порядке
+                        // Основные элементы управления
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            // Кнопка фонарика с динамической иконкой
+                            // Кнопка фонарика
                             IconButton(
                               icon: Image.asset(
                                 context.read<ReceiverCubit>().isFlashOn
@@ -321,7 +304,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content:
-                                        Text('🔦 Команда: Переключить фонарик'),
+                                        Text('Команда: Переключить фонарик'),
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
@@ -336,7 +319,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                                     .sendCommand(CommandType.photo);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('📸 Команда: Сделать фото'),
+                                    content: Text('Команда: Сделать фото'),
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
@@ -362,8 +345,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                                     .sendCommand(CommandType.timer);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content:
-                                        Text('⏱️ Команда: Запустить таймер'),
+                                    content: Text('Команда: Запустить таймер'),
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
@@ -375,6 +357,43 @@ class _ReceiverScreenContent extends StatelessWidget {
                     ),
                   ),
                 ),
+
+              // Добавляем индикатор состояния в верхний правый угол
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 10,
+                right: 60,
+                child: GestureDetector(
+                  onTap: () => _showConnectionStatus(context, state),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          state.isConnected ? Icons.link : Icons.link_off,
+                          color: state.isConnected ? Colors.green : Colors.red,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          state.remoteStream != null
+                              ? Icons.videocam
+                              : Icons.videocam_off,
+                          color: state.remoteStream != null
+                              ? Colors.green
+                              : Colors.red,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -393,7 +412,6 @@ class _ReceiverScreenContent extends StatelessWidget {
     }
   }
 
-  // Вспомогательный метод для создания кнопки качества
   Widget _buildQualityButton(
     BuildContext context,
     String text,

@@ -49,9 +49,13 @@ class WebRTCConnection {
   RTCSessionDescription? get offer => _offer;
   List<RTCIceCandidate> get candidates => _candidates;
   MediaStream? get remoteStream => _remoteStream;
-  bool get isConnected =>
-      _pc?.connectionState ==
-      RTCPeerConnectionState.RTCPeerConnectionStateConnected;
+  bool get isConnected {
+    final isConnected = _pc?.connectionState ==
+        RTCPeerConnectionState.RTCPeerConnectionStateConnected;
+    final hasOpenDataChannel = _dataChannels.values.any(
+        (channel) => channel.state == RTCDataChannelState.RTCDataChannelOpen);
+    return isConnected && hasOpenDataChannel;
+  }
 
   Future<void> createConnection(MediaStream? localStream,
       {bool isBroadcaster = true}) async {
@@ -73,10 +77,21 @@ class WebRTCConnection {
         'rtcpMuxPolicy': 'require',
         'iceCandidatePoolSize': 1,
         'enableDtlsSrtp': true,
-        'enableRtpDataChannels': false, // Используем SCTP data channels
+        'enableRtpDataChannels': true,
+        'iceServersTransportPolicy': 'all',
+        'optional': [
+          {'DtlsSrtpKeyAgreement': true},
+          {'RtpDataChannels': true},
+          {'googHighStartBitrate': true},
+          {'googCpuOveruseDetection': true},
+          {'googCpuOveruseEncodeUsage': true},
+          {'googCpuUnderuseThreshold': 55},
+          {'googCpuOveruseThreshold': 85},
+          {'googScreencastMinBitrate': 400},
+          {'googVeryHighBitrate': true}
+        ]
       };
 
-      _onLog('Creating peer connection with optimized config');
       _pc = await createPeerConnection(config);
       _setupConnectionHandlers();
 
@@ -92,21 +107,18 @@ class WebRTCConnection {
           await _optimizeSenderParameters(rtpSender);
         }
 
-        // Создаем data channel с надежной доставкой для команд
         _onLog('Creating reliable data channel for commands...');
         final dataChannel = await _pc!.createDataChannel(
           'commands',
           RTCDataChannelInit()
             ..ordered = true
-            ..maxRetransmits =
-                3 // Небольшое количество повторных передач для надежности
+            ..maxRetransmits = 3
             ..protocol = 'sctp'
-            ..negotiated = false, // Позволяем автоматическое согласование
+            ..negotiated = false,
         );
 
         _dataChannels[_pc!] = dataChannel;
         _setupDataChannel(dataChannel);
-        _onLog('Data channel created and setup completed');
 
         _onLog('Creating optimized offer...');
         _offer = await _pc!.createOffer({
@@ -121,7 +133,6 @@ class WebRTCConnection {
         sdp = _modifySdpForHighQuality(sdp!);
         _offer = RTCSessionDescription(sdp, _offer!.type);
 
-        _onLog('Setting local description...');
         await _pc!.setLocalDescription(_offer!);
         _onLog('Local description set successfully');
       }
@@ -134,33 +145,36 @@ class WebRTCConnection {
   String _modifySdpForHighQuality(String sdp) {
     var lines = sdp.split('\r\n');
     var newLines = <String>[];
+    bool isVideoSection = false;
 
     for (var line in lines) {
-      // Увеличиваем битрейт для видео
-      if (line.startsWith('b=AS:')) {
-        newLines.add('b=AS:2500'); // Увеличиваем до 2.5 Mbps
-        continue;
-      }
-
-      // Устанавливаем высокий приоритет для видео
       if (line.startsWith('m=video')) {
+        isVideoSection = true;
         newLines.add(line);
-        newLines.add('b=AS:2500');
+        newLines.add('b=AS:2000');
         newLines.add('a=content:main');
         newLines.add('a=priority:high');
+        newLines.add('a=x-google-min-bitrate:500');
+        newLines.add('a=x-google-max-bitrate:2000');
+        newLines.add('a=x-google-start-bitrate:1000');
+        newLines.add('a=x-google-cpu-usage-percent:80');
+        newLines.add('a=x-google-min-cpu-usage-percent:20');
         continue;
       }
 
-      // Оптимизируем параметры кодека
-      if (line.startsWith('a=fmtp:')) {
+      if (isVideoSection && line.startsWith('a=fmtp:')) {
         if (line.contains('VP8')) {
-          newLines.add('$line;max-fs=12288;max-fr=30');
+          newLines.add('$line;max-fs=8192;max-fr=30;max-mbps=108000');
           continue;
         } else if (line.contains('H264')) {
           newLines.add(
-              '$line;profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1');
+              '$line;profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1;x-google-start-bitrate=1000;x-google-max-bitrate=2000;x-google-min-bitrate=500');
           continue;
         }
+      }
+
+      if (line.startsWith('m=audio')) {
+        isVideoSection = false;
       }
 
       newLines.add(line);
@@ -175,19 +189,15 @@ class WebRTCConnection {
 
       if (params.encodings != null && params.encodings!.isNotEmpty) {
         for (var encoding in params.encodings!) {
-          // Увеличиваем битрейт
-          encoding.maxBitrate = 2500000; // 2.5 Mbps
+          encoding.maxBitrate = 2000000; // 2 Mbps
           encoding.minBitrate = 500000; // 500 Kbps минимум
-
-          // Оптимизируем FPS
           encoding.maxFramerate = 30;
-
-          // Отключаем масштабирование для сохранения качества
           encoding.scaleResolutionDownBy = 1.0;
+          encoding.active = true;
         }
 
         await sender.setParameters(params);
-        _onLog('Optimized sender parameters for high quality');
+        _onLog('Optimized sender parameters for lower latency');
       }
     } catch (e) {
       _onLog('Error optimizing sender parameters: $e');
@@ -201,9 +211,10 @@ class WebRTCConnection {
       _onLog('Data channel state changed to: $state');
       if (state == RTCDataChannelState.RTCDataChannelOpen) {
         _onLog('Data channel is now OPEN and ready for communication');
-      } else if (state == RTCDataChannelState.RTCDataChannelClosed) {
-        _onLog('Data channel is now CLOSED');
-        // Пробуем пересоздать data channel при закрытии
+        _sendTestMessage(channel);
+      } else if (state == RTCDataChannelState.RTCDataChannelClosed ||
+          state == RTCDataChannelState.RTCDataChannelClosing) {
+        _onLog('Data channel is closing/closed');
         if (_pc?.connectionState ==
             RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
           _recreateDataChannel();
@@ -222,19 +233,15 @@ class WebRTCConnection {
             _onLog('Received command: $command');
             onCommandReceived?.call(command);
 
-            // Handle specific commands
             switch (command) {
               case 'capture_photo':
                 onCapturePhoto?.call();
                 break;
               case 'toggle_video':
-                // This will be handled by the broadcaster
                 break;
               case 'toggle_flashlight':
-                // This will be handled by the broadcaster
                 break;
               case 'start_timer':
-                // This will be handled by the broadcaster
                 break;
             }
           } else if (data['type'] == 'quality_change') {
@@ -257,20 +264,72 @@ class WebRTCConnection {
   Future<void> _recreateDataChannel() async {
     try {
       _onLog('Attempting to recreate data channel...');
-      final dataChannel = await _pc!.createDataChannel(
-        'commands',
-        RTCDataChannelInit()
-          ..ordered = true
-          ..maxRetransmits = 3
-          ..protocol = 'sctp'
-          ..negotiated = false,
-      );
 
-      _dataChannels[_pc!] = dataChannel;
-      _setupDataChannel(dataChannel);
-      _onLog('Data channel recreated successfully');
+      for (var channel in _dataChannels.values) {
+        await channel.close();
+      }
+      _dataChannels.clear();
+
+      int attempts = 0;
+      const maxAttempts = 3;
+      bool success = false;
+
+      while (!success && attempts < maxAttempts) {
+        try {
+          final dataChannel = await _pc!.createDataChannel(
+            'commands',
+            RTCDataChannelInit()
+              ..ordered = true
+              ..maxRetransmits = 3
+              ..protocol = 'sctp'
+              ..negotiated = false,
+          );
+
+          _dataChannels[_pc!] = dataChannel;
+          _setupDataChannel(dataChannel);
+
+          int waitAttempts = 0;
+          while (dataChannel.state != RTCDataChannelState.RTCDataChannelOpen &&
+              waitAttempts < 50) {
+            await Future.delayed(const Duration(milliseconds: 100));
+            waitAttempts++;
+          }
+
+          if (dataChannel.state == RTCDataChannelState.RTCDataChannelOpen) {
+            _onLog('Data channel recreated and opened successfully');
+            success = true;
+          } else {
+            throw Exception('Data channel did not open in time');
+          }
+        } catch (e) {
+          attempts++;
+          _onLog('Attempt $attempts failed: $e');
+          if (attempts < maxAttempts) {
+            await Future.delayed(Duration(seconds: attempts));
+          }
+        }
+      }
+
+      if (!success) {
+        _onLog('Failed to recreate data channel after $maxAttempts attempts');
+        onConnectionFailed?.call();
+      }
     } catch (e) {
       _onLog('Error recreating data channel: $e');
+      onConnectionFailed?.call();
+    }
+  }
+
+  Future<void> _sendTestMessage(RTCDataChannel channel) async {
+    try {
+      final testMessage = jsonEncode({
+        'type': 'test',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+      await channel.send(RTCDataChannelMessage(testMessage));
+      _onLog('Test message sent successfully');
+    } catch (e) {
+      _onLog('Error sending test message: $e');
     }
   }
 
@@ -281,7 +340,6 @@ class WebRTCConnection {
 
       _onLog('Sending ${type.name} in $totalChunks chunks...');
 
-      // Отправляем метаданные сначала
       final metadataMessage = jsonEncode({
         'type': 'media_metadata',
         'mediaType': type == MediaType.photo ? 'photo' : 'video',
@@ -296,11 +354,9 @@ class WebRTCConnection {
       for (var channel in _dataChannels.values) {
         if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
           try {
-            // Сначала отправляем метаданные
             await channel.send(RTCDataChannelMessage(metadataMessage));
             _onLog('Sent metadata for ${type.name}');
 
-            // Отправляем файл по частям
             for (var i = 0; i < totalChunks; i++) {
               var retryCount = 0;
               bool chunkSent = false;
@@ -312,11 +368,9 @@ class WebRTCConnection {
                   final chunk = bytes.sublist(
                       start, end > bytes.length ? bytes.length : end);
 
-                  // Отправляем чанк
                   await channel.send(RTCDataChannelMessage.fromBinary(chunk));
                   _onLog('Sent chunk ${i + 1}/$totalChunks');
 
-                  // Уведомляем о прогрессе
                   onTransferProgress?.call(
                     media.name,
                     type == MediaType.photo ? 'photo' : 'video',
@@ -336,13 +390,11 @@ class WebRTCConnection {
                         'Failed to send chunk after $_maxRetries attempts');
                   }
 
-                  // Ждем перед повторной попыткой
                   await Future.delayed(
                       Duration(milliseconds: _retryDelayBaseMs * retryCount));
                 }
               }
 
-              // Небольшая задержка между чанками
               await Future.delayed(Duration(milliseconds: _chunkDelayMs));
             }
 
@@ -350,7 +402,7 @@ class WebRTCConnection {
             sentToAny = true;
           } catch (e) {
             _onLog('Error sending to channel: $e');
-            continue; // Пробуем следующий канал если есть
+            continue;
           }
         }
       }
@@ -372,6 +424,7 @@ class WebRTCConnection {
       _onLog('Connection state changed to: $state');
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
         _onLog('Successfully connected');
+        _verifyDataChannelState();
       } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
           state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
         _onLog('Connection failed or disconnected');
@@ -503,17 +556,13 @@ class WebRTCConnection {
         _onLog(
             'Found existing sender for ${newTrack.kind}, replacing track...');
 
-        // Получаем текущие параметры
         var params = sender.parameters;
 
-        // Настраиваем параметры для лучшего качества
         params.degradationPreference =
             RTCDegradationPreference.MAINTAIN_RESOLUTION;
 
-        // Применяем параметры
         await sender.setParameters(params);
 
-        // Заменяем трек
         await sender.replaceTrack(newTrack);
 
         _onLog('Track replaced successfully: ${newTrack.kind}');
@@ -527,7 +576,6 @@ class WebRTCConnection {
     }
   }
 
-  // Метод для обновления всего потока
   Future<void> updateStream(MediaStream newStream) async {
     try {
       _onLog('Updating entire stream...');
@@ -571,7 +619,6 @@ class WebRTCConnection {
     _onLog('WebRTC connection closed');
   }
 
-  // Метод для отправки команд через Data Channel
   Future<bool> sendCommand(String command, Map<String, dynamic> data) async {
     try {
       for (var channel in _dataChannels.values) {
@@ -588,5 +635,27 @@ class WebRTCConnection {
       _onLog('Error sending command via data channel: $e');
       return false;
     }
+  }
+
+  Future<void> _verifyDataChannelState() async {
+    if (_dataChannels.isEmpty) {
+      _onLog('No data channels exist, creating new one...');
+      await _recreateDataChannel();
+      return;
+    }
+
+    final hasOpenChannel = _dataChannels.values.any(
+        (channel) => channel.state == RTCDataChannelState.RTCDataChannelOpen);
+
+    if (!hasOpenChannel) {
+      _onLog('No open data channels found, recreating...');
+      await _recreateDataChannel();
+    } else {
+      _onLog('Data channel verified and open');
+    }
+  }
+
+  List<RTCRtpSender> getSenders() {
+    return _senders;
   }
 }

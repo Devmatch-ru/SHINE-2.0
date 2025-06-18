@@ -26,7 +26,7 @@ class _AuthServiceImpl implements AuthService {
 
   @override
   Future<void> signInWithEmail(String email, String password) async {
-    // TODO: call backend
+    // TODO
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyEmail, email);
     await prefs.setBool(_keyIsLoggedIn, true);
@@ -34,7 +34,7 @@ class _AuthServiceImpl implements AuthService {
 
   @override
   Future<void> signUpWithEmail(String email, String password) async {
-    // TODO: call backend
+    // TODO
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyEmail, email);
     await prefs.setBool(_keyIsLoggedIn, true);

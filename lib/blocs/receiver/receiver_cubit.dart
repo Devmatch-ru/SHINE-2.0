@@ -38,35 +38,76 @@ class ReceiverCubit extends Cubit<ReceiverState> {
   }
 
   void _handleStateChange() {
-    _reconnectTimer
-        ?.cancel(); // Отменяем таймер переподключения при изменении состояния
+    _reconnectTimer?.cancel();
 
     if (_manager.isConnected && _manager.remoteStream != null) {
-      _reconnectAttempts =
-          0; // Сбрасываем счетчик попыток при успешном подключении
+      _reconnectAttempts = 0;
 
-      emit(ReceiverConnected(
-        stream: _manager.remoteStream!,
-        broadcaster: _manager.connectedBroadcaster!,
-        streamQuality: state.streamQuality,
-      ));
+      final currentState = state;
+      if (currentState is ReceiverConnected) {
+        if (currentState.remoteStream != _manager.remoteStream ||
+            currentState.connectedBroadcaster !=
+                _manager.connectedBroadcaster) {
+          emit(ReceiverConnected(
+            remoteStream: _manager.remoteStream!,
+            connectedBroadcaster: _manager.connectedBroadcaster!,
+            streamQuality: currentState.streamQuality,
+          ));
+        }
+      } else {
+        emit(ReceiverConnected(
+          remoteStream: _manager.remoteStream!,
+          connectedBroadcaster: _manager.connectedBroadcaster!,
+          streamQuality: state.streamQuality,
+        ));
+      }
     } else {
-      _startReconnection();
+      if (_manager.isConnected) {
+        if (!(state is ReceiverConnected)) {
+          emit(ReceiverConnected(
+            remoteStream: null,
+            connectedBroadcaster: _manager.connectedBroadcaster!,
+            streamQuality: state.streamQuality,
+          ));
+        }
+      } else {
+        if (!(state is ReceiverDisconnected)) {
+          emit(ReceiverDisconnected(streamQuality: state.streamQuality));
+        }
+        _startReconnection();
+      }
     }
   }
 
   void _handleStreamChanged(MediaStream? stream) {
     _remoteRenderer.srcObject = stream;
+
     if (stream != null && _manager.connectedBroadcaster != null) {
-      _reconnectAttempts = 0; // Сбрасываем счетчик попыток при получении стрима
+      _reconnectAttempts = 0;
       _reconnectTimer?.cancel();
 
-      emit(ReceiverConnected(
-        stream: stream,
-        broadcaster: _manager.connectedBroadcaster!,
-        streamQuality: state.streamQuality,
-      ));
+      final currentState = state;
+      if (currentState is ReceiverConnected) {
+        if (currentState.remoteStream != stream ||
+            currentState.connectedBroadcaster !=
+                _manager.connectedBroadcaster) {
+          emit(ReceiverConnected(
+            remoteStream: stream,
+            connectedBroadcaster: _manager.connectedBroadcaster!,
+            streamQuality: currentState.streamQuality,
+          ));
+        }
+      } else {
+        emit(ReceiverConnected(
+          remoteStream: stream,
+          connectedBroadcaster: _manager.connectedBroadcaster!,
+          streamQuality: state.streamQuality,
+        ));
+      }
     } else {
+      if (!(state is ReceiverDisconnected)) {
+        emit(ReceiverDisconnected(streamQuality: state.streamQuality));
+      }
       _startReconnection();
     }
   }
@@ -75,10 +116,14 @@ class ReceiverCubit extends Cubit<ReceiverState> {
     print('Receiver error: $error');
 
     if (!error.contains('Max reconnection attempts reached')) {
-      _startReconnection();
+      if (!(state is ReceiverError)) {
+        _startReconnection();
+      }
     }
 
-    emit(ReceiverError(error));
+    if (state is! ReceiverError || (state as ReceiverError).error != error) {
+      emit(ReceiverError(error));
+    }
   }
 
   void _startReconnection() {
@@ -88,8 +133,7 @@ class ReceiverCubit extends Cubit<ReceiverState> {
     }
 
     _reconnectAttempts++;
-    final delay =
-        Duration(seconds: _reconnectAttempts * 2); // Экспоненциальная задержка
+    final delay = Duration(seconds: _reconnectAttempts * 2);
 
     print(
         'Starting reconnection attempt $_reconnectAttempts after ${delay.inSeconds} seconds');
@@ -98,7 +142,7 @@ class ReceiverCubit extends Cubit<ReceiverState> {
     _reconnectTimer = Timer(delay, () {
       if (state is! ReceiverConnected) {
         emit(ReceiverDisconnected(streamQuality: state.streamQuality));
-        // Попытка переподключения к последнему известному broadcaster
+
         if (_manager.connectedBroadcaster != null) {
           _manager.switchToPrimaryBroadcaster(_manager.connectedBroadcaster!);
         }
@@ -108,7 +152,6 @@ class ReceiverCubit extends Cubit<ReceiverState> {
 
   void _handleMediaReceived(String mediaType, String filePath) {
     try {
-      // Сохраняем медиафайл в галерею
       if (mediaType.toLowerCase() == 'photo') {
         GallerySaver.saveImage(filePath, albumName: 'Shine')
             .then((_) => print('Photo saved to gallery: $filePath'))
@@ -130,8 +173,8 @@ class ReceiverCubit extends Cubit<ReceiverState> {
       if (state is ReceiverConnected) {
         final currentState = state as ReceiverConnected;
         emit(ReceiverConnected(
-          stream: currentState.remoteStream!,
-          broadcaster: currentState.connectedBroadcaster!,
+          remoteStream: currentState.remoteStream,
+          connectedBroadcaster: currentState.connectedBroadcaster!,
           streamQuality: quality,
         ));
       } else if (state is ReceiverReady) {
@@ -169,6 +212,16 @@ class ReceiverCubit extends Cubit<ReceiverState> {
       }
 
       await _manager.sendCommandToAll(commandString);
+
+      if (state is ReceiverConnected) {
+        final currentState = state as ReceiverConnected;
+        emit(ReceiverConnected(
+          remoteStream: currentState.remoteStream,
+          connectedBroadcaster: currentState.connectedBroadcaster!,
+          streamQuality: currentState.streamQuality,
+          lastCommand: commandString,
+        ));
+      }
     } catch (e) {
       _handleError(e.toString());
     }
@@ -177,7 +230,7 @@ class ReceiverCubit extends Cubit<ReceiverState> {
   void switchBroadcaster(String broadcasterUrl) {
     try {
       _manager.switchToPrimaryBroadcaster(broadcasterUrl);
-      _reconnectAttempts = 0; // Сбрасываем счетчик при ручном переключении
+      _reconnectAttempts = 0;
     } catch (e) {
       _handleError(e.toString());
     }

@@ -11,6 +11,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import './webrtc/types.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
+import './permissions_handler.dart';
 
 class ReceiverManager {
   HttpServer? _server;
@@ -42,7 +43,15 @@ class ReceiverManager {
   // Getters
   MediaStream? get remoteStream =>
       _primaryBroadcaster != null ? _remoteStreams[_primaryBroadcaster] : null;
-  bool get isConnected => _isConnected;
+  bool get isConnected {
+    final hasConnection = _connections.isNotEmpty;
+    final hasStream = _remoteStreams.isNotEmpty;
+    final hasDataChannel = _dataChannels.values.any(
+        (channel) => channel.state == RTCDataChannelState.RTCDataChannelOpen);
+
+    return hasConnection && hasStream && hasDataChannel;
+  }
+
   String? get connectedBroadcaster => _primaryBroadcaster;
   List<String> get connectedBroadcasters => List.from(_connectedBroadcasters);
   int get connectionCount => _connections.length;
@@ -50,6 +59,12 @@ class ReceiverManager {
 
   Future<void> init() async {
     try {
+      final permissionsGranted =
+          await PermissionsHandler.checkAndRequestAllPermissions();
+      if (!permissionsGranted) {
+        throw Exception('Необходимые разрешения не были предоставлены');
+      }
+
       await startDiscoveryListener();
       await _startSignalServer();
     } catch (e) {
@@ -99,7 +114,6 @@ class ReceiverManager {
 
         if (request.method == 'POST' && request.url.path == 'offer') {
           try {
-            // Verify content type
             final contentType = request.headers['content-type'];
             if (contentType == null ||
                 !contentType.contains('application/json')) {
@@ -132,7 +146,6 @@ class ReceiverManager {
 
             _addMessage('Processing offer from $broadcasterUrl');
 
-            // Close previous connection if exists
             if (_connections.containsKey(broadcasterUrl)) {
               _addMessage('Closing existing connection for $broadcasterUrl');
               await _connections[broadcasterUrl]?.close();
@@ -148,13 +161,11 @@ class ReceiverManager {
             }
             onStreamChanged?.call(null);
 
-            // Check connection limit
             if (_connections.length >= maxConnections) {
               return shelf.Response(503,
                   body: 'Maximum connections ($maxConnections) reached');
             }
 
-            // Create new connection with improved configuration
             _addMessage('Creating new WebRTC connection');
             final pc = await createPeerConnection({
               'iceServers': [
@@ -181,7 +192,6 @@ class ReceiverManager {
             _setupPeerConnectionHandlers(pc, broadcasterUrl);
             _connections[broadcasterUrl] = pc;
 
-            // Set remote description
             try {
               await pc.setRemoteDescription(offer);
               _addMessage('Remote description set successfully');
@@ -193,7 +203,6 @@ class ReceiverManager {
                   body: 'Failed to set remote description: $e');
             }
 
-            // Create and set local answer
             RTCSessionDescription? answer;
             try {
               answer = await pc.createAnswer({
@@ -300,8 +309,7 @@ class ReceiverManager {
       });
 
       _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, 8080,
-          shared: true // Enable shared binding for multiple connections
-          );
+          shared: true);
       _addMessage('Signal server started on port 8080');
     } catch (e) {
       _addMessage('Error starting signal server: $e');
@@ -318,8 +326,7 @@ class ReceiverManager {
         _addMessage('Received video track: ${event.track.id}');
         _remoteStreams[broadcasterUrl] = event.streams[0];
         onStreamChanged?.call(_remoteStreams[broadcasterUrl]);
-        _isConnected = true;
-        onStateChange?.call();
+        _verifyConnection(broadcasterUrl);
       }
     };
 
@@ -351,22 +358,45 @@ class ReceiverManager {
 
     pc.onIceConnectionState = (state) {
       if (_isDisposed) return;
-      _addMessage('ICE Connection State: $state');
-      if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
-          state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+      _addMessage('ICE connection state changed to: $state');
+
+      if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+        // При кратковременном разрыве даем шанс восстановиться
+        Future.delayed(Duration(seconds: 5), () {
+          if (pc.iceConnectionState ==
+              RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+            _handleDisconnect(broadcasterUrl);
+          }
+        });
+      } else if (state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
         _handleDisconnect(broadcasterUrl);
+      } else if (state ==
+          RTCIceConnectionState.RTCIceConnectionStateConnected) {
+        _addMessage('ICE Connection restored');
+        _isConnected = true;
+        onStateChange?.call();
       }
     };
 
     pc.onConnectionState = (state) {
       if (_isDisposed) return;
       _addMessage('Connection State: $state');
-      if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
-          state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        // При разрыве ждем 5 секунд перед полным отключением
+        Future.delayed(Duration(seconds: 5), () {
+          if (pc.connectionState ==
+              RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+            _handleDisconnect(broadcasterUrl);
+          }
+        });
+      } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
         _handleDisconnect(broadcasterUrl);
       } else if (state ==
           RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
-        _addMessage('WebRTC connection established');
+        _addMessage('Connection restored');
+        _isConnected = true;
+        onStateChange?.call();
       }
     };
   }
@@ -378,7 +408,6 @@ class ReceiverManager {
         _addMessage('Data channel is now OPEN and ready for communication');
       } else if (state == RTCDataChannelState.RTCDataChannelClosed) {
         _addMessage('Data channel is now CLOSED');
-        // Если соединение все еще активно, пробуем переподключиться
         if (_connections[broadcasterUrl]?.connectionState ==
             RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
           _handleDataChannelReconnect(broadcasterUrl);
@@ -412,28 +441,85 @@ class ReceiverManager {
     };
   }
 
-  void _handleDataChannelReconnect(String broadcasterUrl) async {
+  void _verifyConnection(String broadcasterUrl) {
+    if (_isDisposed) return;
+
+    final hasStream = _remoteStreams.containsKey(broadcasterUrl);
+    final hasDataChannel = _dataChannels[broadcasterUrl]?.state ==
+        RTCDataChannelState.RTCDataChannelOpen;
+
+    _addMessage(
+        'Verifying connection - Stream: $hasStream, DataChannel: $hasDataChannel');
+
+    if (hasStream && !hasDataChannel) {
+      _addMessage(
+          'Stream exists but no data channel, attempting to create one...');
+      _handleDataChannelReconnect(broadcasterUrl);
+    }
+
+    _isConnected = hasStream && hasDataChannel;
+    onStateChange?.call();
+  }
+
+  Future<RTCDataChannel?> _handleDataChannelReconnect(
+      String broadcasterUrl) async {
     _addMessage('Attempting to reestablish data channel for $broadcasterUrl');
+
     try {
-      // Создаем новый data channel
       final pc = _connections[broadcasterUrl];
       if (pc != null) {
-        final dataChannel = await pc.createDataChannel(
-          'commands',
-          RTCDataChannelInit()
-            ..ordered = true
-            ..maxRetransmits = 3
-            ..protocol = 'sctp'
-            ..negotiated = false,
-        );
+        // Close existing channel if any
+        if (_dataChannels[broadcasterUrl] != null) {
+          await _dataChannels[broadcasterUrl]!.close();
+          _dataChannels.remove(broadcasterUrl);
+        }
 
-        _dataChannels[broadcasterUrl] = dataChannel;
-        _setupDataChannel(dataChannel, broadcasterUrl);
-        _addMessage('Data channel recreated for $broadcasterUrl');
+        int attempts = 0;
+        const maxAttempts = 3;
+        RTCDataChannel? newChannel;
+
+        while (attempts < maxAttempts &&
+            (newChannel == null ||
+                newChannel.state != RTCDataChannelState.RTCDataChannelOpen)) {
+          try {
+            newChannel = await pc.createDataChannel(
+              'commands',
+              RTCDataChannelInit()
+                ..ordered = true
+                ..maxRetransmits = 3
+                ..protocol = 'sctp'
+                ..negotiated = false,
+            );
+
+            _dataChannels[broadcasterUrl] = newChannel;
+            _setupDataChannel(newChannel, broadcasterUrl);
+
+            // Wait for channel to open
+            int waitAttempts = 0;
+            while (newChannel.state != RTCDataChannelState.RTCDataChannelOpen &&
+                waitAttempts < 50) {
+              await Future.delayed(const Duration(milliseconds: 100));
+              waitAttempts++;
+            }
+
+            if (newChannel.state == RTCDataChannelState.RTCDataChannelOpen) {
+              _addMessage('Data channel recreated and opened successfully');
+              return newChannel;
+            }
+          } catch (e) {
+            _addMessage('Attempt ${attempts + 1} failed: $e');
+          }
+
+          attempts++;
+          if (attempts < maxAttempts) {
+            await Future.delayed(Duration(seconds: attempts));
+          }
+        }
       }
     } catch (e) {
       _addMessage('Error recreating data channel: $e');
     }
+    return null;
   }
 
   void _handleDisconnect(String broadcasterUrl) {
@@ -441,7 +527,6 @@ class ReceiverManager {
 
     _addMessage('Handling disconnect from $broadcasterUrl');
 
-    // Удаляем broadcaster из списков
     _connectedBroadcasters.remove(broadcasterUrl);
     _connections.remove(broadcasterUrl);
     _dataChannels.remove(broadcasterUrl);
@@ -454,7 +539,6 @@ class ReceiverManager {
       _remoteStreams.remove(broadcasterUrl);
     }
 
-    // Если это был основной broadcaster, выбираем нового
     if (_primaryBroadcaster == broadcasterUrl) {
       if (_connectedBroadcasters.isNotEmpty) {
         _primaryBroadcaster = _connectedBroadcasters.first;
@@ -469,7 +553,6 @@ class ReceiverManager {
     onStateChange?.call();
     onBroadcastersChanged?.call(_connectedBroadcasters);
 
-    // Пытаемся переподключиться через 3 секунды
     if (!_isDisposed) {
       Future.delayed(const Duration(seconds: 3), () {
         _attemptReconnect(broadcasterUrl);
@@ -483,27 +566,24 @@ class ReceiverManager {
     _addMessage('Attempting to reconnect to $broadcasterUrl');
 
     try {
-      // Проверяем доступность broadcaster
       final response = await http
           .get(Uri.parse('$broadcasterUrl/health'))
           .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
-        // Broadcaster доступен, пробуем переподключиться
         _addMessage('Broadcaster available, attempting reconnection...');
-        // Создаем новое подключение
         await _initializeConnection(broadcasterUrl);
       } else {
         _addMessage(
             'Broadcaster not available (status: ${response.statusCode})');
-        // Пробуем снова через 5 секунд
+
         Future.delayed(const Duration(seconds: 5), () {
           _attemptReconnect(broadcasterUrl);
         });
       }
     } catch (e) {
       _addMessage('Reconnection attempt failed: $e');
-      // Пробуем снова через 5 секунд
+
       if (!_isDisposed) {
         Future.delayed(const Duration(seconds: 5), () {
           _attemptReconnect(broadcasterUrl);
@@ -590,35 +670,50 @@ class ReceiverManager {
   }
 
   Future<void> sendCommand(String command) async {
-    if (_connections[_primaryBroadcaster] == null ||
-        _dataChannels[_primaryBroadcaster] == null) {
-      throw Exception('No active connection or data channel');
+    if (_connections[_primaryBroadcaster] == null) {
+      _addMessage('No active connection found');
+      throw Exception('No active connection');
     }
 
-    // Ждем, пока data channel откроется (максимум 10 секунд)
-    int attempts = 0;
-    while (_dataChannels[_primaryBroadcaster]!.state !=
-            RTCDataChannelState.RTCDataChannelOpen &&
-        attempts < 100) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      attempts++;
-
-      if (attempts % 10 == 0) {
-        _addMessage(
-            'Waiting for data channel to open... attempt $attempts/100');
+    if (_dataChannels[_primaryBroadcaster] == null) {
+      _addMessage('No data channel found, attempting to create one...');
+      final newChannel =
+          await _handleDataChannelReconnect(_primaryBroadcaster!);
+      if (newChannel == null) {
+        throw Exception('Failed to create data channel');
       }
     }
 
-    if (_dataChannels[_primaryBroadcaster]!.state !=
+    // Увеличиваем таймаут до 15 секунд для слабых соединений
+    int attempts = 0;
+    while (_dataChannels[_primaryBroadcaster]?.state !=
+            RTCDataChannelState.RTCDataChannelOpen &&
+        attempts < 150) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
+
+      if (attempts % 30 == 0) {
+        _addMessage(
+            'Still waiting for data channel to open... ${attempts / 10} seconds passed');
+      }
+    }
+
+    if (_dataChannels[_primaryBroadcaster]?.state !=
         RTCDataChannelState.RTCDataChannelOpen) {
-      _addMessage(
-          'Data channel state: ${_dataChannels[_primaryBroadcaster]!.state}');
-      throw Exception('Data channel is not open after waiting 10 seconds');
+      _addMessage('Data channel failed to open after 15 seconds');
+      // Пробуем пересоздать data channel
+      final newChannel =
+          await _handleDataChannelReconnect(_primaryBroadcaster!);
+      if (newChannel == null ||
+          newChannel.state != RTCDataChannelState.RTCDataChannelOpen) {
+        throw Exception('Data channel is not open after multiple attempts');
+      }
     }
 
     final commandData = jsonEncode({
       'type': 'command',
       'action': command,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
     });
 
     try {
@@ -627,6 +722,12 @@ class ReceiverManager {
       _addMessage('Successfully sent command: $command');
     } catch (e) {
       _addMessage('Error sending command: $e');
+      // Пробуем пересоздать data channel при ошибке отправки
+      final newChannel =
+          await _handleDataChannelReconnect(_primaryBroadcaster!);
+      if (newChannel == null) {
+        throw Exception('Failed to recreate data channel after send error');
+      }
       throw Exception('Failed to send command: $e');
     }
   }
@@ -715,7 +816,6 @@ class ReceiverManager {
 
   void _handleMediaMetadata(String broadcasterId, Map<String, dynamic> data) {
     _addMessage('Received media metadata from $broadcasterId');
-    // Очищаем предыдущие данные если они были
     _pendingMediaMetadata.remove(broadcasterId);
     _pendingChunks.remove(broadcasterId);
 
@@ -750,16 +850,13 @@ class ReceiverManager {
         return;
       }
 
-      // Добавляем чанк в список
       _pendingChunks[broadcasterId]!.add(binaryData);
       _addMessage(
           'Received chunk ${_pendingChunks[broadcasterId]!.length}/${metadata['totalChunks']}');
 
-      // Проверяем, получили ли все чанки
       if (_pendingChunks[broadcasterId]!.length == metadata['totalChunks']) {
         _addMessage('Received all chunks, assembling file...');
 
-        // Собираем все чанки в один файл
         final allBytes = Uint8List(metadata['fileSize']);
         var offset = 0;
         for (var chunk in _pendingChunks[broadcasterId]!) {
@@ -774,13 +871,11 @@ class ReceiverManager {
         await _saveMediaToDevice(
             broadcasterId, mediaType, allBytes, fileName, timestamp);
 
-        // Очищаем временные данные
         _pendingMediaMetadata.remove(broadcasterId);
         _pendingChunks.remove(broadcasterId);
       }
     } catch (e) {
       _addMessage('Error handling binary data: $e');
-      // Очищаем временные данные в случае ошибки
       _pendingMediaMetadata.remove(broadcasterId);
       _pendingChunks.remove(broadcasterId);
     }
@@ -791,22 +886,18 @@ class ReceiverManager {
     try {
       _addMessage('Saving $mediaType to device: $fileName');
 
-      // Создаем временную директорию для сохранения файла
       final directory = await getTemporaryDirectory();
       final mediaDir = Directory('${directory.path}/received_media');
       if (!await mediaDir.exists()) {
         await mediaDir.create(recursive: true);
       }
 
-      // Формируем путь к файлу
       final filePath = '${mediaDir.path}/${timestamp}_$fileName';
       final file = File(filePath);
 
-      // Сохраняем файл
       await file.writeAsBytes(binaryData);
       _addMessage('File saved to: $filePath');
 
-      // Сохраняем в галерею
       if (mediaType == 'photo') {
         await GallerySaver.saveImage(
           filePath,
@@ -823,7 +914,6 @@ class ReceiverManager {
         onVideoReceived?.call(broadcasterUrl, binaryData);
       }
 
-      // Уведомляем UI о новом файле
       onMediaReceived?.call(mediaType, filePath);
     } catch (e) {
       _addMessage('Error saving media to device: $e');

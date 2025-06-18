@@ -26,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _passwordError;
   String? _confirmError;
 
-  //url to user agreement TODO mb not necessary
+  //url to user agreement TODO mb
   //final _agreementUrl = Uri.parse('https://');
 
 
@@ -51,21 +51,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final api = ApiService();
-      // Сначала регистрация
       final response = await api.register(UserModel(
         email: _email.text.trim(),
         password: _password.text,
       ));
 
       if (mounted) {
-        // В обоих случаях (успех или нужна верификация) переходим на экран ввода кода
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => VerificationCodeScreen(
               email: _email.text.trim(),
               type: VerificationType.registration,
               onSuccess: (email, _) {
-                // После успешной регистрации авторизуем пользователя
                 context.read<AuthCubit>().signIn(
                       email,
                       _password.text,
@@ -77,7 +74,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       final error = e.toString().replaceFirst('Exception: ', '');
-      // Если ошибка о необходимости подтверждения email - переходим на экран ввода кода
       if (error.contains('необходимо подтвердить email')) {
         if (mounted) {
           Navigator.of(context).push(
@@ -86,7 +82,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 email: _email.text.trim(),
                 type: VerificationType.registration,
                 onSuccess: (email, _) {
-                  // После успешной регистрации авторизуем пользователя
                   context.read<AuthCubit>().signIn(
                         email,
                         _password.text,
@@ -97,7 +92,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
         }
       } else {
-        // Для всех остальных ошибок показываем сообщение
         setState(() => _emailError = error);
       }
     } finally {
