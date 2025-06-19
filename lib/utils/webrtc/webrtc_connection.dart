@@ -72,27 +72,18 @@ class WebRTCConnection {
           }
         ],
         'sdpSemantics': 'unified-plan',
-        'iceTransportPolicy': 'all',
         'bundlePolicy': 'max-bundle',
         'rtcpMuxPolicy': 'require',
-        'iceCandidatePoolSize': 1,
+        'iceCandidatePoolSize': 0,
         'enableDtlsSrtp': true,
-        'enableRtpDataChannels': true,
-        'iceServersTransportPolicy': 'all',
         'optional': [
           {'DtlsSrtpKeyAgreement': true},
-          {'RtpDataChannels': true},
-          {'googHighStartBitrate': true},
-          {'googCpuOveruseDetection': true},
-          {'googCpuOveruseEncodeUsage': true},
-          {'googCpuUnderuseThreshold': 55},
-          {'googCpuOveruseThreshold': 85},
-          {'googScreencastMinBitrate': 400},
-          {'googVeryHighBitrate': true}
         ]
       };
 
+      _onLog('Initializing peer connection with config: $config');
       _pc = await createPeerConnection(config);
+      _onLog('Peer connection created successfully');
       _setupConnectionHandlers();
 
       if (isBroadcaster && localStream != null) {
@@ -104,7 +95,6 @@ class WebRTCConnection {
           _onLog('Adding track: ${track.kind}, enabled: ${track.enabled}');
           var rtpSender = await _pc!.addTrack(track, localStream);
           _senders.add(rtpSender!);
-          await _optimizeSenderParameters(rtpSender);
         }
 
         _onLog('Creating reliable data channel for commands...');
@@ -112,9 +102,10 @@ class WebRTCConnection {
           'commands',
           RTCDataChannelInit()
             ..ordered = true
-            ..maxRetransmits = 3
+            ..maxRetransmits = 0
             ..protocol = 'sctp'
-            ..negotiated = false,
+            ..negotiated = true
+            ..id = 1,
         );
 
         _dataChannels[_pc!] = dataChannel;
@@ -124,17 +115,21 @@ class WebRTCConnection {
         _offer = await _pc!.createOffer({
           'offerToReceiveVideo': true,
           'offerToReceiveAudio': false,
-          'voiceActivityDetection': false,
-          'iceRestart': false,
-          'enableDtlsSrtp': true,
         });
 
         var sdp = _offer!.sdp;
-        sdp = _modifySdpForHighQuality(sdp!);
-        _offer = RTCSessionDescription(sdp, _offer!.type);
-
-        await _pc!.setLocalDescription(_offer!);
-        _onLog('Local description set successfully');
+        sdp = _modifySdpForLowLatency(sdp!);
+        _onLog('Modified SDP for low latency: $sdp');
+        await _pc!
+            .setLocalDescription(RTCSessionDescription(sdp, _offer!.type));
+        _onLog('Local description set for broadcaster');
+      } else {
+        _onLog('Setting up as receiver...');
+        await _pc!.createOffer({
+          'offerToReceiveVideo': true,
+          'offerToReceiveAudio': true,
+        });
+        _onLog('Receiver offer created');
       }
     } catch (e) {
       _onLog('Error creating connection: $e');
@@ -142,7 +137,7 @@ class WebRTCConnection {
     }
   }
 
-  String _modifySdpForHighQuality(String sdp) {
+  String _modifySdpForLowLatency(String sdp) {
     var lines = sdp.split('\r\n');
     var newLines = <String>[];
     bool isVideoSection = false;
@@ -151,24 +146,17 @@ class WebRTCConnection {
       if (line.startsWith('m=video')) {
         isVideoSection = true;
         newLines.add(line);
-        newLines.add('b=AS:2000');
+        newLines.add('b=AS:2500');
         newLines.add('a=content:main');
-        newLines.add('a=priority:high');
-        newLines.add('a=x-google-min-bitrate:500');
-        newLines.add('a=x-google-max-bitrate:2000');
-        newLines.add('a=x-google-start-bitrate:1000');
-        newLines.add('a=x-google-cpu-usage-percent:80');
-        newLines.add('a=x-google-min-cpu-usage-percent:20');
         continue;
       }
 
       if (isVideoSection && line.startsWith('a=fmtp:')) {
         if (line.contains('VP8')) {
-          newLines.add('$line;max-fs=8192;max-fr=30;max-mbps=108000');
+          newLines.add('$line;max-fs=12288;max-fr=30');
           continue;
         } else if (line.contains('H264')) {
-          newLines.add(
-              '$line;profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1;x-google-start-bitrate=1000;x-google-max-bitrate=2000;x-google-min-bitrate=500');
+          newLines.add('$line;profile-level-id=42e01f;packetization-mode=1');
           continue;
         }
       }
@@ -181,27 +169,6 @@ class WebRTCConnection {
     }
 
     return newLines.join('\r\n');
-  }
-
-  Future<void> _optimizeSenderParameters(RTCRtpSender sender) async {
-    try {
-      var params = sender.parameters;
-
-      if (params.encodings != null && params.encodings!.isNotEmpty) {
-        for (var encoding in params.encodings!) {
-          encoding.maxBitrate = 2000000; // 2 Mbps
-          encoding.minBitrate = 500000; // 500 Kbps минимум
-          encoding.maxFramerate = 30;
-          encoding.scaleResolutionDownBy = 1.0;
-          encoding.active = true;
-        }
-
-        await sender.setParameters(params);
-        _onLog('Optimized sender parameters for lower latency');
-      }
-    } catch (e) {
-      _onLog('Error optimizing sender parameters: $e');
-    }
   }
 
   void _setupDataChannel(RTCDataChannel channel) {
@@ -420,66 +387,32 @@ class WebRTCConnection {
   }
 
   void _setupConnectionHandlers() {
-    _pc!.onConnectionState = (state) {
-      _onLog('Connection state changed to: $state');
-      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
-        _onLog('Successfully connected');
-        _verifyDataChannelState();
-      } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
-          state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-        _onLog('Connection failed or disconnected');
+    _pc?.onIceCandidate = (candidate) {
+      _onLog('New ICE candidate: ${candidate.candidate}');
+      _candidates.add(candidate);
+      onIceCandidate?.call(candidate);
+    };
+
+    _pc?.onIceConnectionState = (state) {
+      _onLog('ICE Connection State changed to: $state');
+      if (state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
+          state == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
         onConnectionFailed?.call();
       }
+    };
+
+    _pc?.onConnectionState = (state) {
+      _onLog('Connection State changed to: $state');
       onStateChange?.call();
     };
 
-    _pc!.onIceConnectionState = (state) {
-      _onLog('ICE connection state changed to: $state');
-      if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
-          state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
-        _onLog('ICE connection failed');
-        onConnectionFailed?.call();
+    _pc?.onTrack = (track) {
+      _onLog('Received remote track: ${track.track.kind}');
+      if (track.track.kind == 'video') {
+        _remoteStream = track.streams[0];
+        onRemoteStream?.call(_remoteStream!);
+        onStateChange?.call();
       }
-    };
-
-    _pc!.onIceGatheringState = (state) {
-      _onLog('ICE gathering state changed to: $state');
-    };
-
-    _pc!.onIceCandidate = (candidate) {
-      if (candidate != null) {
-        _onLog('New ICE candidate: ${candidate.candidate}');
-        _candidates.add(candidate);
-        onIceCandidate?.call(candidate);
-      } else {
-        _onLog('ICE gathering completed');
-      }
-    };
-
-    _pc!.onTrack = (event) {
-      _onLog('Track received: ${event.track.kind}');
-      _onLog(
-          'Track enabled: ${event.track.enabled}, muted: ${event.track.muted}');
-      _onLog('Track settings: ${event.track.getSettings()}');
-      _onLog('Streams count: ${event.streams.length}');
-
-      if (event.track.kind == 'video') {
-        if (event.streams.isNotEmpty) {
-          _remoteStream = event.streams[0];
-          _onLog('Remote stream set with ID: ${_remoteStream!.id}');
-          _onLog('Remote stream active: ${_remoteStream!.active}');
-          _onLog('Remote stream tracks: ${_remoteStream!.getTracks().length}');
-          onRemoteStream?.call(_remoteStream!);
-        } else {
-          _onLog('Warning: Received video track without stream');
-        }
-      }
-    };
-
-    _pc!.onDataChannel = (channel) {
-      _onLog('Data channel received');
-      _dataChannels[_pc!] = channel;
-      _setupDataChannel(channel);
     };
   }
 

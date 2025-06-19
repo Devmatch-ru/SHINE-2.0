@@ -89,10 +89,10 @@ class _BroadcasterScreenContent extends StatelessWidget {
                 child: state.isInitializing
                     ? Container(color: Colors.black)
                     : RTCVideoView(
-                        context.read<BroadcasterCubit>().localRenderer,
-                        objectFit:
-                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                      ),
+                  context.read<BroadcasterCubit>().localRenderer,
+                  objectFit:
+                  RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                ),
               ),
 
               // Хэдэр
@@ -326,16 +326,16 @@ class _BroadcasterScreenContent extends StatelessWidget {
                             onTap: state.isTimerActive
                                 ? null
                                 : () {
-                                    if (state.isVideoMode) {
-                                      context
-                                          .read<BroadcasterCubit>()
-                                          .toggleRecording();
-                                    } else {
-                                      context
-                                          .read<BroadcasterCubit>()
-                                          .capturePhoto();
-                                    }
-                                  },
+                              if (state.isVideoMode) {
+                                context
+                                    .read<BroadcasterCubit>()
+                                    .toggleRecording();
+                              } else {
+                                context
+                                    .read<BroadcasterCubit>()
+                                    .capturePhoto();
+                              }
+                            },
                             child: Image.asset(
                               (state.isVideoMode && state.isRecording)
                                   ? 'assets/icons/camera/shutter.png'
@@ -359,8 +359,8 @@ class _BroadcasterScreenContent extends StatelessWidget {
                             onPressed: state.isTimerActive
                                 ? null
                                 : () => context
-                                    .read<BroadcasterCubit>()
-                                    .startTimerCapture(),
+                                .read<BroadcasterCubit>()
+                                .startTimerCapture(),
                           ),
                         ],
                       ),

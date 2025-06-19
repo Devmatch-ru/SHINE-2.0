@@ -10,9 +10,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   late final BroadcasterManager _manager;
   Timer? _captureTimer;
-  Timer? _reconnectTimer;
-  int _reconnectAttempts = 0;
-  static const int maxReconnectAttempts = 5;
 
   BroadcasterCubit({required this.receiverUrl})
       : super(const BroadcasterInitial());
@@ -43,13 +40,15 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
 
       await _manager.init();
 
-      if (_manager.localStream != null) {
-        _localRenderer.srcObject = _manager.localStream;
-        emit(BroadcasterReady(
-          stream: _manager.localStream!,
-          connectedReceivers: const [],
-        ));
+      if (_manager.localStream == null) {
+        throw Exception('Local stream not initialized');
       }
+
+      _localRenderer.srcObject = _manager.localStream;
+      emit(BroadcasterReady(
+        stream: _manager.localStream!,
+        connectedReceivers: const [],
+      ));
 
       await startBroadcasting();
     } catch (e) {
@@ -59,55 +58,36 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
 
   Future<void> startBroadcasting() async {
     try {
+      if (_manager.localStream == null) {
+        _addMessage('Local stream is null, cannot start broadcast');
+        throw Exception('Local stream is not available');
+      }
+
+      _addMessage('Starting broadcast to $receiverUrl');
       await _manager.startBroadcast(receiverUrl);
 
-      if (_manager.isBroadcasting && _manager.localStream != null) {
-        _reconnectAttempts =
-            0;
-        _reconnectTimer?.cancel();
-
+      if (_manager.isBroadcasting) {
+        _addMessage('Broadcast started successfully');
         emit(BroadcasterReady(
           stream: _manager.localStream!,
           connectedReceivers: _manager.connectedReceivers,
         ));
+      } else {
+        _addMessage('Broadcast failed to start');
+        throw Exception('Broadcast failed to start');
       }
     } catch (e) {
-      _handleError(e.toString());
+      _handleError('Ошибка при запуске трансляции: $e');
     }
   }
 
   void _handleConnectionFailed() {
-    if (state is BroadcasterError) return;
-
-    _addMessage('Connection failed, attempting to reconnect...');
-
-    if (_reconnectAttempts < maxReconnectAttempts) {
-      _reconnectAttempts++;
-
-      final delay = Duration(seconds: _reconnectAttempts * 2);
-
-      _reconnectTimer?.cancel();
-      _reconnectTimer = Timer(delay, () async {
-        _addMessage(
-            'Attempting reconnection (attempt $_reconnectAttempts of $maxReconnectAttempts)');
-        await startBroadcasting();
-      });
-    } else {
-      _addMessage('Max reconnection attempts reached');
-      emit(BroadcasterError(
-          'Не удалось восстановить подключение после $maxReconnectAttempts попыток'));
-    }
+    _addMessage('Соединение потеряно');
+    emit(BroadcasterError('Соединение с приемником потеряно'));
   }
 
   void _handleError(String error) {
-    _addMessage('Error occurred: $error');
-
-    if (!error.contains('Не удалось восстановить подключение')) {
-      // Если это не ошибка после максимального количества попыток переподключения,
-      // пробуем переподключиться
-      _handleConnectionFailed();
-    }
-
+    _addMessage('Ошибка: $error');
     emit(BroadcasterError(error));
   }
 
@@ -120,33 +100,15 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
     _localRenderer.srcObject = currentStream;
 
     if (_manager.isBroadcasting) {
-      _reconnectAttempts = 0;
-      _reconnectTimer?.cancel();
-
-      if (state is BroadcasterTimer) {
-        final currentState = state as BroadcasterTimer;
-        emit(BroadcasterTimer(
-          stream: currentStream,
-          seconds: currentState.timerSeconds,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-          isVideoMode: state.isVideoMode,
-        ));
-      } else if (state.isRecording || _manager.isRecording) {
-        emit(BroadcasterRecording(
-          stream: currentStream,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
-      } else {
-        emit(BroadcasterReady(
-          stream: currentStream,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-          isVideoMode: state.isVideoMode,
-        ));
-      }
+      _addMessage('Состояние обновлено: трансляция активна');
+      emit(BroadcasterReady(
+        stream: currentStream,
+        connectedReceivers: _manager.connectedReceivers,
+        isPowerSaveMode: _manager.isPowerSaveMode,
+        isVideoMode: state.isVideoMode,
+      ));
     } else {
+      _addMessage('Состояние обновлено: трансляция неактивна');
       emit(BroadcasterReady(
         stream: currentStream,
         connectedReceivers: const [],
@@ -262,14 +224,13 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
             connectedReceivers: _manager.connectedReceivers,
             isPowerSaveMode: _manager.isPowerSaveMode,
           ));
+          emit(BroadcasterCommandReceived(
+            stream: _manager.localStream!,
+            message: '📹 Видео сохранено',
+            connectedReceivers: _manager.connectedReceivers,
+            isPowerSaveMode: _manager.isPowerSaveMode,
+          ));
         }
-
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '📹 Видео сохранено',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
       } else {
         _addMessage('Начинаем запись видео...');
         await _manager.startVideoRecording();
@@ -280,14 +241,13 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
             connectedReceivers: _manager.connectedReceivers,
             isPowerSaveMode: _manager.isPowerSaveMode,
           ));
+          emit(BroadcasterCommandReceived(
+            stream: _manager.localStream!,
+            message: '🔴 Запись видео начата',
+            connectedReceivers: _manager.connectedReceivers,
+            isPowerSaveMode: _manager.isPowerSaveMode,
+          ));
         }
-
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '🔴 Запись видео начата',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
       }
 
       Future.delayed(const Duration(seconds: 2), () {
@@ -313,7 +273,7 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
   }
 
   void _addMessage(String message) {
-    print('BroadcasterCubit: $message');
+    print('Broadcaster: $message');
   }
 
   Future<void> _executeFlashlightCommand() async {
@@ -452,7 +412,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
 
   @override
   Future<void> close() async {
-    _reconnectTimer?.cancel();
     _captureTimer?.cancel();
     await _localRenderer.dispose();
     await _manager.dispose();
@@ -462,7 +421,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
   Future<void> disconnect() async {
     try {
       _captureTimer?.cancel();
-      _reconnectTimer?.cancel();
 
       await _manager.stopBroadcast();
 

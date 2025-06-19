@@ -19,7 +19,6 @@ import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 
-
 class BroadcasterManager {
   final List<String> _messages = [];
   bool _inCalling = false;
@@ -56,6 +55,11 @@ class BroadcasterManager {
   MediaRecorder? _mediaRecorder;
   String? _currentVideoPath;
   bool _isRecording = false;
+
+  RTCPeerConnection? _peerConnection;
+  MediaStream? _localStream;
+  bool _isConnected = false;
+  final ValueNotifier<List<String>> messagesNotifier = ValueNotifier([]);
 
   BroadcasterManager({
     this.onStateChange,
@@ -113,7 +117,7 @@ class BroadcasterManager {
 
   MediaStream? get localStream => _mediaManager.localStream;
   bool get isBroadcasting => _inCalling;
-  List<String> get messages => List.unmodifiable(_messages);
+  List<String> get messages => messagesNotifier.value;
   List<MediaDeviceInfo> get videoInputs => _mediaManager.videoInputs;
   String? get selectedVideoFPS => _mediaManager.selectedVideoFPS;
   VideoSize get selectedVideoSize => _mediaManager.selectedVideoSize;
@@ -122,6 +126,7 @@ class BroadcasterManager {
   bool get isRecording => _isRecording;
   bool get isFlashOn => _isFlashOn;
   bool get isPowerSaveMode => _isPowerSaveMode;
+  bool get isConnected => _isConnected;
 
   Future<void> init() async {
     await _mediaManager.init();
@@ -266,7 +271,7 @@ class BroadcasterManager {
 
       // Создание media stream с повторными попытками
       int retryCount = 0;
-      while (retryCount < 3) {
+      while (retryCount < 15) {
         try {
           await _mediaManager.createStream(mediaConstraints);
           if (_mediaManager.localStream != null) break;
@@ -285,7 +290,7 @@ class BroadcasterManager {
 
       // Создание WebRTC подключения с повторными попытками
       retryCount = 0;
-      while (retryCount < 3) {
+      while (retryCount < 15) {
         try {
           await _webrtc.createConnection(_mediaManager.localStream!);
           if (_webrtc.offer != null) break;
@@ -324,7 +329,7 @@ class BroadcasterManager {
       retryCount = 0;
       Exception? lastError;
 
-      while (retryCount < 3) {
+      while (retryCount < 15) {
         try {
           _addMessage('Attempt ${retryCount + 1} to send offer to receiver');
 
@@ -358,7 +363,7 @@ class BroadcasterManager {
         }
 
         retryCount++;
-        if (retryCount < 3) {
+        if (retryCount < 15) {
           await Future.delayed(Duration(seconds: 1));
         }
       }
@@ -689,7 +694,7 @@ class BroadcasterManager {
   }
 
   void _addMessage(String message) {
-    _messages.add(message);
+    messagesNotifier.value = [...messagesNotifier.value, message];
   }
 
   void _handleStreamUpdated(MediaStream stream) async {
@@ -750,6 +755,123 @@ class BroadcasterManager {
       onStateChange?.call();
     } catch (e) {
       _addMessage('Error disabling power save mode: $e');
+    }
+  }
+
+  Future<String> _getLocalIp() async {
+    final wifiIP = await NetworkInfo().getWifiIP();
+    if (wifiIP == null) {
+      throw Exception('Could not determine Wi-Fi IP');
+    }
+    return wifiIP;
+  }
+
+  Future<RTCPeerConnection> _createPeerConnection(String receiverUrl) async {
+    try {
+      _addMessage('Creating peer connection for $receiverUrl');
+
+      final config = {
+        'iceServers': [
+          {
+            'urls': ['stun:stun1.l.google.com:19302']
+          },
+        ],
+        'sdpSemantics': 'unified-plan',
+        'bundlePolicy': 'max-bundle',
+        'rtcpMuxPolicy': 'require',
+        'iceTransportPolicy': 'all',
+      };
+
+      final pc = await createPeerConnection(config);
+      if (pc == null) throw Exception('Failed to create peer connection');
+
+      // Add local stream
+      if (_localStream != null) {
+        _addMessage('Adding local stream tracks');
+        final videoTracks = _localStream!.getVideoTracks();
+        for (var track in videoTracks) {
+          await pc.addTrack(track, _localStream!);
+        }
+      }
+
+      // Set up event handlers
+      pc.onIceCandidate = (candidate) {
+        _addMessage('New ICE candidate: ${candidate.candidate}');
+        _sendCandidate(receiverUrl, candidate);
+      };
+
+      pc.onIceConnectionState = (state) {
+        _addMessage('ICE connection state: $state');
+        if (state == RTCIceConnectionState.RTCIceConnectionStateConnected) {
+          _isConnected = true;
+          onStateChange?.call();
+        } else if (state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
+            state == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+          _handleDisconnection();
+        }
+      };
+
+      // Create and send offer
+      final offer = await pc.createOffer({
+        'offerToReceiveVideo': false,
+        'offerToReceiveAudio': false,
+      });
+
+      await pc.setLocalDescription(offer);
+      _addMessage('Local description set');
+
+      final response = await http.post(
+        Uri.parse('http://$receiverUrl/offer'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'sdp': offer.sdp,
+          'type': offer.type,
+          'broadcasterUrl': 'http://${await _getLocalIp()}:8080',
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to send offer: ${response.statusCode}');
+      }
+
+      final answerData = jsonDecode(response.body);
+      final answer = RTCSessionDescription(
+        answerData['sdp'],
+        answerData['type'],
+      );
+
+      await pc.setRemoteDescription(answer);
+      _addMessage('Remote description set');
+
+      _peerConnection = pc;
+      return pc;
+    } catch (e) {
+      _addMessage('Error creating peer connection: $e');
+      rethrow;
+    }
+  }
+
+  void _handleDisconnection() {
+    _addMessage('Handling disconnection');
+    _isConnected = false;
+    _peerConnection?.close();
+    _peerConnection = null;
+    onStateChange?.call();
+  }
+
+  Future<void> _sendCandidate(
+      String receiverUrl, RTCIceCandidate candidate) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://$receiverUrl/candidate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'candidate': candidate.toMap()}),
+      );
+      if (response.statusCode != 200) {
+        _addMessage('Failed to send ICE candidate: ${response.statusCode}');
+      }
+    } catch (e) {
+      _addMessage('Error sending ICE candidate: $e');
     }
   }
 }

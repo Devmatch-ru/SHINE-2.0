@@ -11,25 +11,21 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import './webrtc/types.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
-import './permissions_handler.dart';
 
 class ReceiverManager {
   HttpServer? _server;
   RawDatagramSocket? _udpSocket;
-  final Map<String, RTCPeerConnection> _connections =
-      {}; // Множественные соединения
-  final Map<String, RTCDataChannel> _dataChannels =
-      {}; // Data channels для каждого broadcaster
-  final Map<String, MediaStream> _remoteStreams =
-      {}; // Потоки от каждого broadcaster
-  String? _primaryBroadcaster; // Основной broadcaster для отображения
+  final Map<String, RTCPeerConnection> _connections = {};
+  final Map<String, RTCDataChannel> _dataChannels = {};
+  final Map<String, MediaStream> _remoteStreams = {};
+  String? _primaryBroadcaster;
   final List<String> _connectedBroadcasters = [];
   bool _isConnected = false;
   bool _isDisposed = false;
-  final int maxConnections = 7; // Максимум 7 устройств
+  final int maxConnections = 7;
   final ValueNotifier<List<String>> messagesNotifier = ValueNotifier([]);
+  final Map<String, List<Map<String, dynamic>>> _earlyRemoteCandidates = {};
 
-  // Callbacks
   VoidCallback? onStateChange;
   void Function(MediaStream?)? onStreamChanged;
   void Function(String error)? onError;
@@ -40,7 +36,6 @@ class ReceiverManager {
 
   ReceiverManager();
 
-  // Getters
   MediaStream? get remoteStream =>
       _primaryBroadcaster != null ? _remoteStreams[_primaryBroadcaster] : null;
   bool get isConnected {
@@ -48,7 +43,6 @@ class ReceiverManager {
     final hasStream = _remoteStreams.isNotEmpty;
     final hasDataChannel = _dataChannels.values.any(
         (channel) => channel.state == RTCDataChannelState.RTCDataChannelOpen);
-
     return hasConnection && hasStream && hasDataChannel;
   }
 
@@ -59,14 +53,7 @@ class ReceiverManager {
 
   Future<void> init() async {
     try {
-      final permissionsGranted =
-          await PermissionsHandler.checkAndRequestAllPermissions();
-      if (!permissionsGranted) {
-        throw Exception('Необходимые разрешения не были предоставлены');
-      }
-
       await startDiscoveryListener();
-      await _startSignalServer();
     } catch (e) {
       _addMessage('Error initializing: $e');
       rethrow;
@@ -132,13 +119,10 @@ class ReceiverManager {
               return shelf.Response(400, body: 'Invalid JSON format: $e');
             }
 
-            // Validate required fields
             if (data['sdp'] == null ||
                 data['type'] == null ||
                 data['broadcasterUrl'] == null) {
-              return shelf.Response(400,
-                  body:
-                      'Missing required fields (sdp, type, or broadcasterUrl)');
+              return shelf.Response(400, body: 'Missing required fields');
             }
 
             final offer = RTCSessionDescription(data['sdp'], data['type']);
@@ -147,158 +131,152 @@ class ReceiverManager {
             _addMessage('Processing offer from $broadcasterUrl');
 
             if (_connections.containsKey(broadcasterUrl)) {
-              _addMessage('Closing existing connection for $broadcasterUrl');
               await _connections[broadcasterUrl]?.close();
               _connections.remove(broadcasterUrl);
+              _dataChannels.remove(broadcasterUrl);
+              if (_remoteStreams.containsKey(broadcasterUrl)) {
+                _remoteStreams[broadcasterUrl]
+                    ?.getTracks()
+                    .forEach((track) => track.stop());
+                await _remoteStreams[broadcasterUrl]?.dispose();
+                _remoteStreams.remove(broadcasterUrl);
+              }
+              _connectedBroadcasters.remove(broadcasterUrl);
+              onBroadcastersChanged?.call(_connectedBroadcasters);
             }
-            if (_remoteStreams.containsKey(broadcasterUrl)) {
-              _addMessage('Cleaning up existing stream for $broadcasterUrl');
-              _remoteStreams[broadcasterUrl]
-                  ?.getTracks()
-                  .forEach((track) => track.stop());
-              await _remoteStreams[broadcasterUrl]?.dispose();
-              _remoteStreams.remove(broadcasterUrl);
-            }
-            onStreamChanged?.call(null);
 
             if (_connections.length >= maxConnections) {
-              return shelf.Response(503,
-                  body: 'Maximum connections ($maxConnections) reached');
+              return shelf.Response(503, body: 'Maximum connections reached');
             }
 
-            _addMessage('Creating new WebRTC connection');
             final pc = await createPeerConnection({
               'iceServers': [
                 {
-                  'urls': [
-                    'stun:stun1.l.google.com:19302',
-                    'stun:stun2.l.google.com:19302',
-                  ],
-                }
+                  'urls': ['stun:stun1.l.google.com:19302']
+                },
               ],
               'sdpSemantics': 'unified-plan',
-              'iceTransportPolicy': 'all',
               'bundlePolicy': 'max-bundle',
               'rtcpMuxPolicy': 'require',
-              'offerToReceiveAudio': false,
+              'iceTransportPolicy': 'all',
               'offerToReceiveVideo': true,
+              'offerToReceiveAudio': false,
             });
 
             if (pc == null) {
-              return shelf.Response(500,
-                  body: 'Failed to create peer connection');
+              throw Exception('Failed to create peer connection');
             }
 
-            _setupPeerConnectionHandlers(pc, broadcasterUrl);
+            pc.onIceCandidate = (candidate) {
+              _addMessage('New ICE candidate: ${candidate.candidate}');
+              _sendIceCandidate(candidate, broadcasterUrl);
+            };
+
+            pc.onDataChannel = (channel) {
+              _addMessage('Received data channel: ${channel.label}');
+              _dataChannels[broadcasterUrl] = channel;
+              _setupDataChannel(channel, broadcasterUrl);
+            };
+
+            pc.onIceConnectionState = (state) {
+              _addMessage('ICE connection state: $state');
+              if (state == RTCIceConnectionState.RTCIceConnectionStateConnected) {
+                if (!_connectedBroadcasters.contains(broadcasterUrl)) {
+                  _connectedBroadcasters.add(broadcasterUrl);
+                  onBroadcastersChanged?.call(_connectedBroadcasters);
+                }
+              } else if (state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
+                  state == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+                _handleDisconnection(broadcasterUrl);
+              }
+            };
+
+            pc.onTrack = (event) {
+              _addMessage('Received track: ${event.track.kind}, enabled: ${event.track.enabled}');
+              if (event.track.kind == 'video') {
+                _remoteStreams[broadcasterUrl] = event.streams[0];
+                final videoTracks = event.streams[0].getVideoTracks();
+                _addMessage('Video tracks: ${videoTracks.length}, enabled: ${videoTracks.isNotEmpty ? videoTracks[0].enabled : 'N/A'}');
+                if (_primaryBroadcaster == null) {
+                  _primaryBroadcaster = broadcasterUrl;
+                }
+                onStreamChanged?.call(_remoteStreams[_primaryBroadcaster]);
+                onStateChange?.call();
+              }
+            };
+
+            await pc.setRemoteDescription(offer);
+            final answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            if (_earlyRemoteCandidates.containsKey(broadcasterUrl)) {
+              for (final cand in _earlyRemoteCandidates[broadcasterUrl]!) {
+                try {
+                  await pc.addCandidate(RTCIceCandidate(
+                    cand['candidate'],
+                    cand['sdpMid'],
+                    cand['sdpMLineIndex'],
+                  ));
+                } catch (e) {
+                  _addMessage('Failed to add buffered candidate: $e');
+                }
+              }
+              _earlyRemoteCandidates.remove(broadcasterUrl);
+            }
+
             _connections[broadcasterUrl] = pc;
+            _addMessage('Connection established with $broadcasterUrl');
 
-            try {
-              await pc.setRemoteDescription(offer);
-              _addMessage('Remote description set successfully');
-            } catch (e) {
-              _addMessage('Error setting remote description: $e');
-              await pc.close();
-              _connections.remove(broadcasterUrl);
-              return shelf.Response(500,
-                  body: 'Failed to set remote description: $e');
-            }
-
-            RTCSessionDescription? answer;
-            try {
-              answer = await pc.createAnswer({
-                'offerToReceiveVideo': true,
-                'offerToReceiveAudio': false,
-              });
-
-              if (answer == null) {
-                throw Exception('Failed to create answer');
-              }
-
-              _addMessage('Created answer successfully');
-            } catch (e) {
-              _addMessage('Error creating answer: $e');
-              await pc.close();
-              _connections.remove(broadcasterUrl);
-              return shelf.Response(500, body: 'Failed to create answer: $e');
-            }
-
-            // Modify SDP to disable audio
-            String sdp = answer.sdp!;
-            final lines = sdp.split('\n');
-            final modifiedLines = lines.map((line) {
-              if (line.startsWith('m=audio')) {
-                return 'm=audio 0 UDP/TLS/RTP/SAVPF 0';
-              }
-              return line;
-            }).toList();
-
-            final modifiedAnswer = RTCSessionDescription(
-              modifiedLines.join('\n'),
-              answer.type,
+            return shelf.Response.ok(
+              jsonEncode({'sdp': answer.sdp, 'type': answer.type}),
+              headers: {'Content-Type': 'application/json'},
             );
-
-            try {
-              await pc.setLocalDescription(modifiedAnswer);
-              _addMessage('Local description set successfully');
-            } catch (e) {
-              _addMessage('Error setting local description: $e');
-              await pc.close();
-              _connections.remove(broadcasterUrl);
-              return shelf.Response(500,
-                  body: 'Failed to set local description: $e');
-            }
-
-            // Send answer to broadcaster
-            try {
-              final response = await http.post(
-                Uri.parse('$broadcasterUrl/answer'),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode(
-                    {'sdp': modifiedAnswer.sdp, 'type': modifiedAnswer.type}),
-              );
-
-              if (response.statusCode != 200) {
-                throw Exception(
-                    'Failed to send answer: ${response.statusCode}');
-              }
-            } catch (e) {
-              _addMessage('Error sending answer: $e');
-              await pc.close();
-              _connections.remove(broadcasterUrl);
-              return shelf.Response(500, body: 'Failed to send answer: $e');
-            }
-
-            _primaryBroadcaster = broadcasterUrl;
-            _isConnected = true;
-
-            if (!_connectedBroadcasters.contains(broadcasterUrl)) {
-              _connectedBroadcasters.add(broadcasterUrl);
-            }
-
-            onStateChange?.call();
-            onBroadcastersChanged?.call(_connectedBroadcasters);
-
-            return shelf.Response.ok('Offer processed successfully');
           } catch (e) {
             _addMessage('Error processing offer: $e');
-            return shelf.Response(500, body: 'Internal server error: $e');
+            return shelf.Response.internalServerError(body: 'Error: $e');
           }
-        } else if (request.method == 'POST' &&
-            request.url.path == 'candidate') {
+        }
+
+        if (request.method == 'POST' && request.url.path == 'candidate') {
           try {
             final body = await request.readAsString();
-            final data = jsonDecode(body);
+            if (body.isEmpty) {
+              return shelf.Response(400, body: 'Empty request body');
+            }
+
+            Map<String, dynamic> data;
+            try {
+              data = jsonDecode(body);
+            } catch (e) {
+              return shelf.Response(400, body: 'Invalid JSON: $e');
+            }
+
+            final candidateMap =
+                data.containsKey('candidate') ? data['candidate'] : data;
+
+            final connectionInfo = request.context['shelf.io.connection_info']
+                as HttpConnectionInfo;
+            final remoteIp = connectionInfo.remoteAddress.address;
+            final broadcasterUrl = 'http://$remoteIp:8080';
+
+            if (!_connections.containsKey(broadcasterUrl)) {
+              _earlyRemoteCandidates
+                  .putIfAbsent(broadcasterUrl, () => [])
+                  .add(candidateMap);
+              _addMessage('Buffered ICE candidate for $broadcasterUrl');
+              return shelf.Response.ok('Buffered');
+            }
+
             final candidate = RTCIceCandidate(
-              data['candidate']['candidate'],
-              data['candidate']['sdpMid'],
-              data['candidate']['sdpMLineIndex'],
+              candidateMap['candidate'],
+              candidateMap['sdpMid'],
+              candidateMap['sdpMLineIndex'],
             );
 
-            _addMessage('Received ICE candidate: ${candidate.candidate}');
-            await _connections[_primaryBroadcaster]?.addCandidate(candidate);
-            _addMessage('Added ICE candidate');
+            await _connections[broadcasterUrl]!.addCandidate(candidate);
+            _addMessage('Added ICE candidate from $broadcasterUrl');
 
-            return shelf.Response.ok('Candidate processed');
+            return shelf.Response.ok('OK');
           } catch (e) {
             _addMessage('Error processing candidate: $e');
             return shelf.Response.internalServerError(body: 'Error: $e');
@@ -308,12 +286,74 @@ class ReceiverManager {
         return shelf.Response.notFound('Not found');
       });
 
-      _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, 8080,
-          shared: true);
+      _server = await shelf_io.serve(
+        handler,
+        InternetAddress.anyIPv4,
+        8080,
+        shared: true,
+      );
       _addMessage('Signal server started on port 8080');
     } catch (e) {
       _addMessage('Error starting signal server: $e');
       rethrow;
+    }
+  }
+
+  void _handleDisconnection(String broadcasterUrl) {
+    _addMessage('Handling disconnection from $broadcasterUrl');
+    _connections.remove(broadcasterUrl);
+    _dataChannels.remove(broadcasterUrl);
+    if (_remoteStreams.containsKey(broadcasterUrl)) {
+      _remoteStreams[broadcasterUrl]
+          ?.getTracks()
+          .forEach((track) => track.stop());
+      _remoteStreams[broadcasterUrl]?.dispose();
+      _remoteStreams.remove(broadcasterUrl);
+    }
+    _connectedBroadcasters.remove(broadcasterUrl);
+
+    if (_primaryBroadcaster == broadcasterUrl) {
+      if (_connectedBroadcasters.isNotEmpty) {
+        _primaryBroadcaster = _connectedBroadcasters.first;
+        onStreamChanged?.call(_remoteStreams[_primaryBroadcaster]);
+      } else {
+        _primaryBroadcaster = null;
+        _isConnected = false;
+        onStreamChanged?.call(null);
+      }
+    }
+
+    onStateChange?.call();
+    onBroadcastersChanged?.call(_connectedBroadcasters);
+
+    if (!_isDisposed) {
+      Future.delayed(const Duration(seconds: 3), () {
+        _attemptReconnect(broadcasterUrl);
+      });
+    }
+  }
+
+  Future<void> _sendIceCandidate(
+      RTCIceCandidate candidate, String receiverUrl) async {
+    try {
+      String formattedUrl = receiverUrl;
+      if (!formattedUrl.startsWith('http://') &&
+          !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'http://$receiverUrl';
+      }
+      formattedUrl = formattedUrl
+          .replaceFirst('http://http://', 'http://')
+          .replaceFirst('http://http//', 'http://');
+      final response = await http.post(
+        Uri.parse('$formattedUrl/candidate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'candidate': candidate.toMap()}),
+      );
+      if (response.statusCode != 200) {
+        _addMessage('Failed to send ICE candidate: ${response.statusCode}');
+      }
+    } catch (e) {
+      _addMessage('Error sending ICE candidate: $e');
     }
   }
 
@@ -323,9 +363,14 @@ class ReceiverManager {
     pc.onTrack = (event) {
       if (_isDisposed) return;
       if (event.track.kind == 'video') {
-        _addMessage('Received video track: ${event.track.id}');
+        _addMessage('Received video track: ${event.track.id}, enabled: ${event.track.enabled}');
         _remoteStreams[broadcasterUrl] = event.streams[0];
-        onStreamChanged?.call(_remoteStreams[broadcasterUrl]);
+        final videoTracks = event.streams[0].getVideoTracks();
+        _addMessage('Video tracks: ${videoTracks.length}, enabled: ${videoTracks.isNotEmpty ? videoTracks[0].enabled : 'N/A'}');
+        if (_primaryBroadcaster == null) {
+          _primaryBroadcaster = broadcasterUrl;
+        }
+        onStreamChanged?.call(_remoteStreams[_primaryBroadcaster]);
         _verifyConnection(broadcasterUrl);
       }
     };
@@ -361,7 +406,6 @@ class ReceiverManager {
       _addMessage('ICE connection state changed to: $state');
 
       if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
-        // При кратковременном разрыве даем шанс восстановиться
         Future.delayed(Duration(seconds: 5), () {
           if (pc.iceConnectionState ==
               RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
@@ -383,7 +427,6 @@ class ReceiverManager {
       _addMessage('Connection State: $state');
 
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-        // При разрыве ждем 5 секунд перед полным отключением
         Future.delayed(Duration(seconds: 5), () {
           if (pc.connectionState ==
               RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
@@ -406,12 +449,14 @@ class ReceiverManager {
       _addMessage('Data channel state for $broadcasterUrl: $state');
       if (state == RTCDataChannelState.RTCDataChannelOpen) {
         _addMessage('Data channel is now OPEN and ready for communication');
+        _verifyConnection(broadcasterUrl);
       } else if (state == RTCDataChannelState.RTCDataChannelClosed) {
         _addMessage('Data channel is now CLOSED');
         if (_connections[broadcasterUrl]?.connectionState ==
             RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
           _handleDataChannelReconnect(broadcasterUrl);
         }
+        _verifyConnection(broadcasterUrl);
       }
     };
 
@@ -427,7 +472,6 @@ class ReceiverManager {
               _handleMediaMetadata(broadcasterUrl, data);
               break;
             case 'command':
-              // Обработка команд если они есть
               break;
             default:
               _addMessage('Unknown message type: $messageType');
@@ -468,7 +512,6 @@ class ReceiverManager {
     try {
       final pc = _connections[broadcasterUrl];
       if (pc != null) {
-        // Close existing channel if any
         if (_dataChannels[broadcasterUrl] != null) {
           await _dataChannels[broadcasterUrl]!.close();
           _dataChannels.remove(broadcasterUrl);
@@ -494,7 +537,6 @@ class ReceiverManager {
             _dataChannels[broadcasterUrl] = newChannel;
             _setupDataChannel(newChannel, broadcasterUrl);
 
-            // Wait for channel to open
             int waitAttempts = 0;
             while (newChannel.state != RTCDataChannelState.RTCDataChannelOpen &&
                 waitAttempts < 50) {
@@ -624,7 +666,6 @@ class ReceiverManager {
     }
   }
 
-  // Метод для переключения между broadcasters
   void switchToPrimaryBroadcaster(String broadcasterUrl) {
     if (_connectedBroadcasters.contains(broadcasterUrl)) {
       _primaryBroadcaster = broadcasterUrl;
@@ -633,7 +674,6 @@ class ReceiverManager {
     }
   }
 
-  // Метод для отправки команды всем подключенным broadcasters
   Future<void> sendCommandToAll(String command) async {
     if (_dataChannels.isEmpty) {
       throw Exception('No active connection or data channel');
@@ -684,14 +724,12 @@ class ReceiverManager {
       }
     }
 
-    // Увеличиваем таймаут до 15 секунд для слабых соединений
     int attempts = 0;
     while (_dataChannels[_primaryBroadcaster]?.state !=
             RTCDataChannelState.RTCDataChannelOpen &&
         attempts < 150) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
-
       if (attempts % 30 == 0) {
         _addMessage(
             'Still waiting for data channel to open... ${attempts / 10} seconds passed');
@@ -701,7 +739,6 @@ class ReceiverManager {
     if (_dataChannels[_primaryBroadcaster]?.state !=
         RTCDataChannelState.RTCDataChannelOpen) {
       _addMessage('Data channel failed to open after 15 seconds');
-      // Пробуем пересоздать data channel
       final newChannel =
           await _handleDataChannelReconnect(_primaryBroadcaster!);
       if (newChannel == null ||
@@ -722,7 +759,6 @@ class ReceiverManager {
       _addMessage('Successfully sent command: $command');
     } catch (e) {
       _addMessage('Error sending command: $e');
-      // Пробуем пересоздать data channel при ошибке отправки
       final newChannel =
           await _handleDataChannelReconnect(_primaryBroadcaster!);
       if (newChannel == null) {
@@ -738,7 +774,6 @@ class ReceiverManager {
       throw Exception('No active connection or data channel');
     }
 
-    // Ждем, пока data channel откроется
     int attempts = 0;
     while (_dataChannels[_primaryBroadcaster]!.state !=
             RTCDataChannelState.RTCDataChannelOpen &&

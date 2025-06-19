@@ -204,33 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: theme.textTheme.bodySmall),
                 ),
               ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => context.read<AuthCubit>().signInWithGoogle(),
-                icon: Image.asset('assets/images/google.png',
-                    width: 24, height: 24),
-                label: const Text('Google'),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: const StadiumBorder(),
-                  side: BorderSide.none,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),OutlinedButton.icon(
-                onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-              ),
-                icon: Image.asset('assets/images/google.png',
-                    width: 24, height: 24),
-                label: const Text('Google'),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: const StadiumBorder(),
-                  side: BorderSide.none,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
+              
               const Spacer(),
               Center(
                   child:

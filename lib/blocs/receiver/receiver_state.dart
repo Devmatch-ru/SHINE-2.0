@@ -11,6 +11,10 @@ abstract class ReceiverState extends Equatable {
   final StreamQuality streamQuality;
   final String? lastCommand;
   final String? error;
+  final String? connectionQuality;
+  final int? connectionLatency;
+  final String? videoResolution;
+  final int? videoBitrate;
 
   const ReceiverState({
     this.isInitializing = false,
@@ -20,6 +24,10 @@ abstract class ReceiverState extends Equatable {
     this.streamQuality = StreamQuality.medium,
     this.lastCommand,
     this.error,
+    this.connectionQuality,
+    this.connectionLatency,
+    this.videoResolution,
+    this.videoBitrate,
   });
 
   void addLog(String log) {}
@@ -33,6 +41,10 @@ abstract class ReceiverState extends Equatable {
         error,
         streamQuality,
         lastCommand,
+        connectionQuality,
+        connectionLatency,
+        videoResolution,
+        videoBitrate,
       ];
 }
 

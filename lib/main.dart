@@ -28,6 +28,7 @@ Future<void> main() async {
         BlocProvider(create: (_) => WifiCubit(connectivity: Connectivity())),
         BlocProvider(create: (_) => onb.OnboardingCubit()),
         BlocProvider(create: (_) => RoleCubit()),
+
       ],
       child: const ShineApp(),
     ),

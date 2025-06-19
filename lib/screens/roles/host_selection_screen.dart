@@ -16,12 +16,17 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedHost;
   bool _isSearching = false;
-  final BroadcasterManager _manager = BroadcasterManager();
+  late final BroadcasterManager _manager;
   Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
+    _manager = BroadcasterManager(
+      onStateChange: () {
+        if (mounted) setState(() {});
+      },
+    );
     _initManager();
     _searchController.addListener(_onSearchChanged);
     _startPeriodicRefresh();
@@ -55,7 +60,6 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
 
   Future<void> _initManager() async {
     await _manager.init();
-    _manager.onStateChange = (() => setState(() {}));
     await _refreshList();
   }
 
