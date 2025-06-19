@@ -30,6 +30,7 @@ class _ReceiverScreenContent extends StatelessWidget {
   double _getControlsPadding(BuildContext context) =>
       MediaQuery.of(context).size.width * 0.1;
 
+
   void _handleError(BuildContext context, String error) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
