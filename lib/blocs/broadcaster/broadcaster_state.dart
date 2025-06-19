@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 abstract class BroadcasterState extends Equatable {

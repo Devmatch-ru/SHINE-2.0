@@ -137,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.bgMain,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leadingWidth: 100,
+        leadingWidth: 130,
         leading: TextButton.icon(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           label: Text('Назад',

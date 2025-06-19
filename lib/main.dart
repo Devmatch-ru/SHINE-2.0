@@ -18,7 +18,7 @@ import 'package:shine/services/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await _requestPermissions();
+  await requestPermissions();
   debugPaintBaselinesEnabled = false;
 
   runApp(
@@ -34,22 +34,50 @@ Future<void> main() async {
   );
 }
 
-Future<void> _requestPermissions() async {
-  final statuses = await [
-    Permission.camera,
-    Permission.nearbyWifiDevices,
-    Permission.locationWhenInUse,
-    Permission.storage,
-  ].request();
+final GlobalKey<NavigatorState> _navigatiorKey = GlobalKey<NavigatorState>();
 
-  statuses.forEach((permission, status) {
-    if (status.isDenied || status.isPermanentlyDenied) {
-      debugPrint('Permission $permission was denied');
-      if (permission == Permission.nearbyWifiDevices) {
-        debugPrint('NEARBY_WIFI_DEVICES denied, Wi-Fi detection may fail');
-      }
+Future<void> requestPermissions() async {
+  while (true) {
+    final statuses = await [
+      Permission.camera,
+      Permission.microphone,
+      Permission.locationWhenInUse,
+    ].request();
+
+    final allGranted = statuses.values.every((status) => status.isGranted);
+
+    if (allGranted) break;
+
+    final permanentlyDenied =
+        statuses.values.any((status) => status.isPermanentlyDenied);
+
+    if (permanentlyDenied) {
+      final opened = await openAppSettings();
+      if (!opened) break;
+    } else {
+      final shouldRetry = await showDialog<bool>(
+        context: _navigatiorKey.currentContext!,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Разрешения'),
+          content: const Text(
+              'Для работы приложения необходимо разрешение на камеру, микрофон и геолокацию.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Выход'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Повторить'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldRetry != true) break;
     }
-  });
+  }
 }
 
 class ShineApp extends StatelessWidget {
@@ -58,6 +86,7 @@ class ShineApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatiorKey,
       title: 'SHINE',
       theme: ThemeData(
         useMaterial3: true,
