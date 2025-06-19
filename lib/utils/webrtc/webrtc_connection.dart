@@ -6,7 +6,7 @@ import 'package:camera/camera.dart';
 import './types.dart';
 
 class WebRTCConnection {
-  static const int _maxChunkSize = 16 * 1024; // 16KB chunks
+  static const int _maxChunkSize = 16 * 1024;
   static const int _maxRetries = 3;
   static const int _chunkDelayMs = 50;
   static const int _retryDelayBaseMs = 100;
@@ -49,13 +49,9 @@ class WebRTCConnection {
   RTCSessionDescription? get offer => _offer;
   List<RTCIceCandidate> get candidates => _candidates;
   MediaStream? get remoteStream => _remoteStream;
-  bool get isConnected {
-    final isConnected = _pc?.connectionState ==
-        RTCPeerConnectionState.RTCPeerConnectionStateConnected;
-    final hasOpenDataChannel = _dataChannels.values.any(
-        (channel) => channel.state == RTCDataChannelState.RTCDataChannelOpen);
-    return isConnected && hasOpenDataChannel;
-  }
+  bool get isConnected =>
+      _pc?.connectionState ==
+          RTCPeerConnectionState.RTCPeerConnectionStateConnected;
 
   Future<void> createConnection(MediaStream? localStream,
       {bool isBroadcaster = true}) async {
@@ -72,18 +68,16 @@ class WebRTCConnection {
           }
         ],
         'sdpSemantics': 'unified-plan',
+        'iceTransportPolicy': 'all',
         'bundlePolicy': 'max-bundle',
         'rtcpMuxPolicy': 'require',
-        'iceCandidatePoolSize': 0,
+        'iceCandidatePoolSize': 1,
         'enableDtlsSrtp': true,
-        'optional': [
-          {'DtlsSrtpKeyAgreement': true},
-        ]
+        'enableRtpDataChannels': false,
       };
 
-      _onLog('Initializing peer connection with config: $config');
+      _onLog('Creating peer connection with optimized config');
       _pc = await createPeerConnection(config);
-      _onLog('Peer connection created successfully');
       _setupConnectionHandlers();
 
       if (isBroadcaster && localStream != null) {
@@ -95,6 +89,7 @@ class WebRTCConnection {
           _onLog('Adding track: ${track.kind}, enabled: ${track.enabled}');
           var rtpSender = await _pc!.addTrack(track, localStream);
           _senders.add(rtpSender!);
+          await _optimizeSenderParameters(rtpSender);
         }
 
         _onLog('Creating reliable data channel for commands...');
@@ -102,34 +97,32 @@ class WebRTCConnection {
           'commands',
           RTCDataChannelInit()
             ..ordered = true
-            ..maxRetransmits = 0
+            ..maxRetransmits =
+            3
             ..protocol = 'sctp'
-            ..negotiated = true
-            ..id = 1,
+            ..negotiated = false,
         );
 
         _dataChannels[_pc!] = dataChannel;
         _setupDataChannel(dataChannel);
+        _onLog('Data channel created and setup completed');
 
         _onLog('Creating optimized offer...');
         _offer = await _pc!.createOffer({
           'offerToReceiveVideo': true,
           'offerToReceiveAudio': false,
+          'voiceActivityDetection': false,
+          'iceRestart': false,
+          'enableDtlsSrtp': true,
         });
 
         var sdp = _offer!.sdp;
-        sdp = _modifySdpForLowLatency(sdp!);
-        _onLog('Modified SDP for low latency: $sdp');
-        await _pc!
-            .setLocalDescription(RTCSessionDescription(sdp, _offer!.type));
-        _onLog('Local description set for broadcaster');
-      } else {
-        _onLog('Setting up as receiver...');
-        await _pc!.createOffer({
-          'offerToReceiveVideo': true,
-          'offerToReceiveAudio': true,
-        });
-        _onLog('Receiver offer created');
+        sdp = _modifySdpForHighQuality(sdp!);
+        _offer = RTCSessionDescription(sdp, _offer!.type);
+
+        _onLog('Setting local description...');
+        await _pc!.setLocalDescription(_offer!);
+        _onLog('Local description set successfully');
       }
     } catch (e) {
       _onLog('Error creating connection: $e');
@@ -137,38 +130,65 @@ class WebRTCConnection {
     }
   }
 
-  String _modifySdpForLowLatency(String sdp) {
+  String _modifySdpForHighQuality(String sdp) {
     var lines = sdp.split('\r\n');
     var newLines = <String>[];
-    bool isVideoSection = false;
 
     for (var line in lines) {
-      if (line.startsWith('m=video')) {
-        isVideoSection = true;
-        newLines.add(line);
+      // Увеличенный битрейт для видео
+      if (line.startsWith('b=AS:')) {
         newLines.add('b=AS:2500');
-        newLines.add('a=content:main');
         continue;
       }
 
-      if (isVideoSection && line.startsWith('a=fmtp:')) {
+      // Высокий приоритет для видео
+      if (line.startsWith('m=video')) {
+        newLines.add(line);
+        newLines.add('b=AS:2500');
+        newLines.add('a=content:main');
+        newLines.add('a=priority:high');
+        continue;
+      }
+
+      // Оптимизация параметров кодека
+      if (line.startsWith('a=fmtp:')) {
         if (line.contains('VP8')) {
           newLines.add('$line;max-fs=12288;max-fr=30');
           continue;
         } else if (line.contains('H264')) {
-          newLines.add('$line;profile-level-id=42e01f;packetization-mode=1');
+          newLines.add(
+              '$line;profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1');
           continue;
         }
-      }
-
-      if (line.startsWith('m=audio')) {
-        isVideoSection = false;
       }
 
       newLines.add(line);
     }
 
     return newLines.join('\r\n');
+  }
+
+  Future<void> _optimizeSenderParameters(RTCRtpSender sender) async {
+    try {
+      var params = sender.parameters;
+
+      if (params.encodings != null && params.encodings!.isNotEmpty) {
+        for (var encoding in params.encodings!) {
+
+          encoding.maxBitrate = 2500000; // 2.5 Mbps
+          encoding.minBitrate = 500000; // 500 Kbps минимум
+
+          encoding.maxFramerate = 30;
+
+          encoding.scaleResolutionDownBy = 1.0;
+        }
+
+        await sender.setParameters(params);
+        _onLog('Optimized sender parameters for high quality');
+      }
+    } catch (e) {
+      _onLog('Error optimizing sender parameters: $e');
+    }
   }
 
   void _setupDataChannel(RTCDataChannel channel) {
@@ -178,10 +198,8 @@ class WebRTCConnection {
       _onLog('Data channel state changed to: $state');
       if (state == RTCDataChannelState.RTCDataChannelOpen) {
         _onLog('Data channel is now OPEN and ready for communication');
-        _sendTestMessage(channel);
-      } else if (state == RTCDataChannelState.RTCDataChannelClosed ||
-          state == RTCDataChannelState.RTCDataChannelClosing) {
-        _onLog('Data channel is closing/closed');
+      } else if (state == RTCDataChannelState.RTCDataChannelClosed) {
+        _onLog('Data channel is now CLOSED');
         if (_pc?.connectionState ==
             RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
           _recreateDataChannel();
@@ -231,72 +249,20 @@ class WebRTCConnection {
   Future<void> _recreateDataChannel() async {
     try {
       _onLog('Attempting to recreate data channel...');
+      final dataChannel = await _pc!.createDataChannel(
+        'commands',
+        RTCDataChannelInit()
+          ..ordered = true
+          ..maxRetransmits = 3
+          ..protocol = 'sctp'
+          ..negotiated = false,
+      );
 
-      for (var channel in _dataChannels.values) {
-        await channel.close();
-      }
-      _dataChannels.clear();
-
-      int attempts = 0;
-      const maxAttempts = 3;
-      bool success = false;
-
-      while (!success && attempts < maxAttempts) {
-        try {
-          final dataChannel = await _pc!.createDataChannel(
-            'commands',
-            RTCDataChannelInit()
-              ..ordered = true
-              ..maxRetransmits = 3
-              ..protocol = 'sctp'
-              ..negotiated = false,
-          );
-
-          _dataChannels[_pc!] = dataChannel;
-          _setupDataChannel(dataChannel);
-
-          int waitAttempts = 0;
-          while (dataChannel.state != RTCDataChannelState.RTCDataChannelOpen &&
-              waitAttempts < 50) {
-            await Future.delayed(const Duration(milliseconds: 100));
-            waitAttempts++;
-          }
-
-          if (dataChannel.state == RTCDataChannelState.RTCDataChannelOpen) {
-            _onLog('Data channel recreated and opened successfully');
-            success = true;
-          } else {
-            throw Exception('Data channel did not open in time');
-          }
-        } catch (e) {
-          attempts++;
-          _onLog('Attempt $attempts failed: $e');
-          if (attempts < maxAttempts) {
-            await Future.delayed(Duration(seconds: attempts));
-          }
-        }
-      }
-
-      if (!success) {
-        _onLog('Failed to recreate data channel after $maxAttempts attempts');
-        onConnectionFailed?.call();
-      }
+      _dataChannels[_pc!] = dataChannel;
+      _setupDataChannel(dataChannel);
+      _onLog('Data channel recreated successfully');
     } catch (e) {
       _onLog('Error recreating data channel: $e');
-      onConnectionFailed?.call();
-    }
-  }
-
-  Future<void> _sendTestMessage(RTCDataChannel channel) async {
-    try {
-      final testMessage = jsonEncode({
-        'type': 'test',
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-      await channel.send(RTCDataChannelMessage(testMessage));
-      _onLog('Test message sent successfully');
-    } catch (e) {
-      _onLog('Error sending test message: $e');
     }
   }
 
@@ -387,32 +353,65 @@ class WebRTCConnection {
   }
 
   void _setupConnectionHandlers() {
-    _pc?.onIceCandidate = (candidate) {
-      _onLog('New ICE candidate: ${candidate.candidate}');
-      _candidates.add(candidate);
-      onIceCandidate?.call(candidate);
+    _pc!.onConnectionState = (state) {
+      _onLog('Connection state changed to: $state');
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        _onLog('Successfully connected');
+      } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+          state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        _onLog('Connection failed or disconnected');
+        onConnectionFailed?.call();
+      }
+      onStateChange?.call();
     };
 
-    _pc?.onIceConnectionState = (state) {
-      _onLog('ICE Connection State changed to: $state');
-      if (state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
-          state == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+    _pc!.onIceConnectionState = (state) {
+      _onLog('ICE connection state changed to: $state');
+      if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
+          state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+        _onLog('ICE connection failed');
         onConnectionFailed?.call();
       }
     };
 
-    _pc?.onConnectionState = (state) {
-      _onLog('Connection State changed to: $state');
-      onStateChange?.call();
+    _pc!.onIceGatheringState = (state) {
+      _onLog('ICE gathering state changed to: $state');
     };
 
-    _pc?.onTrack = (track) {
-      _onLog('Received remote track: ${track.track.kind}');
-      if (track.track.kind == 'video') {
-        _remoteStream = track.streams[0];
-        onRemoteStream?.call(_remoteStream!);
-        onStateChange?.call();
+    _pc!.onIceCandidate = (candidate) {
+      if (candidate != null) {
+        _onLog('New ICE candidate: ${candidate.candidate}');
+        _candidates.add(candidate);
+        onIceCandidate?.call(candidate);
+      } else {
+        _onLog('ICE gathering completed');
       }
+    };
+
+    _pc!.onTrack = (event) {
+      _onLog('Track received: ${event.track.kind}');
+      _onLog(
+          'Track enabled: ${event.track.enabled}, muted: ${event.track.muted}');
+      _onLog('Track settings: ${event.track.getSettings()}');
+      _onLog('Streams count: ${event.streams.length}');
+
+      if (event.track.kind == 'video') {
+        if (event.streams.isNotEmpty) {
+          _remoteStream = event.streams[0];
+          _onLog('Remote stream set with ID: ${_remoteStream!.id}');
+          _onLog('Remote stream active: ${_remoteStream!.active}');
+          _onLog('Remote stream tracks: ${_remoteStream!.getTracks().length}');
+          onRemoteStream?.call(_remoteStream!);
+        } else {
+          _onLog('Warning: Received video track without stream');
+        }
+      }
+    };
+
+    _pc!.onDataChannel = (channel) {
+      _onLog('Data channel received');
+      _dataChannels[_pc!] = channel;
+      _setupDataChannel(channel);
     };
   }
 
@@ -568,27 +567,5 @@ class WebRTCConnection {
       _onLog('Error sending command via data channel: $e');
       return false;
     }
-  }
-
-  Future<void> _verifyDataChannelState() async {
-    if (_dataChannels.isEmpty) {
-      _onLog('No data channels exist, creating new one...');
-      await _recreateDataChannel();
-      return;
-    }
-
-    final hasOpenChannel = _dataChannels.values.any(
-        (channel) => channel.state == RTCDataChannelState.RTCDataChannelOpen);
-
-    if (!hasOpenChannel) {
-      _onLog('No open data channels found, recreating...');
-      await _recreateDataChannel();
-    } else {
-      _onLog('Data channel verified and open');
-    }
-  }
-
-  List<RTCRtpSender> getSenders() {
-    return _senders;
   }
 }

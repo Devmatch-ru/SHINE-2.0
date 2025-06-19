@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shine/screens/auth/auth_screen.dart';
+import 'package:shine/screens/auth/register_screen.dart';
 
 class SaverScreen extends StatelessWidget {
   const SaverScreen({super.key});
@@ -9,10 +11,9 @@ class SaverScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFDBD4FF),
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE2D8FF), Color(0xFFB2A5FF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+          image: DecorationImage(
+            image: AssetImage('assets/images/onboarding/shine_diamond.png'), // Replace with your image path
+            fit: BoxFit.cover, // Adjust fit as needed
           ),
         ),
         width: double.infinity,
@@ -21,8 +22,6 @@ class SaverScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 80),
-
-              // Тексты
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
@@ -48,25 +47,19 @@ class SaverScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const Spacer(),
-
-              // Картинки с бриллиантами
-              Image.asset(
-                'assets/images/shine_diamond.png',
-                width: 260,
-              ),
-
-              const Spacer(),
-
-              // Кнопки
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        // TODO: переход на экран входа
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
@@ -79,7 +72,12 @@ class SaverScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () {
-                        // TODO: переход на экран регистрации
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white),

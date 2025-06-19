@@ -8,6 +8,7 @@ import '../../theme/main_design.dart';
 import '../../utils/settings_manager.dart';
 import 'faq_screen.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,36 +16,88 @@ class SettingsScreen extends StatefulWidget {
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
+String _generateCoolText(String host) {
+  const coolWords = [
+    'ConnectSphere',
+    'StreamVibe',
+    'LinkPulse',
+    'SyncWave',
+    'BroadcastBlitz',
+    'ShareSpark',
+    'FlowFusion',
+    'StreamSurge',
+  ];
+var lastDigit = '0';
+  final parts = host.split(':');
+  if (parts.length == 3) {
+    final ip = parts[1];
+    final ipParts = ip.split('.');
+    if (ipParts.length == 4) {
+      lastDigit = ipParts.last.substring(ipParts.last.length - 1);
+    }
+  }
 
+  
+  final randomWord = coolWords[DateTime.now().millisecondsSinceEpoch % coolWords.length];
+
+  return '$randomWord$lastDigit'; 
+}
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _highQuality = false;
   bool _saveOriginal = false;
   bool _sendImmediately = false;
   bool _sendToAll = false;
   bool _loading = true;
+  bool _canSendEmail = false;
 
   late final SettingsManager _settings;
 
   @override
   void initState() {
     super.initState();
+    _checkEmailCapability();
     _loadSettings();
   }
 
-  Future<void> _openEmailClient(BuildContext context) async {
-    final email = Email(
-      recipients: ['isip_s.a.komkov@mpt.ru'],
-      subject: 'Отзыв о приложении',
-      body: '',
+  Future<void> _checkEmailCapability() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'help.me0shine@gmail.com',
+      query: 'subject=Отзыв о приложении',
     );
 
+    final canLaunch = await canLaunchUrl(emailLaunchUri);
+    if (mounted) {
+      setState(() {
+        _canSendEmail = canLaunch;
+      });
+    }
+  }
+
+  Future<void> _openEmailClient() async {
     try {
+      final email = Email(
+        recipients: ['help.me0shine@gmail.com'],
+        subject: 'Отзыв о приложении',
+        body: '',
+      );
       await FlutterEmailSender.send(email);
     } catch (e) {
+      if (mounted) {
+        await _copyToClipboard();
+      }
+    }
+  }
+
+  Future<void> _copyToClipboard() async {
+    await Clipboard.setData(
+        const ClipboardData(text: 'help.me0shine@gmail.com'));
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Не удалось открыть почтовый клиент:\n$e')),
+        const SnackBar(content: Text('Адрес скопирован в буфер обмена')),
       );
     }
+    Navigator.pop(context);
   }
 
   Future<void> _loadSettings() async {
@@ -249,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildNavTile('Написать нам', () {
                       showDialog(
                         context: context,
-                        barrierColor: Colors.black12, // чуть затемнённый фон
+                        barrierColor: Colors.black12,
                         builder: (ctx) => Center(
                           child: Material(
                             color: Colors.transparent,
@@ -277,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Если возникли вопросы, трудности или пожелания,\nнапишите нам на adress@mail',
+                                    'Если возникли вопросы, трудности или пожелания,\nнапишите нам на help.me0shine@gmail.com',
                                     style: AppTextStyles.body,
                                     textAlign: TextAlign.center,
                                   ),
@@ -285,8 +338,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
+                                      onPressed: _canSendEmail
+                                          ? _openEmailClient
+                                          : _copyToClipboard,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: AppColors.primaryLight,
+                                        shape: const StadiumBorder(),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 16),
+                                      ),
+                                      child: Text(
+                                        _canSendEmail
+                                            ? 'Написать'
+                                            : 'Скопировать адрес',
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
                                       onPressed: () async {
-                                        _openEmailClient(context);
+                                        await Clipboard.setData(
+                                            const ClipboardData(
+                                                text:
+                                                    'help.me0shine@gmail.com'));
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    'Адрес скопирован в буфер обмена')),
+                                          );
+                                          Navigator.pop(context);
+                                        }
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.primary,
@@ -295,7 +382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 16),
                                       ),
-                                      child: const Text('Написать',
+                                      child: const Text('Скопировать адрес',
                                           style: TextStyle(fontSize: 16)),
                                     ),
                                   ),
@@ -397,7 +484,7 @@ void _shareApp(BuildContext context) {
             title: const Text('Поделиться…'),
             onTap: () {
               Navigator.pop(context);
-              Share.share(text); // системное меню share
+              Share.share(text);
             },
           ),
           ListTile(

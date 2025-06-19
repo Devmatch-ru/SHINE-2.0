@@ -222,7 +222,7 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         case VerificationType.enterAccount:
           await api.verifyCode(codeInt);
           if (mounted) {
-            _resendTimer?.cancel(); // Останавливаем таймер
+            _resendTimer?.cancel();
             if (widget.onSuccess != null) {
               widget.onSuccess!(widget.email, null);
             }

@@ -1,4 +1,3 @@
-// lib/screens/about_tabs_screen.dart
 import 'package:flutter/material.dart';
 
 import '../../theme/main_design.dart';

@@ -59,6 +59,7 @@ dependencies:
   network_info_plus: ^6.1.4
   image: ^4.5.4
   image_picker: ^1.0.7
+  url_launcher: ^6.2.5
 
 dependency_overrides:
   webrtc_interface: ^1.2.2+hotfix.2
@@ -116,6 +117,7 @@ flutter:
     - assets/icons/camera/shutter.png
     - assets/icons/camera/trailing.png
     - assets/icons/camera/thunder.png
+    - assets/images/onboarding/shine_diamond.png
   fonts:
     - family: ProximaNova
       fonts:

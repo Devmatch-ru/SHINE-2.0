@@ -44,12 +44,10 @@ class BroadcasterManager {
   final void Function(String fileName, String mediaType, int sentChunks,
       int totalChunks, bool isCompleted)? onTransferProgress;
 
-  // Энергосбережение
   bool _isPowerSaveMode = false;
   Timer? _thermalMonitor;
   DateTime _lastThermalCheck = DateTime.now();
 
-  // Состояние фонарика
   bool _isFlashOn = false;
 
   MediaRecorder? _mediaRecorder;
@@ -269,7 +267,6 @@ class BroadcasterManager {
         },
       };
 
-      // Создание media stream с повторными попытками
       int retryCount = 0;
       while (retryCount < 15) {
         try {
@@ -288,7 +285,6 @@ class BroadcasterManager {
             'Failed to create media stream after multiple attempts');
       }
 
-      // Создание WebRTC подключения с повторными попытками
       retryCount = 0;
       while (retryCount < 15) {
         try {
@@ -325,7 +321,6 @@ class BroadcasterManager {
         throw Exception('Invalid receiver URL format');
       }
 
-      // Отправка offer с повторными попытками
       retryCount = 0;
       Exception? lastError;
 
@@ -639,25 +634,14 @@ class BroadcasterManager {
           targetBitrate = 1500000; // 1.5 Mbps
       }
 
-      // Применяем новые ограничения к существующему потоку
+      //ограничения к существующему потоку
       await _mediaManager.updateStreamWithConstraints(constraints);
 
-      // Обновляем WebRTC соединение с новым потоком
       if (_mediaManager.localStream != null) {
         await _webrtc.updateStream(_mediaManager.localStream!);
 
-        // Применяем новый битрейт
-        final senders = await _webrtc.getSenders();
-        for (var sender in senders) {
-          if (sender.track?.kind == 'video') {
-            final parameters = sender.parameters;
-            if (parameters.encodings != null) {
-              parameters.encodings![0].maxBitrate = targetBitrate;
-              parameters.encodings![0].minBitrate = targetBitrate ~/ 2;
-              await sender.setParameters(parameters);
-            }
-          }
-        }
+        final senders = 'await _webrtc.getSenders()';
+
       }
 
       _addMessage(
@@ -742,136 +726,6 @@ class BroadcasterManager {
       onStateChange?.call();
     } catch (e) {
       _addMessage('Error enabling power save mode: $e');
-    }
-  }
-
-  void _disablePowerSaveMode() async {
-    if (!_isPowerSaveMode) return;
-
-    try {
-      _isPowerSaveMode = false;
-      _addMessage('Power save mode disabled');
-
-      onStateChange?.call();
-    } catch (e) {
-      _addMessage('Error disabling power save mode: $e');
-    }
-  }
-
-  Future<String> _getLocalIp() async {
-    final wifiIP = await NetworkInfo().getWifiIP();
-    if (wifiIP == null) {
-      throw Exception('Could not determine Wi-Fi IP');
-    }
-    return wifiIP;
-  }
-
-  Future<RTCPeerConnection> _createPeerConnection(String receiverUrl) async {
-    try {
-      _addMessage('Creating peer connection for $receiverUrl');
-
-      final config = {
-        'iceServers': [
-          {
-            'urls': ['stun:stun1.l.google.com:19302']
-          },
-        ],
-        'sdpSemantics': 'unified-plan',
-        'bundlePolicy': 'max-bundle',
-        'rtcpMuxPolicy': 'require',
-        'iceTransportPolicy': 'all',
-      };
-
-      final pc = await createPeerConnection(config);
-      if (pc == null) throw Exception('Failed to create peer connection');
-
-      // Add local stream
-      if (_localStream != null) {
-        _addMessage('Adding local stream tracks');
-        final videoTracks = _localStream!.getVideoTracks();
-        for (var track in videoTracks) {
-          await pc.addTrack(track, _localStream!);
-        }
-      }
-
-      // Set up event handlers
-      pc.onIceCandidate = (candidate) {
-        _addMessage('New ICE candidate: ${candidate.candidate}');
-        _sendCandidate(receiverUrl, candidate);
-      };
-
-      pc.onIceConnectionState = (state) {
-        _addMessage('ICE connection state: $state');
-        if (state == RTCIceConnectionState.RTCIceConnectionStateConnected) {
-          _isConnected = true;
-          onStateChange?.call();
-        } else if (state == RTCIceConnectionState.RTCIceConnectionStateFailed ||
-            state == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
-          _handleDisconnection();
-        }
-      };
-
-      // Create and send offer
-      final offer = await pc.createOffer({
-        'offerToReceiveVideo': false,
-        'offerToReceiveAudio': false,
-      });
-
-      await pc.setLocalDescription(offer);
-      _addMessage('Local description set');
-
-      final response = await http.post(
-        Uri.parse('http://$receiverUrl/offer'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'sdp': offer.sdp,
-          'type': offer.type,
-          'broadcasterUrl': 'http://${await _getLocalIp()}:8080',
-        }),
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to send offer: ${response.statusCode}');
-      }
-
-      final answerData = jsonDecode(response.body);
-      final answer = RTCSessionDescription(
-        answerData['sdp'],
-        answerData['type'],
-      );
-
-      await pc.setRemoteDescription(answer);
-      _addMessage('Remote description set');
-
-      _peerConnection = pc;
-      return pc;
-    } catch (e) {
-      _addMessage('Error creating peer connection: $e');
-      rethrow;
-    }
-  }
-
-  void _handleDisconnection() {
-    _addMessage('Handling disconnection');
-    _isConnected = false;
-    _peerConnection?.close();
-    _peerConnection = null;
-    onStateChange?.call();
-  }
-
-  Future<void> _sendCandidate(
-      String receiverUrl, RTCIceCandidate candidate) async {
-    try {
-      final response = await http.post(
-        Uri.parse('http://$receiverUrl/candidate'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'candidate': candidate.toMap()}),
-      );
-      if (response.statusCode != 200) {
-        _addMessage('Failed to send ICE candidate: ${response.statusCode}');
-      }
-    } catch (e) {
-      _addMessage('Error sending ICE candidate: $e');
     }
   }
 }

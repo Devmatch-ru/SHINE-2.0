@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shine/screens/roles/host_selection_screen.dart';
 import '../../blocs/wifi/wifi_cubit.dart';
 import '../../blocs/wifi/wifi_state.dart';
 import '../../theme/main_design.dart';
@@ -27,7 +28,7 @@ class ClientTipScreen extends StatelessWidget {
       height: double.infinity,
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('assets/images/tips/client_tip.png'),
+          image: AssetImage('assets/images/tips/host_tip.png'),
           fit: BoxFit.cover,
         ),
       ),
@@ -102,10 +103,25 @@ class ClientTipScreen extends StatelessWidget {
                                 const Spacer(),
                                 if ( state is! WifiDisconnected) ...[
                                   ElevatedButton(
-                                    onPressed: () async {
-                                      await ClientTipScreen.markSeen();
-                                      Navigator.pop(context);
-                                    },
+                                    onPressed: () async => await Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                        transitionDuration: const Duration(milliseconds: 300),
+                                        pageBuilder: (context, animation, secondaryAnimation) => const HostSelectionScreen(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return SlideTransition(
+                                            position: animation.drive(
+                                              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                                                  .chain(CurveTween(curve: Curves.easeInOut)),
+                                            ),
+                                            child: FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.white,
                                       foregroundColor: AppColors.primary,

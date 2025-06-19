@@ -53,7 +53,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   String extractErrorText(Object e) {
     var text = e.toString();
 
-    // Извлекаем сообщение об ошибке из JSON ответа
     if (text.contains('"error":')) {
       final errorStart = text.indexOf('"error":') + 8;
       final errorEnd = text.indexOf('"', errorStart);
@@ -62,13 +61,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       }
     }
 
-    // Убираем технические детали
     text = text
         .replaceAll('Exception: ', '')
         .replaceAll('Network error: ', '')
         .replaceAll('Request failed with status: ', '');
 
-    // Если это ответ сервера с ошибкой, извлекаем только сообщение
     if (text.contains('Body:')) {
       try {
         final bodyStart = text.indexOf('Body:') + 5;
@@ -84,7 +81,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
-    // Валидация
     final passwordError = validatePassword(_passwordCtrl.text);
     final confirmError =
         _passwordCtrl.text != _confirmCtrl.text ? 'Пароли не совпадают' : null;
@@ -114,16 +110,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (!mounted) return;
 
       if (response['success'] == true) {
-        // Показываем сообщение об успехе
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Пароль успешно изменен')),
         );
 
         if (widget.isFromProfile) {
-          // Возвращаемся в профиль
           Navigator.of(context).pop();
         } else {
-          // Выполняем вход с новым паролем
           context.read<AuthCubit>().signIn(widget.email, _passwordCtrl.text);
           Navigator.of(context).popUntil((route) => route.isFirst);
         }

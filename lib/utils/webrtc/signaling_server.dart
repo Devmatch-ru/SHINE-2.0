@@ -89,7 +89,7 @@ class SignalingServer {
 
     try {
       _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, 8080,
-          shared: true // Enable shared binding for multiple connections
+          shared: true
           );
       _onLog('Server running on port 8080');
     } catch (e) {

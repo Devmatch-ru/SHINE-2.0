@@ -109,7 +109,22 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
             TextButton(
               onPressed: () async => await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
+                PageRouteBuilder(
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (context, animation, secondaryAnimation) => const RoleSelectScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: animation.drive(
+                        Tween(begin: const Offset(0.0, 1.0), end: Offset.zero)
+                            .chain(CurveTween(curve: Curves.easeInOut)),
+                      ),
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      ),
+                    );
+                  },
+                ),
               ),
               child: Text(
                 'Отменить',
@@ -120,7 +135,6 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
               onPressed: _selectedHost == null
                   ? null
                   : () async {
-                      // Format the receiver URL
                       if (_selectedHost!.startsWith('RECEIVER:')) {
                         final parts = _selectedHost!.split(':');
                         if (parts.length == 3) {
@@ -204,18 +218,22 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
                     )
                   else
                     ..._filteredHosts.map(
-                      (host) => Column(
-                        children: [
-                          ListTile(
-                            title: Text(host),
-                            trailing: _selectedHost == host
-                                ? const Icon(Icons.check, color: Colors.black)
-                                : null,
-                            onTap: () => _onSelect(host),
-                          ),
-                          if (host != _filteredHosts.last) _buildDivider(),
-                        ],
-                      ),
+                          (host) {
+                        final UserName = _generateUserNameText(host);
+                        return Column(
+                          children: [
+                            ListTile(
+                              title: Text(UserName),
+                              // subtitle: Text(host.split(':')[1]),
+                              trailing: _selectedHost == host
+                                  ? const Icon(Icons.check, color: Colors.black)
+                                  : null,
+                              onTap: () => _onSelect(host),
+                            ),
+                            if (host != _filteredHosts.last) _buildDivider(),
+                          ],
+                        );
+                      },
                     ),
                 ],
               ),
@@ -225,4 +243,34 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
       ),
     );
   }
+  String _generateUserNameText(String host) {
+    const coolWords = [
+      'Linker',
+      'Signal',
+      'Wave',
+      'Beam',
+      'Echo',
+      'Pulse',
+      'Relay',
+      'Nimbus',
+      'Channel',
+      'Bridge',
+    ];
+
+    final parts = host.split(':');
+    if (parts.length != 3) return 'Unknown';
+
+    final ip = parts[1];
+    final ipParts = ip.split('.');
+    if (ipParts.length != 4) return 'Unknown';
+
+    final lastOctet = ipParts.last;
+    final lastDigits = lastOctet.replaceAll(RegExp(r'[^0-9]'), '');
+
+    final index = int.tryParse(lastDigits) ?? 0;
+    final word = coolWords[index % coolWords.length];
+
+    return '$word$lastDigits';
+  }
+
 }

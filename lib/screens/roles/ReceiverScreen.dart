@@ -204,7 +204,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                 child: state.isConnected && state.remoteStream != null
                     ? RTCVideoView(
                         context.read<ReceiverCubit>().remoteRenderer,
-                        key: ValueKey(state.remoteStream.toString()), // Принудительное обновление
+                        key: ValueKey(state.remoteStream.toString()),
                         objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                       )
                     : Center(
@@ -227,13 +227,13 @@ class _ReceiverScreenContent extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: () => _showConnectionStatus(context, state),
-                              child: const Text(
-                                'Показать статус подключения',
-                                style: TextStyle(color: Colors.blue),
-                              ),
-                            ),
+                            // TextButton(
+                            //   onPressed: () => _showConnectionStatus(context, state),
+                            //   child: const Text(
+                            //     'Показать статус подключения',
+                            //     style: TextStyle(color: Colors.blue),
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),
@@ -253,10 +253,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                state.connectedBroadcaster != null
-                                    ? 'Основной: ${state.connectedBroadcaster}'
-                                    : 'Ожидание подключения',
+                              Text( 'Camera',
                                 style: AppTextStyles.lead.copyWith(color: Colors.white),
                               ),
                               if (context.read<ReceiverCubit>().connectedBroadcasters.length > 0)
@@ -332,7 +329,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                   ),
                 ),
               ),
-              if (state.isConnected)
+
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -409,7 +406,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                 top: MediaQuery.of(context).padding.top + 10,
                 right: 60,
                 child: GestureDetector(
-                  onTap: () => _showConnectionStatus(context, state),
+                  // onTap: () => _showConnectionStatus(context, state),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(

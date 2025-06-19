@@ -14,7 +14,6 @@ class MediaDevicesManager {
   final VoidCallback? onStateChange;
   final void Function(MediaStream)? onStreamUpdated;
 
-  // Оптимизация производительности
   Timer? _performanceMonitor;
   bool _isLowPowerMode = false;
   int _frameDropCount = 0;
@@ -26,7 +25,6 @@ class MediaDevicesManager {
     this.onStreamUpdated,
   }) : _onLog = onLog;
 
-  // Getters
   MediaStream? get localStream => _localStream;
   List<MediaDeviceInfo> get videoInputs =>
       _devices.where((d) => d.kind == 'videoinput').toList();
@@ -55,11 +53,8 @@ class MediaDevicesManager {
     try {
       final videoTrack = _localStream!.getVideoTracks().first;
 
-      // Простая проверка производительности без getStats
-      // Можно добавить другие метрики производительности
       _onLog('Checking performance...');
 
-      // Пример: если устройство работает долго, переключаемся в энергосберегающий режим
       final uptime = now.difference(_lastQualityAdjustment);
       if (uptime.inMinutes > 5 && !_isLowPowerMode) {
         await _adaptiveQualityReduction();
@@ -71,13 +66,10 @@ class MediaDevicesManager {
   }
 
   bool _shouldReduceQuality(Map<String, dynamic> stats) {
-    // Логика определения необходимости снижения качества
-    // Можно добавить проверки на frame drops, CPU usage, etc.
     return false; // Пока отключено, можно настроить позже
   }
 
   bool _canIncreaseQuality(Map<String, dynamic> stats) {
-    // Логика определения возможности повышения качества
     return false; // Пока отключено
   }
 
@@ -86,7 +78,6 @@ class MediaDevicesManager {
       _onLog('Switching to low power mode due to performance issues');
       _isLowPowerMode = true;
 
-      // Снижаем качество для экономии ресурсов
       await _applyLowPowerSettings();
     }
   }
@@ -96,7 +87,6 @@ class MediaDevicesManager {
       _onLog('Switching back to normal mode - performance improved');
       _isLowPowerMode = false;
 
-      // Возвращаем нормальные настройки
       await _applyNormalSettings();
     }
   }
@@ -110,7 +100,6 @@ class MediaDevicesManager {
         'frameRate': 15,
         'facingMode': 'environment',
         'aspectRatio': 16.0 / 9.0,
-        // Оптимизация для экономии энергии
         'advanced': [
           {'powerLineFrequency': 50},
           {'whiteBalanceMode': 'manual'},
@@ -182,7 +171,7 @@ class MediaDevicesManager {
           'optional': [
             {'sourceId': _selectedVideoInputId}
           ],
-        'facingMode': 'environment', // Используем заднюю камеру по умолчанию
+        'facingMode': 'environment',
         'width': _selectedVideoSize.width,
         'height': _selectedVideoSize.height,
         'frameRate': double.parse(_selectedVideoFPS!),
@@ -202,17 +191,13 @@ class MediaDevicesManager {
 
   Future<void> updateStream() async {
     try {
-      // Сначала останавливаем старый поток
       await stopStream();
 
-      // Небольшая задержка для освобождения ресурсов
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // Создаем новый поток
       await createStream();
       _onLog('Stream updated with new settings');
 
-      // Уведомляем о новом потоке
       if (_localStream != null) {
         onStreamUpdated?.call(_localStream!);
       }
@@ -229,20 +214,16 @@ class MediaDevicesManager {
     try {
       _onLog('Updating stream with custom constraints...');
 
-      // Сначала останавливаем старый поток
       await stopStream();
 
-      // Небольшая задержка для освобождения ресурсов
       await Future.delayed(const Duration(milliseconds: 300));
 
-      // Создаем новый поток с заданными ограничениями
       _localStream = await navigator.mediaDevices.getUserMedia(constraints);
 
       if (_localStream != null) {
         var videoTrack = _localStream!.getVideoTracks().first;
         _onLog('New video track settings: ${videoTrack.getSettings()}');
 
-        // Уведомляем о новом потоке
         onStreamUpdated?.call(_localStream!);
       }
 
@@ -258,14 +239,12 @@ class MediaDevicesManager {
     if (_localStream != null) {
       _onLog('Stopping current stream...');
 
-      // Останавливаем все треки
       final tracks = _localStream!.getTracks();
       for (var track in tracks) {
         _onLog('Stopping track: ${track.kind}');
         await track.stop();
       }
 
-      // Освобождаем поток
       await _localStream!.dispose();
       _localStream = null;
 

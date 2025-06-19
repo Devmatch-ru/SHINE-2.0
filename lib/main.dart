@@ -10,9 +10,9 @@ import 'package:shine/blocs/role/role_cubit.dart';
 import 'package:shine/blocs/role/role_state.dart';
 import 'package:shine/blocs/onboarding/onboarding_cubit.dart' as onb;
 import 'package:shine/blocs/wifi/wifi_cubit.dart';
-import 'package:shine/screens/auth/auth_screen.dart';
 import 'package:shine/screens/onboarding_screen.dart';
 import 'package:shine/screens/roles/role_select.dart';
+import 'package:shine/screens/saver_screen.dart';
 import 'package:shine/theme/main_design.dart';
 import 'package:shine/services/auth_service.dart';
 
@@ -28,7 +28,6 @@ Future<void> main() async {
         BlocProvider(create: (_) => WifiCubit(connectivity: Connectivity())),
         BlocProvider(create: (_) => onb.OnboardingCubit()),
         BlocProvider(create: (_) => RoleCubit()),
-
       ],
       child: const ShineApp(),
     ),
@@ -130,9 +129,13 @@ class ShineApp extends StatelessWidget {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
-          } else if (authState is Unauthenticated) {
-            return const LoginScreen();
-          } else if (authState is Authenticated) {
+          }
+
+          if (authState is Unauthenticated) {
+            return const SaverScreen();
+          }
+
+          if (authState is Authenticated) {
             return BlocBuilder<onb.OnboardingCubit, onb.OnboardingState>(
               builder: (context, onbState) {
                 if (onbState is onb.OnboardingRequired) {
@@ -140,16 +143,14 @@ class ShineApp extends StatelessWidget {
                 }
                 return BlocBuilder<RoleCubit, RoleState>(
                   builder: (context, roleState) {
-                    if (roleState is RoleInitial) {
-                      return const RoleSelectScreen();
-                    }
                     return const RoleSelectScreen();
                   },
                 );
               },
             );
           }
-          return const LoginScreen();
+
+          return const SaverScreen();
         },
       ),
     );

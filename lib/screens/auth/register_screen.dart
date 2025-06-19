@@ -26,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _passwordError;
   String? _confirmError;
 
-  //url to user agreement TODO mb
+  //url to user agreement TODO
   //final _agreementUrl = Uri.parse('https://');
 
 

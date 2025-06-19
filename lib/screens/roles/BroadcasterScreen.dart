@@ -20,7 +20,6 @@ class BroadcasterScreen extends StatelessWidget {
     return BlocProvider(
       create: (_) {
         final cubit = BroadcasterCubit(receiverUrl: receiverUrl);
-        // Initialize asynchronously
         Future.microtask(() => cubit.initialize());
         return cubit;
       },
@@ -57,7 +56,6 @@ class _BroadcasterScreenContent extends StatelessWidget {
         final size = MediaQuery.of(context).size;
         final isPortrait = size.height > size.width;
 
-        // Проверка ориентации экрана
         if (!isPortrait) {
           return const Scaffold(
             backgroundColor: Colors.black,
@@ -208,27 +206,27 @@ class _BroadcasterScreenContent extends StatelessWidget {
                 ),
 
               // Сообщение команды
-              if (state.commandMessage != null)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    margin: const EdgeInsets.symmetric(horizontal: 40),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Text(
-                      state.commandMessage!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
+              // if (state.commandMessage != null)
+              //   Center(
+              //     child: Container(
+              //       padding: const EdgeInsets.all(20),
+              //       margin: const EdgeInsets.symmetric(horizontal: 40),
+              //       decoration: BoxDecoration(
+              //         color: Colors.blue.withOpacity(0.9),
+              //         borderRadius: BorderRadius.circular(15),
+              //         border: Border.all(color: Colors.white, width: 2),
+              //       ),
+              //       child: Text(
+              //         state.commandMessage!,
+              //         style: const TextStyle(
+              //           color: Colors.white,
+              //           fontSize: 18,
+              //           fontWeight: FontWeight.bold,
+              //         ),
+              //         textAlign: TextAlign.center,
+              //       ),
+              //     ),
+              //   ),
 
               // Нижние элементы управления
               Positioned(
