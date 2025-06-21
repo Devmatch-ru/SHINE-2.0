@@ -1,5 +1,5 @@
 class ApiConfig {
-  static const String baseUrl = 'http://5.129.200.23:8080/api/v1/public';
+  static const String baseUrl = 'https://tech-shine.ru/api/v1/public';
 
   static const String register = '/user/reg/';
   static const String sendCode = '/user/code/send';

@@ -23,6 +23,8 @@ class HostTipScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Future.microtask(() => HostTipScreen.markSeen());
+
     return Container(
       width: double.infinity,
       height: double.infinity,

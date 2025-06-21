@@ -13,12 +13,12 @@ import 'package:shine/blocs/wifi/wifi_cubit.dart';
 import 'package:shine/screens/onboarding_screen.dart';
 import 'package:shine/screens/roles/role_select.dart';
 import 'package:shine/screens/saver_screen.dart';
+import 'package:shine/permission_manager.dart';
 import 'package:shine/theme/main_design.dart';
 import 'package:shine/services/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await requestPermissions();
   debugPaintBaselinesEnabled = false;
 
   runApp(
@@ -34,59 +34,17 @@ Future<void> main() async {
   );
 }
 
-final GlobalKey<NavigatorState> _navigatiorKey = GlobalKey<NavigatorState>();
-
-Future<void> requestPermissions() async {
-  while (true) {
-    final statuses = await [
-      Permission.camera,
-      Permission.microphone,
-      Permission.locationWhenInUse,
-    ].request();
-
-    final allGranted = statuses.values.every((status) => status.isGranted);
-
-    if (allGranted) break;
-
-    final permanentlyDenied =
-        statuses.values.any((status) => status.isPermanentlyDenied);
-
-    if (permanentlyDenied) {
-      final opened = await openAppSettings();
-      if (!opened) break;
-    } else {
-      final shouldRetry = await showDialog<bool>(
-        context: _navigatiorKey.currentContext!,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Text('Разрешения'),
-          content: const Text(
-              'Для работы приложения необходимо разрешение на камеру, микрофон и геолокацию.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Выход'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldRetry != true) break;
-    }
-  }
-}
+final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
 class ShineApp extends StatelessWidget {
   const ShineApp({Key? key}) : super(key: key);
+  
 
   @override
   Widget build(BuildContext context) {
+    Future.microtask(() => PermissionManager.requestPermissions(context));
     return MaterialApp(
-      navigatorKey: _navigatiorKey,
+      navigatorKey: _navigatorKey,
       title: 'SHINE',
       theme: ThemeData(
         useMaterial3: true,

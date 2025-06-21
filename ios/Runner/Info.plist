@@ -13,10 +13,10 @@
     <key>NSLocalNetworkUsageDescription</key>
     <string>Приложению требуется доступ к локальной сети для поиска устройств и трансляции</string>
     <key>NSBonjourServices</key>
-    <array>
-        <string>_shine._tcp</string>
-        <string>_shine._udp</string>
-    </array>
+	<array>
+	<string>_shine._tcp</string>
+	<string>_shine._udp</string>
+	</array>
     <key>NSAppTransportSecurity</key>
     <dict>
         <key>NSAllowsLocalNetworking</key>

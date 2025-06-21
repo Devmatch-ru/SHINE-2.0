@@ -23,6 +23,8 @@ class ClientTipScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Future.microtask(() => ClientTipScreen.markSeen());
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -53,7 +55,7 @@ class ClientTipScreen extends StatelessWidget {
                   final baseSubtitle = 'Изображение камеры транслируется\nна все подключённые устройства';
                   final errorSubtitle = switch (state) {
                     WifiDisconnected() => 'Кажется, отсутствует соединение.\nДля работы подключитесь к точке доступа Wi-Fi',
-                  //WifiConnectedStable() || WifiDisconnected() => 'Кажется, соединение нестабильно.\nПроверьте подключение к точке доступа Wi-Fi',
+                    //WifiConnectedStable() || WifiDisconnected() => 'Кажется, соединение нестабильно.\nПроверьте подключение к точке доступа Wi-Fi',
                     _ => '',
                   };
                   final errorMessage = state is WifiDisconnected ? 'Отсутствует соединение' : '';

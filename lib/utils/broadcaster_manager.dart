@@ -330,17 +330,17 @@ class BroadcasterManager {
 
           final response = await http
               .post(
-                Uri.parse('$receiverUrl/offer'),
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                },
-                body: jsonEncode({
-                  'sdp': _webrtc.offer!.sdp,
-                  'type': _webrtc.offer!.type,
-                  'broadcasterUrl': 'http://$wifiIP:8080',
-                }),
-              )
+            Uri.parse('$receiverUrl/offer'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'sdp': _webrtc.offer!.sdp,
+              'type': _webrtc.offer!.type,
+              'broadcasterUrl': 'http://$wifiIP:8080',
+            }),
+          )
               .timeout(Duration(seconds: 5));
 
           hasResponse = true;

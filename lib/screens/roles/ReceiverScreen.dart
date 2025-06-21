@@ -1,68 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:shine/blocs/receiver/receiver_state.dart';
 import 'package:shine/theme/main_design.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shine/blocs/receiver/receiver_cubit.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 
-import '../../blocs/receiver/receiver_cubit.dart';
-import '../../blocs/receiver/receiver_state.dart';
-
-class ReceiverScreen extends StatelessWidget {
+class ReceiverScreen extends StatefulWidget {
   const ReceiverScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ReceiverCubit()..initialize(),
-      child: const _ReceiverScreenContent(),
-    );
-  }
+  State<ReceiverScreen> createState() => _ReceiverScreenState();
 }
 
-class _ReceiverScreenContent extends StatelessWidget {
-  const _ReceiverScreenContent();
+class _ReceiverScreenState extends State<ReceiverScreen> {
+  late final ReceiverCubit _cubit;
+  late final RTCVideoRenderer _remoteRenderer;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _remoteRenderer = RTCVideoRenderer();
+    _cubit = ReceiverCubit();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _remoteRenderer.initialize();
+      await _cubit.initialize();
+      setState(() => _isInitialized = true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка инициализации: $e')),
+        );
+      }
+    }
+  }
 
   double _getIconSize(BuildContext context) =>
       MediaQuery.of(context).size.width * 0.07;
   double _getShutterSize(BuildContext context) =>
       MediaQuery.of(context).size.width * 0.18;
-  double _getControlsPadding(BuildContext context) =>
-      MediaQuery.of(context).size.width * 0.1;
 
-
-  void _handleError(BuildContext context, String error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(error),
-        duration: const Duration(seconds: 3),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  void _showConnectionStatus(BuildContext context, ReceiverState state) {
-    final messages = context.read<ReceiverCubit>().debugMessages;
-    if (messages.isNotEmpty) {
-      print('Last debug message: ${messages.last}');
-    }
-
+  void _showConnectionStatus() {
+    final state = _cubit.state;
+    final messages = _cubit.messages;
     String status = 'Статус подключения:\n';
     status +=
         state.isConnected ? '✅ Соединение активно\n' : '❌ Нет соединения\n';
     status += state.remoteStream != null
         ? '✅ Видео поток активен\n'
         : '❌ Нет видео потока\n';
-    status += state.connectedBroadcaster != null
-        ? '✅ Broadcaster подключен (${state.connectedBroadcaster})\n'
+    status += state.connectedBroadcasters.isNotEmpty
+        ? '✅ Broadcaster подключен (${state.connectedBroadcasters.first})\n'
         : '❌ Нет подключенного broadcaster\n';
-    status +=
-        'Качество потока: ${state.streamQuality.toString().split('.').last}\n';
-    status +=
-        'Качество соединения: ${state.connectionQuality ?? "Неизвестно"}\n';
-    status += 'Задержка: ${state.connectionLatency ?? "Неизвестно"} мс\n';
-    status += 'Разрешение: ${state.videoResolution ?? "Неизвестно"}\n';
-    status += 'Битрейт: ${state.videoBitrate ?? "Неизвестно"} кбит/с\n';
+    // Stream quality, connection quality, latency, resolution, and bitrate not supported in ReceiverManager
+    status += 'Качество потока: Неизвестно\n';
+    status += 'Качество соединения: Неизвестно\n';
+    status += 'Задержка: Неизвестно мс\n';
+    status += 'Разрешение: Неизвестно\n';
+    status += 'Битрейт: Неизвестно кбит/с\n';
 
     showDialog(
       context: context,
@@ -80,10 +81,7 @@ class _ReceiverScreenContent extends StatelessWidget {
               children: [
                 const Text(
                   'Статус подключения',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Text(status),
@@ -107,9 +105,7 @@ class _ReceiverScreenContent extends StatelessWidget {
                         final msg = messages[messages.length - 1 - index];
                         return Padding(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
+                              horizontal: 8, vertical: 4),
                           child: Text(
                             '• $msg',
                             style: TextStyle(
@@ -161,83 +157,84 @@ class _ReceiverScreenContent extends StatelessWidget {
   }
 
   @override
+  void dispose() {
+    _remoteRenderer.srcObject = null;
+    _remoteRenderer.dispose();
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ReceiverCubit, ReceiverState>(
-      listener: (context, state) {
-        if (state is ReceiverError) {
-          _handleError(context, state.error!);
-        }
-      },
+    final size = MediaQuery.of(context).size;
+    final isPortrait = size.height > size.width;
+
+    if (!isPortrait) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Text(
+            'Поверните устройство вертикально',
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ),
+        ),
+      );
+    }
+
+    if (!_isInitialized) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    return BlocBuilder<ReceiverCubit, ReceiverState>(
+      bloc: _cubit,
       builder: (context, state) {
-        print('Building UI with state: $state');
-        print('isConnected: ${state.isConnected}, remoteStream: ${state.remoteStream}');
-        final size = MediaQuery.of(context).size;
-        final isPortrait = size.height > size.width;
-
-        if (!isPortrait) {
-          return const Scaffold(
-            backgroundColor: Colors.black,
-            body: Center(
-              child: Text(
-                'Поверните устройство вертикально',
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-            ),
-          );
-        }
-
-        if (state.isInitializing) {
-          return const Scaffold(
-            backgroundColor: Colors.black,
-            body: Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-              ),
-            ),
-          );
-        }
-
+        _remoteRenderer.srcObject = state.remoteStream;
         return Scaffold(
           backgroundColor: Colors.black,
           body: Stack(
             children: [
               Positioned.fill(
-                child: state.isConnected && state.remoteStream != null
-                    ? RTCVideoView(
-                        context.read<ReceiverCubit>().remoteRenderer,
+                child: RTCVideoView(
+                        _remoteRenderer,
                         key: ValueKey(state.remoteStream.toString()),
-                        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                       )
-                    : Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.wifi_tethering,
-                              color: Colors.white54,
-                              size: 48,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              state.isConnected
-                                  ? 'Подключено, ожидание видео потока...'
-                                  : 'Ожидание подключения...',
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            // TextButton(
-                            //   onPressed: () => _showConnectionStatus(context, state),
-                            //   child: const Text(
-                            //     'Показать статус подключения',
-                            //     style: TextStyle(color: Colors.blue),
-                            //   ),
-                            // ),
-                          ],
-                        ),
-                      ),
+                    //  Center(
+                    //     child: Column(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         const Icon(
+                    //           Icons.wifi_tethering,
+                    //           color: Colors.white54,
+                    //           size: 48,
+                    //         ),
+                    //         const SizedBox(height: 16),
+                    //         Text(
+                    //           state.isConnected
+                    //               ? 'Подключено, ожидание видео потока...'
+                    //               : 'Ожидание подключения...',
+                    //           style: const TextStyle(
+                    //             color: Colors.white54,
+                    //             fontSize: 16,
+                    //           ),
+                    //         ),
+                    //         const SizedBox(height: 8),
+                    //         TextButton(
+                    //           onPressed: _showConnectionStatus,
+                    //           child: const Text(
+                    //             'Показать статус подключения',
+                    //             style: TextStyle(color: Colors.blue),
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
               ),
               Positioned(
                 top: 0,
@@ -254,19 +251,22 @@ class _ReceiverScreenContent extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text( 'Camera',
-                                style: AppTextStyles.lead.copyWith(color: Colors.white),
+                              Text(
+                                'Camera',
+                                style: AppTextStyles.lead
+                                    .copyWith(color: Colors.white),
                               ),
-                              if (context.read<ReceiverCubit>().connectedBroadcasters.length > 0)
+                              if (state.connectedBroadcasters.isNotEmpty)
                                 Container(
                                   margin: const EdgeInsets.only(top: 2),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 1),
                                   decoration: BoxDecoration(
                                     color: Colors.blue.withOpacity(0.8),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    '📱 ${context.read<ReceiverCubit>().connectedBroadcasters.length}/7',
+                                    '📱 ${state.connectedBroadcasters.length}/7',
                                     style: const TextStyle(fontSize: 10),
                                   ),
                                 ),
@@ -292,24 +292,11 @@ class _ReceiverScreenContent extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          _buildQualityButton(context, 'Низкое', 'low', false),
                           _buildQualityButton(
-                            context,
-                            'Низкое',
-                            StreamQuality.low,
-                            state.streamQuality == StreamQuality.low,
-                          ),
+                              context, 'Среднее', 'medium', true),
                           _buildQualityButton(
-                            context,
-                            'Среднее',
-                            StreamQuality.medium,
-                            state.streamQuality == StreamQuality.medium,
-                          ),
-                          _buildQualityButton(
-                            context,
-                            'Высокое',
-                            StreamQuality.high,
-                            state.streamQuality == StreamQuality.high,
-                          ),
+                              context, 'Высокое', 'high', false),
                         ],
                       ),
                     ),
@@ -326,90 +313,89 @@ class _ReceiverScreenContent extends StatelessWidget {
                       height: _getIconSize(context),
                       color: Colors.white,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () async {
+                      await _cubit.close();
+                      if (mounted) Navigator.pop(context);
+                    },
                   ),
                 ),
               ),
-
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: size.width * 0.1,
-                      vertical: 20,
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            IconButton(
-                              icon: Image.asset(
-                                context.read<ReceiverCubit>().isFlashOn
-                                    ? 'assets/icons/camera/flash.png'
-                                    : 'assets/icons/camera/_flash.png',
-                                width: _getIconSize(context),
-                                height: _getIconSize(context),
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                context.read<ReceiverCubit>().sendCommand(CommandType.flashlight);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Команда: Переключить фонарик'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: size.width * 0.1, vertical: 20),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          IconButton(
+                            icon: Image.asset(
+                              'assets/icons/camera/_flash.png',
+                              width: _getIconSize(context),
+                              height: _getIconSize(context),
+                              color: Colors.white,
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                context.read<ReceiverCubit>().sendCommand(CommandType.photo);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Команда: Сделать фото'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              child: Image.asset(
-                                'assets/icons/camera/_shutter.png',
-                                width: _getShutterSize(context),
-                                height: _getShutterSize(context),
-                              ),
+                            onPressed: () {
+                              _cubit.sendCommand('flashlight');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Команда: Переключить фонарик'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              _cubit.sendCommand('photo');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Команда: Сделать фото'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            child: Image.asset(
+                              'assets/icons/camera/_shutter.png',
+                              width: _getShutterSize(context),
+                              height: _getShutterSize(context),
                             ),
-                            IconButton(
-                              icon: Image.asset(
-                                'assets/icons/camera/thunder.png',
-                                width: _getIconSize(context),
-                                height: _getIconSize(context),
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                context.read<ReceiverCubit>().sendCommand(CommandType.timer);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Команда: Запустить таймер'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
+                          ),
+                          IconButton(
+                            icon: Image.asset(
+                              'assets/icons/camera/thunder.png',
+                              width: _getIconSize(context),
+                              height: _getIconSize(context),
+                              color: Colors.white,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                            onPressed: () {
+                              _cubit.sendCommand('timer');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Команда: Запустить таймер'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+              ),
               Positioned(
                 top: MediaQuery.of(context).padding.top + 10,
                 right: 60,
                 child: GestureDetector(
-                  // onTap: () => _showConnectionStatus(context, state),
+                  onTap: _showConnectionStatus,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(12),
@@ -424,8 +410,12 @@ class _ReceiverScreenContent extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Icon(
-                          state.remoteStream != null ? Icons.videocam : Icons.videocam_off,
-                          color: state.remoteStream != null ? Colors.green : Colors.red,
+                          state.remoteStream != null
+                              ? Icons.videocam
+                              : Icons.videocam_off,
+                          color: state.remoteStream != null
+                              ? Colors.green
+                              : Colors.red,
                           size: 16,
                         ),
                       ],
@@ -440,29 +430,14 @@ class _ReceiverScreenContent extends StatelessWidget {
     );
   }
 
-  String _getQualityName(StreamQuality quality) {
-    switch (quality) {
-      case StreamQuality.low:
-        return 'Низкое (640x360)';
-      case StreamQuality.medium:
-        return 'Среднее (1280x720)';
-      case StreamQuality.high:
-        return 'Высокое (1920x1080, 25fps)';
-    }
-  }
-
   Widget _buildQualityButton(
-    BuildContext context,
-    String text,
-    StreamQuality quality,
-    bool isSelected,
-  ) {
+      BuildContext context, String text, String quality, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        context.read<ReceiverCubit>().changeStreamQuality(quality);
+        _cubit.sendCommand(quality);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Изменение качества на ${_getQualityName(quality)}'),
+            content: Text('Изменение качества на $text'),
             duration: const Duration(seconds: 2),
           ),
         );

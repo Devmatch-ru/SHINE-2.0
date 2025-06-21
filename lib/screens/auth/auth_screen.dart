@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shine/screens/roles/role_select.dart';
+import 'package:shine/permission_manager.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../theme/main_design.dart';
 import '../../widgets/custom_text_field.dart';
@@ -81,30 +82,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         if (authResponse['success'] == true) {
-          final codeResponse = await api.sendCode(_email.text.trim());
-
-          if (mounted) {
-            if (codeResponse['success'] == true) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => VerificationCodeScreen(
-                    email: _email.text.trim(),
-                    type: VerificationType.enterAccount,
-                    skipCodeSending: true,
-                    onSuccess: (email, _) {
-                      context.read<AuthCubit>().signIn(
-                            email,
-                            _password.text,
-                          );
-                    },
-                  ),
-                ),
-              );
-            } else {
-              setState(() =>
-                  _error = codeResponse['error'] ?? 'Ошибка отправки кода');
-            }
-          }
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => VerificationCodeScreen(
+                email: _email.text.trim(),
+                type: VerificationType.enterAccount,
+                onSuccess: (email, _) {
+                  context.read<AuthCubit>().signIn(
+                        email,
+                        _password.text,
+                      );
+                },
+              ),
+            ),
+          );
         } else {
           setState(
               () => _error = authResponse['error'] ?? 'Ошибка авторизации');
@@ -119,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Future.microtask(() => PermissionManager.requestPermissions(context));
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -204,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: theme.textTheme.bodySmall),
                 ),
               ),
-              
+              // const SocialAuthButton(),
               const Spacer(),
               Center(
                   child:

@@ -1,89 +1,68 @@
+// Receiver bloc state models
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
-enum StreamQuality { low, medium, high }
+/// Very small subset of stream-quality strings that `ReceiverScreen` sends to
+/// the broadcaster.  Keep as `String` to avoid tight coupling with
+/// `ReceiverManager` which now uses plain text.
+enum ReceiverStreamQuality { low, medium, high }
 
 abstract class ReceiverState extends Equatable {
+  const ReceiverState({
+    required this.isInitializing,
+    required this.isConnected,
+    this.remoteStream,
+    this.connectedBroadcasters = const [],
+    this.isFlashOn = false,
+    this.error,
+  });
+
   final bool isInitializing;
   final bool isConnected;
   final MediaStream? remoteStream;
-  final String? connectedBroadcaster;
-  final StreamQuality streamQuality;
-  final String? lastCommand;
+  final List<String> connectedBroadcasters;
+  final bool isFlashOn;
   final String? error;
-  final String? connectionQuality;
-  final int? connectionLatency;
-  final String? videoResolution;
-  final int? videoBitrate;
-
-  const ReceiverState({
-    this.isInitializing = false,
-    this.isConnected = false,
-    this.remoteStream,
-    this.connectedBroadcaster,
-    this.streamQuality = StreamQuality.medium,
-    this.lastCommand,
-    this.error,
-    this.connectionQuality,
-    this.connectionLatency,
-    this.videoResolution,
-    this.videoBitrate,
-  });
-
-  void addLog(String log) {}
 
   @override
   List<Object?> get props => [
         isInitializing,
         isConnected,
         remoteStream,
-        connectedBroadcaster,
+        connectedBroadcasters,
+        isFlashOn,
         error,
-        streamQuality,
-        lastCommand,
-        connectionQuality,
-        connectionLatency,
-        videoResolution,
-        videoBitrate,
       ];
 }
 
 class ReceiverInitial extends ReceiverState {
-  const ReceiverInitial() : super(isInitializing: true);
+  const ReceiverInitial() : super(isInitializing: true, isConnected: false);
 }
 
 class ReceiverReady extends ReceiverState {
-  const ReceiverReady({StreamQuality streamQuality = StreamQuality.medium})
-      : super(streamQuality: streamQuality);
-}
-
-class ReceiverConnected extends ReceiverState {
-  const ReceiverConnected({
+  const ReceiverReady({
+    required bool isConnected,
     required MediaStream? remoteStream,
-    required String connectedBroadcaster,
-    required StreamQuality streamQuality,
-    String? lastCommand,
+    required List<String> connectedBroadcasters,
+    bool isFlashOn = false,
   }) : super(
-          isConnected: true,
+          isInitializing: false,
+          isConnected: isConnected,
           remoteStream: remoteStream,
-          connectedBroadcaster: connectedBroadcaster,
-          streamQuality: streamQuality,
-          lastCommand: lastCommand,
-        );
-}
-
-class ReceiverDisconnected extends ReceiverState {
-  const ReceiverDisconnected({
-    required StreamQuality streamQuality,
-    String? lastCommand,
-  }) : super(
-          streamQuality: streamQuality,
-          lastCommand: lastCommand,
+          connectedBroadcasters: connectedBroadcasters,
+          isFlashOn: isFlashOn,
         );
 }
 
 class ReceiverError extends ReceiverState {
-  const ReceiverError(String error,
-      {StreamQuality streamQuality = StreamQuality.medium})
-      : super(error: error, streamQuality: streamQuality);
+  const ReceiverError(String message)
+      : super(
+          isInitializing: false,
+          isConnected: false,
+          error: message,
+        );
+
+  @override
+  List<Object?> get props => [...super.props, error];
 }

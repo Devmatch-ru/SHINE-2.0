@@ -49,6 +49,12 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
 
     try {
       await _manager.refreshReceivers();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка обновления списка: $e')),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -59,8 +65,16 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
   }
 
   Future<void> _initManager() async {
-    await _manager.init();
-    await _refreshList();
+    try {
+      await _manager.init();
+      await _refreshList();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка инициализации: $e')),
+        );
+      }
+    }
   }
 
   void _onSearchChanged() {
@@ -81,11 +95,11 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
   }
 
   Widget _buildDivider() => const Divider(
-        height: 0,
-        thickness: 0.5,
-        indent: AppSpacing.s,
-        color: Color(0xFFE0E0E0),
-      );
+    height: 0,
+    thickness: 0.5,
+    indent: AppSpacing.s,
+    color: Color(0xFFE0E0E0),
+  );
 
   @override
   void dispose() {
@@ -135,24 +149,33 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
               onPressed: _selectedHost == null
                   ? null
                   : () async {
-                      if (_selectedHost!.startsWith('RECEIVER:')) {
-                        final parts = _selectedHost!.split(':');
-                        if (parts.length == 3) {
-                          final receiverIP = parts[1];
-                          final receiverPort = parts[2];
-                          final fullReceiverUrl =
-                              'http://$receiverIP:$receiverPort';
-
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BroadcasterScreen(
-                                  receiverUrl: fullReceiverUrl),
-                            ),
-                          );
-                        }
+                if (_selectedHost!.startsWith('RECEIVER:')) {
+                  final parts = _selectedHost!.split(':');
+                  if (parts.length == 3) {
+                    final receiverIP = parts[1];
+                    final receiverPort = parts[2];
+                    final fullReceiverUrl = 'http://$receiverIP:$receiverPort';
+                    try {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BroadcasterScreen(receiverUrl: fullReceiverUrl),
+                        ),
+                      );
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Ошибка перехода: $e')),
+                        );
                       }
-                    },
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Неверный формат адреса приемника')),
+                    );
+                  }
+                }
+              },
               child: Text(
                 'Готово',
                 style: AppTextStyles.lead.copyWith(
@@ -203,7 +226,7 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
                     decoration: const InputDecoration(
                       hintText: 'Поиск...',
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       border: InputBorder.none,
                     ),
                   ),
@@ -224,7 +247,6 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
                           children: [
                             ListTile(
                               title: Text(UserName),
-                              // subtitle: Text(host.split(':')[1]),
                               trailing: _selectedHost == host
                                   ? const Icon(Icons.check, color: Colors.black)
                                   : null,
@@ -243,6 +265,7 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
       ),
     );
   }
+
   String _generateUserNameText(String host) {
     const coolWords = [
       'Linker',
@@ -272,5 +295,4 @@ class _HostSelectionScreenState extends State<HostSelectionScreen> {
 
     return '$word$lastDigits';
   }
-
 }
