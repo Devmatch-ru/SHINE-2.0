@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shine/screens/roles/host_selection_screen.dart';
 import '../../blocs/wifi/wifi_cubit.dart';
 import '../../blocs/wifi/wifi_state.dart';
-import '../../theme/main_design.dart';
+import '../../theme/app_constant.dart';
 
 class ClientTipScreen extends StatelessWidget {
   const ClientTipScreen({super.key});

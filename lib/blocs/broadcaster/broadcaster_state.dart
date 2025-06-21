@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 abstract class BroadcasterState extends Equatable {
@@ -60,10 +59,10 @@ class BroadcasterInitial extends BroadcasterState {
 class BroadcasterReady extends BroadcasterState {
   const BroadcasterReady({
     required MediaStream stream,
-    List<String> connectedReceivers = const [],
-    String? commandMessage,
-    bool isPowerSaveMode = false,
-    bool isVideoMode = false,
+    super.connectedReceivers,
+    super.commandMessage,
+    super.isPowerSaveMode,
+    super.isVideoMode,
   }) : super(
     isInitializing: false,
     isConnected: true,
@@ -71,19 +70,15 @@ class BroadcasterReady extends BroadcasterState {
     isTimerActive: false,
     timerSeconds: 0,
     localStream: stream,
-    connectedReceivers: connectedReceivers,
-    commandMessage: commandMessage,
-    isPowerSaveMode: isPowerSaveMode,
-    isVideoMode: isVideoMode,
   );
 }
 
 class BroadcasterRecording extends BroadcasterState {
   const BroadcasterRecording({
     required MediaStream stream,
-    List<String> connectedReceivers = const [],
-    String? commandMessage,
-    bool isPowerSaveMode = false,
+    super.connectedReceivers,
+    super.commandMessage,
+    super.isPowerSaveMode,
   }) : super(
     isInitializing: false,
     isConnected: true,
@@ -91,9 +86,6 @@ class BroadcasterRecording extends BroadcasterState {
     isTimerActive: false,
     timerSeconds: 0,
     localStream: stream,
-    connectedReceivers: connectedReceivers,
-    commandMessage: commandMessage,
-    isPowerSaveMode: isPowerSaveMode,
     isVideoMode: true,
   );
 }
@@ -102,10 +94,10 @@ class BroadcasterTimer extends BroadcasterState {
   const BroadcasterTimer({
     required MediaStream stream,
     required int seconds,
-    List<String> connectedReceivers = const [],
-    String? commandMessage,
-    bool isPowerSaveMode = false,
-    bool isVideoMode = false,
+    super.connectedReceivers,
+    super.commandMessage,
+    super.isPowerSaveMode,
+    super.isVideoMode,
   }) : super(
     isInitializing: false,
     isConnected: true,
@@ -113,10 +105,6 @@ class BroadcasterTimer extends BroadcasterState {
     isTimerActive: true,
     timerSeconds: seconds,
     localStream: stream,
-    connectedReceivers: connectedReceivers,
-    commandMessage: commandMessage,
-    isPowerSaveMode: isPowerSaveMode,
-    isVideoMode: isVideoMode,
   );
 }
 
@@ -124,9 +112,9 @@ class BroadcasterCommandReceived extends BroadcasterState {
   const BroadcasterCommandReceived({
     required MediaStream stream,
     required String message,
-    List<String> connectedReceivers = const [],
-    bool isPowerSaveMode = false,
-    bool isVideoMode = false,
+    super.connectedReceivers,
+    super.isPowerSaveMode,
+    super.isVideoMode,
   }) : super(
     isInitializing: false,
     isConnected: true,
@@ -134,10 +122,7 @@ class BroadcasterCommandReceived extends BroadcasterState {
     isTimerActive: false,
     timerSeconds: 0,
     localStream: stream,
-    connectedReceivers: connectedReceivers,
     commandMessage: message,
-    isPowerSaveMode: isPowerSaveMode,
-    isVideoMode: isVideoMode,
   );
 }
 

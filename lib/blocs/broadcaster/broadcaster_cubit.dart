@@ -2,20 +2,28 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:shine/utils/webrtc/discovery_manager.dart';
 import '../../utils/broadcaster_manager.dart';
 import 'broadcaster_state.dart';
 
 class BroadcasterCubit extends Cubit<BroadcasterState> {
-  final String receiverUrl;
+  String? _receiverUrl;
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   late final BroadcasterManager _manager;
+  late final DiscoveryManager _discoveryManager;
   Timer? _captureTimer;
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   static const int maxReconnectAttempts = 5;
 
-  BroadcasterCubit({required this.receiverUrl})
-      : super(const BroadcasterInitial());
+  BroadcasterCubit({String? receiverUrl})
+      : _receiverUrl = receiverUrl,
+        super(const BroadcasterInitial()) {
+    _discoveryManager = DiscoveryManager(
+      onLog: (message) => print('Discovery: $message'),
+      onStateChange: () => print('Discovery state changed'),
+    );
+  }
 
   RTCVideoRenderer get localRenderer {
     if (state is BroadcasterInitial) {
@@ -29,7 +37,7 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
 
   Future<void> initialize() async {
     try {
-      emit(const BroadcasterInitial()); 
+      emit(const BroadcasterInitial());
       await _localRenderer.initialize();
 
       _manager = BroadcasterManager(
@@ -51,6 +59,21 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
         ));
       }
 
+      await _discoveryManager.startDiscoveryListener();
+      final receivers = await _discoveryManager.discoverReceivers();
+      if (receivers.isNotEmpty) {
+        _receiverUrl = receivers.first.replaceFirst('RECEIVER:', 'http://');
+        print('Selected receiver: $_receiverUrl');
+      } else {
+        _handleError('Не удалось обнаружить ресивер');
+        return;
+      }
+
+      if (_receiverUrl == null || _receiverUrl!.startsWith('http://169.254.')) {
+        _handleError('Неверный адрес ресивера: $_receiverUrl');
+        return;
+      }
+
       await startBroadcasting();
     } catch (e) {
       _handleError(e.toString());
@@ -58,11 +81,17 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
   }
 
   Future<void> startBroadcasting() async {
+    if (_receiverUrl == null || _receiverUrl!.startsWith('http://169.254.')) {
+      _handleError('Неверный адрес ресивера: $_receiverUrl');
+      return;
+    }
+
     try {
-      await _manager.startBroadcast(receiverUrl);
+      print('Starting broadcast to: $_receiverUrl');
+      await _manager.startBroadcast(_receiverUrl!);
 
       if (_manager.isBroadcasting && _manager.localStream != null) {
-        _reconnectAttempts = 0; 
+        _reconnectAttempts = 0;
         _reconnectTimer?.cancel();
 
         emit(BroadcasterReady(
@@ -71,7 +100,7 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
         ));
       }
     } catch (e) {
-      _handleError(e.toString());
+      _handleError('Ошибка при запуске трансляции: $e');
     }
   }
 
@@ -83,26 +112,26 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
 
     if (_reconnectAttempts < maxReconnectAttempts) {
       _reconnectAttempts++;
-
       final delay = Duration(seconds: _reconnectAttempts * 2);
 
       _reconnectTimer?.cancel();
       _reconnectTimer = Timer(delay, () async {
-        _addMessage(
-            'Attempting reconnection (attempt $_reconnectAttempts of $maxReconnectAttempts)');
+        _addMessage('Attempting reconnection (attempt $_reconnectAttempts of $maxReconnectAttempts)');
+        final receivers = await _discoveryManager.discoverReceivers();
+        if (receivers.isNotEmpty) {
+          _receiverUrl = receivers.first.replaceFirst('RECEIVER:', 'http://');
+          print('Re-selected receiver: $_receiverUrl');
+        }
         await startBroadcasting();
       });
     } else {
       _addMessage('Max reconnection attempts reached');
-      emit(BroadcasterError(
-          'Не удалось восстановить подключение после $maxReconnectAttempts попыток'));
+      emit(BroadcasterError('Не удалось восстановить подключение после $maxReconnectAttempts попыток'));
     }
   }
 
   void _handleError(String error) {
-    if (isClosed) {
-      return;
-    }
+    if (isClosed) return;
     _addMessage('Error occurred: $error');
 
     if (!error.contains('Не удалось восстановить подключение')) {
@@ -455,6 +484,7 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
     _captureTimer?.cancel();
     await _localRenderer.dispose();
     await _manager.dispose();
+    await _discoveryManager.dispose();
     super.close();
   }
 
@@ -464,13 +494,11 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
       _reconnectTimer?.cancel();
 
       await _manager.stopBroadcast();
-
       _localRenderer.srcObject = null;
-
       await _manager.dispose();
+      await _discoveryManager.dispose();
 
       await Future.delayed(const Duration(milliseconds: 300));
-
       emit(const BroadcasterInitial());
     } catch (e) {
       _addMessage('Error during disconnect: $e');
@@ -515,7 +543,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
           message: '🔦 Фонарик $status',
           connectedReceivers: _manager.connectedReceivers,
           isPowerSaveMode: _manager.isPowerSaveMode,
-          isVideoMode: state.isVideoMode,
         ));
 
         Future.delayed(const Duration(seconds: 2), () {
@@ -524,7 +551,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
               stream: _manager.localStream!,
               connectedReceivers: _manager.connectedReceivers,
               isPowerSaveMode: _manager.isPowerSaveMode,
-              isVideoMode: state.isVideoMode,
             ));
           }
         });

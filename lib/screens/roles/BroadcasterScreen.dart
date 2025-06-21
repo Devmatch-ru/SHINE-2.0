@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:shine/theme/main_design.dart';
+import 'package:shine/theme/app_constant.dart';
 import 'dart:ui' as ui;
 
 import '../../blocs/broadcaster/broadcaster_cubit.dart';

@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_cubit.dart';
 import '../blocs/auth/auth_state.dart';
-import '../theme/main_design.dart';
+import '../theme/app_constant.dart';
 import '../widgets/custom_text_field.dart';
 import 'auth/verification_code_screen.dart';
-import '../services/api_service.dart';
 import '../blocs/onboarding/onboarding_cubit.dart' as onb;
 import '../blocs/role/role_cubit.dart';
 
@@ -19,7 +18,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _emailCtrl = TextEditingController();
-  String? _error;
 
   @override
   void initState() {

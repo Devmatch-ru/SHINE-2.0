@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class DiscoveryManager {
   RawDatagramSocket? _udpSocket;
@@ -24,8 +25,21 @@ class DiscoveryManager {
 
   Set<String> get receivers => _receivers;
 
+  Future<bool> _checkPermissions() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.locationWhenInUse.request();
+      _onLog('Location permission status: $status');
+      return status.isGranted;
+    }
+    return true; 
+  }
+
   Future<void> startDiscoveryListener() async {
     try {
+      if (!await _checkPermissions()) {
+        _onLog('Location permission denied, discovery may fail');
+      }
+
       _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 9000,
           reuseAddress: true);
       _udpSocket!.broadcastEnabled = true;
@@ -43,9 +57,7 @@ class DiscoveryManager {
       });
 
       _startPeriodicDiscovery();
-
       _startCleanupTimer();
-
       _onLog('UDP discovery listener started');
     } catch (e) {
       _onLog('Error starting discovery listener: $e');
@@ -53,11 +65,19 @@ class DiscoveryManager {
   }
 
   void _handleReceiverResponse(String message) {
-    if (_receivers.add(message)) {
-      _onLog('Found new receiver: $message');
-      onStateChange?.call();
+    final parts = message.split(':');
+    if (parts.length >= 2) {
+      final ip = parts[1];
+      if (ip.startsWith('169.254.')) {
+        _onLog('Ignoring APIPA address: $ip');
+        return;
+      }
+      if (_receivers.add(message)) {
+        _onLog('Found new receiver: $message');
+        onStateChange?.call();
+      }
+      _lastSeenReceivers[message] = DateTime.now();
     }
-    _lastSeenReceivers[message] = DateTime.now();
   }
 
   void _startPeriodicDiscovery() {
@@ -76,43 +96,49 @@ class DiscoveryManager {
   Future<void> _performDiscovery() async {
     try {
       final wifiIP = await NetworkInfo().getWifiIP();
-      if (wifiIP != null) {
-        final parts = wifiIP.split('.');
-        if (parts.length == 4) {
-          final baseIP = '${parts[0]}.${parts[1]}.${parts[2]}';
+      if (wifiIP == null || wifiIP.startsWith('169.254.')) {
+        _onLog('Invalid Wi-Fi IP: $wifiIP');
+        return;
+      }
 
-          if (_isInitialScan) {
-            for (int i = 1; i <= 254; i++) {
-              final address = '$baseIP.$i';
-              _udpSocket!
-                  .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
-            }
-            _isInitialScan = false;
-          } else {
-            final knownIPs = _receivers.map((r) {
-              final parts = r.split(':');
-              return parts[1];
-            }).toSet();
+      final parts = wifiIP.split('.');
+      if (parts.length == 4) {
+        final baseIP = '${parts[0]}.${parts[1]}.${parts[2]}';
 
-            for (final ip in knownIPs) {
-              final lastPart = int.tryParse(ip.split('.').last) ?? 0;
-              for (int i = -5; i <= 5; i++) {
-                final newLast = lastPart + i;
-                if (newLast > 0 && newLast < 255) {
-                  final address = '$baseIP.$newLast';
-                  _udpSocket!.send(
-                      'DISCOVER'.codeUnits, InternetAddress(address), 9000);
-                }
+        if (_isInitialScan) {
+          for (int i = 1; i <= 254; i++) {
+            final address = '$baseIP.$i';
+            _udpSocket!
+                .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
+            _onLog('Sent discovery to: $address:9000');
+          }
+          _isInitialScan = false;
+        } else {
+          final knownIPs = _receivers.map((r) {
+            final parts = r.split(':');
+            return parts[1];
+          }).toSet();
+
+          for (final ip in knownIPs) {
+            final lastPart = int.tryParse(ip.split('.').last) ?? 0;
+            for (int i = -5; i <= 5; i++) {
+              final newLast = lastPart + i;
+              if (newLast > 0 && newLast < 255) {
+                final address = '$baseIP.$newLast';
+                _udpSocket!.send(
+                    'DISCOVER'.codeUnits, InternetAddress(address), 9000);
+                _onLog('Sent discovery to: $address:9000');
               }
             }
+          }
 
-            final random = List.generate(10,
-                (i) => (DateTime.now().millisecondsSinceEpoch + i) % 254 + 1);
-            for (final i in random) {
-              final address = '$baseIP.$i';
-              _udpSocket!
-                  .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
-            }
+          final random = List.generate(10,
+              (i) => (DateTime.now().millisecondsSinceEpoch + i) % 254 + 1);
+          for (final i in random) {
+            final address = '$baseIP.$i';
+            _udpSocket!
+                .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
+            _onLog('Sent discovery to: $address:9000');
           }
         }
       }
@@ -150,5 +176,6 @@ class DiscoveryManager {
     _udpSocket = null;
     _receivers.clear();
     _lastSeenReceivers.clear();
+    _onLog('Discovery manager disposed');
   }
 }

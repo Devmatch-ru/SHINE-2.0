@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:shine/blocs/receiver/receiver_state.dart';
-import 'package:shine/theme/main_design.dart';
+import 'package:shine/theme/app_constant.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shine/blocs/receiver/receiver_cubit.dart';
 import 'dart:ui' as ui;
@@ -132,7 +132,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                       icon: const Icon(Icons.copy),
                       label: const Text('Копировать'),
                       onPressed: () {
-                        final debugInfo = status + "\n" + messages.join("\n");
+                        final debugInfo = "$status\n${messages.join("\n")}";
                         Clipboard.setData(ClipboardData(text: debugInfo));
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

@@ -42,16 +42,12 @@ class ReceiverInitial extends ReceiverState {
 
 class ReceiverReady extends ReceiverState {
   const ReceiverReady({
-    required bool isConnected,
-    required MediaStream? remoteStream,
-    required List<String> connectedBroadcasters,
-    bool isFlashOn = false,
+    required super.isConnected,
+    required super.remoteStream,
+    required super.connectedBroadcasters,
+    super.isFlashOn,
   }) : super(
           isInitializing: false,
-          isConnected: isConnected,
-          remoteStream: remoteStream,
-          connectedBroadcasters: connectedBroadcasters,
-          isFlashOn: isFlashOn,
         );
 }
 

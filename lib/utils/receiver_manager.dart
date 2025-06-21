@@ -1,14 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import './webrtc/types.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 
@@ -169,11 +167,6 @@ class ReceiverManager {
               'offerToReceiveAudio': false,
             });
 
-            if (pc == null) {
-              return shelf.Response(500,
-                  body: 'Failed to create peer connection');
-            }
-
             _setupPeerConnectionHandlers(pc, broadcasterUrl);
             _connections[broadcasterUrl] = pc;
 
@@ -185,10 +178,6 @@ class ReceiverManager {
                 'offerToReceiveVideo': true,
                 'offerToReceiveAudio': false,
               });
-
-              if (answer == null) {
-                throw Exception('Failed to create answer');
-              }
 
               await pc.setLocalDescription(answer);
               _addMessage('Local description set successfully');
@@ -284,10 +273,6 @@ class ReceiverManager {
 
     pc.onIceCandidate = (candidate) async {
       if (_isDisposed) return;
-      if (candidate == null) {
-        _addMessage('ICE gathering completed');
-        return;
-      }
       _addMessage('Generated ICE candidate: ${candidate.candidate}');
 
       try {
@@ -386,7 +371,7 @@ class ReceiverManager {
           _addMessage('Error processing message: $e');
         }
       } else if (message.type == MessageType.binary) {
-        _handleBinaryData(broadcasterUrl, message.binary!);
+        _handleBinaryData(broadcasterUrl, message.binary);
       }
     };
   }
@@ -751,8 +736,8 @@ class ReceiverManager {
     }
   }
 
-  Map<String, Map<String, dynamic>> _pendingMediaMetadata = {};
-  Map<String, List<Uint8List>> _pendingChunks = {};
+  final Map<String, Map<String, dynamic>> _pendingMediaMetadata = {};
+  final Map<String, List<Uint8List>> _pendingChunks = {};
 
   void _handleMediaMetadata(String broadcasterId, Map<String, dynamic> data) {
     _addMessage('Received media metadata from $broadcasterId');

@@ -3,7 +3,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shine/blocs/auth/auth_cubit.dart';
 import 'package:shine/blocs/auth/auth_state.dart';
 import 'package:shine/blocs/role/role_cubit.dart';
@@ -14,7 +13,7 @@ import 'package:shine/screens/onboarding_screen.dart';
 import 'package:shine/screens/roles/role_select.dart';
 import 'package:shine/screens/saver_screen.dart';
 import 'package:shine/permission_manager.dart';
-import 'package:shine/theme/main_design.dart';
+import 'package:shine/theme/app_constant.dart';
 import 'package:shine/services/auth_service.dart';
 
 Future<void> main() async {
@@ -37,7 +36,7 @@ Future<void> main() async {
 final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
 class ShineApp extends StatelessWidget {
-  const ShineApp({Key? key}) : super(key: key);
+  const ShineApp({super.key});
   
 
   @override
@@ -56,8 +55,6 @@ class ShineApp extends StatelessWidget {
           onSecondary: Colors.white,
           error: AppColors.error,
           onError: Colors.white,
-          background: AppColors.bgMain,
-          onBackground: AppColors.primary,
           surface: Colors.white,
           onSurface: AppColors.primary,
         ),

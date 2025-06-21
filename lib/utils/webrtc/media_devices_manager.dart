@@ -16,7 +16,6 @@ class MediaDevicesManager {
 
   Timer? _performanceMonitor;
   bool _isLowPowerMode = false;
-  int _frameDropCount = 0;
   DateTime _lastQualityAdjustment = DateTime.now();
 
   MediaDevicesManager({

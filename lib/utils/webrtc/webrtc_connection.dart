@@ -88,7 +88,7 @@ class WebRTCConnection {
         for (var track in tracks) {
           _onLog('Adding track: ${track.kind}, enabled: ${track.enabled}');
           var rtpSender = await _pc!.addTrack(track, localStream);
-          _senders.add(rtpSender!);
+          _senders.add(rtpSender);
           await _optimizeSenderParameters(rtpSender);
         }
 
@@ -126,7 +126,7 @@ class WebRTCConnection {
       }
     } catch (e) {
       _onLog('Error creating connection: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -379,14 +379,10 @@ class WebRTCConnection {
     };
 
     _pc!.onIceCandidate = (candidate) {
-      if (candidate != null) {
-        _onLog('New ICE candidate: ${candidate.candidate}');
-        _candidates.add(candidate);
-        onIceCandidate?.call(candidate);
-      } else {
-        _onLog('ICE gathering completed');
-      }
-    };
+      _onLog('New ICE candidate: ${candidate.candidate}');
+      _candidates.add(candidate);
+      onIceCandidate?.call(candidate);
+        };
 
     _pc!.onTrack = (event) {
       _onLog('Track received: ${event.track.kind}');
@@ -436,7 +432,7 @@ class WebRTCConnection {
       _candidates.clear();
     } catch (e) {
       _onLog('Error handling answer: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -457,7 +453,7 @@ class WebRTCConnection {
       return answer;
     } catch (e) {
       _onLog('Error creating answer: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -473,7 +469,7 @@ class WebRTCConnection {
       _onLog('ICE candidate added successfully');
     } catch (e) {
       _onLog('Error adding ICE candidate: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -504,7 +500,7 @@ class WebRTCConnection {
       }
     } catch (e) {
       _onLog('Error updating track: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -522,7 +518,7 @@ class WebRTCConnection {
       _onLog('Stream updated successfully');
     } catch (e) {
       _onLog('Error updating stream: $e');
-      throw e;
+      rethrow;
     }
   }
 

@@ -2,12 +2,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_cubit.dart';
-import '../../theme/main_design.dart';
+import '../../theme/app_constant.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../utils/validators.dart';
-import '../../services/api_service.dart';
 import 'verification_code_screen.dart';
-import '../../models/user_model/user_model.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -50,11 +48,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final api = ApiService();
-      final response = await api.register(UserModel(
-        email: _email.text.trim(),
-        password: _password.text,
-      ));
 
       if (mounted) {
         Navigator.of(context).push(
@@ -179,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     builder: (context, scrollController) {
                                       return DecoratedBox(
                                         decoration: BoxDecoration(
-                                          color: theme.colorScheme.background,
+                                          color: theme.colorScheme.surface,
                                           borderRadius:
                                               const BorderRadius.vertical(
                                                   top: Radius.circular(20)),

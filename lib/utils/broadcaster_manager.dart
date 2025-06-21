@@ -2,25 +2,21 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:network_info_plus/network_info_plus.dart';
-import 'package:shelf/shelf.dart' as shelf;
-import 'package:shelf/shelf_io.dart' as shelf_io;
 import '../utils/video_size.dart';
 import './webrtc/media_devices_manager.dart';
 import './webrtc/webrtc_connection.dart';
 import './webrtc/discovery_manager.dart';
 import './webrtc/signaling_server.dart';
 import './webrtc/types.dart';
-import './settings_manager.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 
 class BroadcasterManager {
-  final List<String> _messages = [];
+  // final List<String> _messages = [];
   bool _inCalling = false;
   String? _currentReceiverUrl;
   final Map<RTCPeerConnection, RTCDataChannel> _dataChannels = {};
@@ -29,9 +25,8 @@ class BroadcasterManager {
   late final WebRTCConnection _webrtc;
   late final DiscoveryManager _discovery;
   late final SignalingServer _signaling;
-  late final SettingsManager _settings;
   Timer? _connectionTimer;
-  CameraController? _cameraController;
+  // CameraController? _cameraController;
 
   late final VoidCallback? onStateChange;
   final VoidCallback? onCapturePhoto;
@@ -54,9 +49,7 @@ class BroadcasterManager {
   String? _currentVideoPath;
   bool _isRecording = false;
 
-  RTCPeerConnection? _peerConnection;
-  MediaStream? _localStream;
-  bool _isConnected = false;
+  final bool _isConnected = false;
   final ValueNotifier<List<String>> messagesNotifier = ValueNotifier([]);
 
   BroadcasterManager({
@@ -110,7 +103,6 @@ class BroadcasterManager {
   }
 
   Future<void> _initializeSettings() async {
-    _settings = await SettingsManager.getInstance();
   }
 
   MediaStream? get localStream => _mediaManager.localStream;
@@ -275,7 +267,7 @@ class BroadcasterManager {
           retryCount++;
         } catch (e) {
           _addMessage('Attempt ${retryCount + 1} to create stream failed: $e');
-          if (retryCount >= 2) throw e;
+          if (retryCount >= 2) rethrow;
           await Future.delayed(Duration(seconds: 1));
         }
       }
@@ -294,7 +286,7 @@ class BroadcasterManager {
         } catch (e) {
           _addMessage(
               'Attempt ${retryCount + 1} to create WebRTC connection failed: $e');
-          if (retryCount >= 2) throw e;
+          if (retryCount >= 2) rethrow;
           await Future.delayed(Duration(seconds: 1));
         }
       }
@@ -511,7 +503,7 @@ class BroadcasterManager {
   Future<void> _handleIceCandidate(RTCIceCandidate candidate) async {
     try {
       final response = await http.post(
-        Uri.parse('${_currentReceiverUrl}/candidate'),
+        Uri.parse('$_currentReceiverUrl/candidate'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'candidate': candidate.toMap()}),
       );
@@ -640,7 +632,6 @@ class BroadcasterManager {
       if (_mediaManager.localStream != null) {
         await _webrtc.updateStream(_mediaManager.localStream!);
 
-        final senders = 'await _webrtc.getSenders()';
 
       }
 

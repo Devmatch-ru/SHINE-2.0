@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_cubit.dart';
-import '../../theme/main_design.dart';
+import '../../theme/app_constant.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../utils/validators.dart';
 import '../../services/api_service.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/main_design.dart';
+import '../../theme/app_constant.dart';
 
 class AboutTabsScreen extends StatelessWidget {
-  const AboutTabsScreen({Key? key}) : super(key: key);
+  const AboutTabsScreen({super.key});
 
   static const _aboutText = '''
 Shine Remote Camera — камера, позволяющая транслировать изображение

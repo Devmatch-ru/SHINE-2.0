@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../theme/main_design.dart';
+import '../../theme/app_constant.dart';
 
 class FAQScreen extends StatelessWidget {
   const FAQScreen({super.key});
@@ -37,8 +37,6 @@ class FAQScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle   = Theme.of(context).textTheme.titleMedium!;
-    final answerStyle  = Theme.of(context).textTheme.bodyMedium!;
 
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,

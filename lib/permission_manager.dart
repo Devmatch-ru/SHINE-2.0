@@ -26,7 +26,7 @@ class PermissionManager {
 
     final statuses = await _requiredPermissions.request();
 
-    final permanentlyDenied = statuses.entries
+    statuses.entries
         .where((entry) => entry.value.isPermanentlyDenied)
         .map((e) => e.key)
         .toList();

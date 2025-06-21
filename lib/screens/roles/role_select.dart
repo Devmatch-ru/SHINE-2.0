@@ -5,7 +5,7 @@ import 'package:shine/screens/settings/settings_screen.dart';
 import '../../blocs/role/role_cubit.dart';
 import '../../blocs/wifi/wifi_cubit.dart';
 import '../../blocs/wifi/wifi_state.dart';
-import '../../theme/main_design.dart';
+import '../../theme/app_constant.dart';
 import 'ReceiverScreen.dart';
 import '../tip_screen/client_tip_screen.dart';
 import '../tip_screen/host_tip_screen.dart';
@@ -232,7 +232,7 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(

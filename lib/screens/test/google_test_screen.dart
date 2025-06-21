@@ -1,11 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../models/user_model/dart.dart';
 
 class GoogleTestScreen extends StatefulWidget {
-  const GoogleTestScreen({Key? key}) : super(key: key);
+  const GoogleTestScreen({super.key});
 
   @override
   State<GoogleTestScreen> createState() => _GoogleTestScreenState();
