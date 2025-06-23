@@ -4,9 +4,9 @@ import 'dart:async';
 
 import '../../theme/app_constant.dart';
 import '../../utils/broadcaster_manager.dart';
-import '../../utils/app_utils.dart';
-import '../../utils/service/error_handling_service.dart';
-import '../../utils/service/logging_service.dart';
+import '../../utils/new_organize/app_utils.dart';
+import '../../utils/new_organize/service/error_handling_service.dart';
+import '../../utils/new_organize/service/logging_service.dart';
 import './role_select.dart';
 import './BroadcasterScreen.dart';
 

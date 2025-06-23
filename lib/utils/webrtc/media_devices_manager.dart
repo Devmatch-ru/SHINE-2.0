@@ -1,38 +1,29 @@
-// lib/utils/webrtc/media_devices_manager.dart (Updated)
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../video_size.dart';
 import 'dart:async';
 
-import '../constants.dart';
-import '../service/logging_service.dart';
-import '../video_size.dart';
-class MediaDevicesManager with LoggerMixin {
-  @override
-  String get loggerContext => 'MediaDevicesManager';
-
-  // Device state
+class MediaDevicesManager {
   List<MediaDeviceInfo> _devices = [];
   String? _selectedVideoInputId;
   String? _selectedVideoFPS = '30';
   VideoSize _selectedVideoSize = VideoSize(1280, 720);
   MediaStream? _localStream;
+  final void Function(String) _onLog;
+  final VoidCallback? onStateChange;
+  final void Function(MediaStream)? onStreamUpdated;
 
-  // Performance monitoring
   Timer? _performanceMonitor;
   bool _isLowPowerMode = false;
   DateTime _lastQualityAdjustment = DateTime.now();
 
-  // Callbacks
-  final VoidCallback? onStateChange;
-  final void Function(MediaStream)? onStreamUpdated;
-
   MediaDevicesManager({
+    required void Function(String) onLog,
     this.onStateChange,
     this.onStreamUpdated,
-  });
+  }) : _onLog = onLog;
 
-  // Getters
   MediaStream? get localStream => _localStream;
   List<MediaDeviceInfo> get videoInputs =>
       _devices.where((d) => d.kind == 'videoinput').toList();
@@ -41,48 +32,9 @@ class MediaDevicesManager with LoggerMixin {
   bool get isLowPowerMode => _isLowPowerMode;
 
   Future<void> init() async {
-    try {
-      logInfo('Initializing media devices manager...');
-      await _requestPermissions();
-      await _loadDevices();
-      navigator.mediaDevices.ondevicechange = (event) => _loadDevices();
-      _startPerformanceMonitoring();
-      logInfo('Media devices manager initialized successfully');
-    } catch (e, stackTrace) {
-      logError('Error initializing media devices manager: $e', stackTrace);
-      rethrow;
-    }
-  }
-
-  Future<void> _requestPermissions() async {
-    if (WebRTC.platformIsAndroid || WebRTC.platformIsIOS) {
-      final cameraStatus = await Permission.camera.request();
-      if (cameraStatus.isPermanentlyDenied) {
-        logError('Camera permission permanently denied');
-        throw Exception('Camera permission required');
-      }
-
-      final microphoneStatus = await Permission.microphone.request();
-      if (microphoneStatus.isPermanentlyDenied) {
-        logWarning('Microphone permission permanently denied');
-      }
-    }
-  }
-
-  Future<void> _loadDevices() async {
-    try {
-      final devices = await navigator.mediaDevices.enumerateDevices();
-      _devices = devices;
-      logInfo('Devices loaded: ${devices.length} total, ${videoInputs.length} video inputs');
-
-      for (final device in videoInputs) {
-        logInfo('Video device: ${device.label} (${device.deviceId})');
-      }
-
-      onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error loading devices: $e', stackTrace);
-    }
+    await _loadDevices();
+    navigator.mediaDevices.ondevicechange = (event) => _loadDevices();
+    _startPerformanceMonitoring();
   }
 
   void _startPerformanceMonitoring() {
@@ -98,254 +50,205 @@ class MediaDevicesManager with LoggerMixin {
     if (now.difference(_lastQualityAdjustment).inSeconds < 30) return;
 
     try {
-      logDebug('Checking performance...');
+      final videoTrack = _localStream!.getVideoTracks().first;
+
+      _onLog('Checking performance...');
 
       final uptime = now.difference(_lastQualityAdjustment);
       if (uptime.inMinutes > 5 && !_isLowPowerMode) {
-        await _enableLowPowerMode();
+        await _adaptiveQualityReduction();
         _lastQualityAdjustment = now;
       }
-    } catch (e, stackTrace) {
-      logError('Error checking performance: $e', stackTrace);
+    } catch (e) {
+      _onLog('Error checking performance: $e');
     }
   }
 
-  Future<void> _enableLowPowerMode() async {
-    if (_isLowPowerMode) return;
+  bool _shouldReduceQuality(Map<String, dynamic> stats) {
+    return false; // Пока отключено, можно настроить позже
+  }
 
-    try {
-      logInfo('Enabling low power mode for thermal management');
+  bool _canIncreaseQuality(Map<String, dynamic> stats) {
+    return false; // Пока отключено
+  }
+
+  Future<void> _adaptiveQualityReduction() async {
+    if (!_isLowPowerMode) {
+      _onLog('Switching to low power mode due to performance issues');
       _isLowPowerMode = true;
 
-      final lowPowerConstraints = AppConstants.videoQualities['low']!.toConstraints();
-      await updateStreamWithConstraints(lowPowerConstraints);
-
-      onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error enabling low power mode: $e', stackTrace);
+      await _applyLowPowerSettings();
     }
   }
 
-  Future<void> _disableLowPowerMode() async {
-    if (!_isLowPowerMode) return;
-
-    try {
-      logInfo('Disabling low power mode');
+  Future<void> _adaptiveQualityIncrease() async {
+    if (_isLowPowerMode) {
+      _onLog('Switching back to normal mode - performance improved');
       _isLowPowerMode = false;
 
-      await createStream();
-      onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error disabling low power mode: $e', stackTrace);
+      await _applyNormalSettings();
     }
+  }
+
+  Future<void> _applyLowPowerSettings() async {
+    final constraints = {
+      'audio': false,
+      'video': {
+        'width': 640,
+        'height': 360,
+        'frameRate': 15,
+        'facingMode': 'environment',
+        'aspectRatio': 16.0 / 9.0,
+        'advanced': [
+          {'powerLineFrequency': 50},
+          {'whiteBalanceMode': 'manual'},
+          {'exposureMode': 'manual'},
+        ]
+      },
+    };
+
+    await updateStreamWithConstraints(constraints);
+    onStateChange?.call();
+  }
+
+  Future<void> _applyNormalSettings() async {
+    await createStream();
+    onStateChange?.call();
+  }
+
+  Future<void> dispose() async {
+    _performanceMonitor?.cancel();
+    await stopStream();
+    navigator.mediaDevices.ondevicechange = null;
+  }
+
+  Future<void> _loadDevices() async {
+    if (WebRTC.platformIsAndroid || WebRTC.platformIsIOS) {
+      var status = await Permission.camera.request();
+      if (status.isPermanentlyDenied) _onLog('Camera permission denied');
+      status = await Permission.microphone.request();
+      if (status.isPermanentlyDenied) _onLog('Microphone permission denied');
+    }
+    final devices = await navigator.mediaDevices.enumerateDevices();
+    _devices = devices;
+    _onLog('Devices loaded: ${devices.map((d) => d.label).toList()}');
+    onStateChange?.call();
   }
 
   Future<void> selectVideoInput(String? deviceId) async {
-    try {
-      _selectedVideoInputId = deviceId;
-      logInfo('Video input selected: $deviceId');
-
-      if (_localStream != null) {
-        await updateStream();
-      }
-    } catch (e, stackTrace) {
-      logError('Error selecting video input: $e', stackTrace);
+    _selectedVideoInputId = deviceId;
+    if (_localStream != null) {
+      await updateStream();
     }
   }
 
   Future<void> selectVideoFps(String fps) async {
-    try {
-      _selectedVideoFPS = fps;
-      logInfo('Video FPS changed to: $fps');
-
-      if (_localStream != null) {
-        await updateStream();
-      }
-
-      onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error selecting video FPS: $e', stackTrace);
+    _selectedVideoFPS = fps;
+    _onLog('Video FPS changed to: $fps');
+    if (_localStream != null) {
+      await updateStream();
     }
+    onStateChange?.call();
   }
 
   Future<void> selectVideoSize(String size) async {
-    try {
-      _selectedVideoSize = VideoSize.fromString(size);
-      logInfo('Video size changed to: $size');
-
-      if (_localStream != null) {
-        await updateStream();
-      }
-
-      onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error selecting video size: $e', stackTrace);
+    _selectedVideoSize = VideoSize.fromString(size);
+    _onLog('Video size changed to: $size');
+    if (_localStream != null) {
+      await updateStream();
     }
+    onStateChange?.call();
   }
 
   Future<MediaStream> createStream([Map<String, dynamic>? constraints]) async {
-    try {
-      final finalConstraints = constraints ?? _buildDefaultConstraints();
-
-      logInfo('Creating media stream with constraints: $finalConstraints');
-
-      _localStream = await navigator.mediaDevices.getUserMedia(finalConstraints);
-
-      if (_localStream != null) {
-        final videoTracks = _localStream!.getVideoTracks();
-        if (videoTracks.isNotEmpty) {
-          final videoTrack = videoTracks.first;
-          logInfo('Video track created - Settings: ${videoTrack.getSettings()}');
-        }
-      }
-
-      onStateChange?.call();
-      return _localStream!;
-    } catch (e, stackTrace) {
-      logError('Error creating media stream: $e', stackTrace);
-      rethrow;
-    }
-  }
-
-  Map<String, dynamic> _buildDefaultConstraints() {
-    final constraints = <String, dynamic>{
+    final defaultConstraints = {
       'audio': false,
-      'video': <String, dynamic>{
+      'video': {
+        if (_selectedVideoInputId != null && kIsWeb)
+          'deviceId': {'exact': _selectedVideoInputId},
+        if (_selectedVideoInputId != null && !kIsWeb)
+          'optional': [
+            {'sourceId': _selectedVideoInputId}
+          ],
         'facingMode': 'environment',
         'width': _selectedVideoSize.width,
         'height': _selectedVideoSize.height,
         'frameRate': double.parse(_selectedVideoFPS!),
-        'aspectRatio': 16.0 / 9.0,
       },
     };
 
-    // Add device selection if available
-    if (_selectedVideoInputId != null) {
-      final videoConstraints = constraints['video'] as Map<String, dynamic>;
-      if (kIsWeb) {
-        videoConstraints['deviceId'] = {'exact': _selectedVideoInputId};
-      } else {
-        videoConstraints['optional'] = [
-          {'sourceId': _selectedVideoInputId}
-        ];
-      }
-    }
+    _localStream = await navigator.mediaDevices.getUserMedia(
+      constraints ?? defaultConstraints,
+    );
 
-    return constraints;
+    var videoTrack = _localStream!.getVideoTracks().first;
+    _onLog('Video track settings: ${videoTrack.getSettings()}');
+    onStateChange?.call();
+
+    return _localStream!;
   }
 
   Future<void> updateStream() async {
     try {
-      logInfo('Updating media stream...');
-
       await stopStream();
+
       await Future.delayed(const Duration(milliseconds: 200));
 
       await createStream();
-      logInfo('Stream updated with new settings');
+      _onLog('Stream updated with new settings');
 
       if (_localStream != null) {
         onStreamUpdated?.call(_localStream!);
       }
 
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error updating stream: $e', stackTrace);
+    } catch (e) {
+      _onLog('Error updating stream: $e');
       rethrow;
     }
   }
 
-  Future<void> updateStreamWithConstraints(Map<String, dynamic> constraints) async {
+  Future<void> updateStreamWithConstraints(
+      Map<String, dynamic> constraints) async {
     try {
-      logInfo('Updating stream with custom constraints...');
+      _onLog('Updating stream with custom constraints...');
 
       await stopStream();
+
       await Future.delayed(const Duration(milliseconds: 300));
 
       _localStream = await navigator.mediaDevices.getUserMedia(constraints);
 
       if (_localStream != null) {
-        final videoTracks = _localStream!.getVideoTracks();
-        if (videoTracks.isNotEmpty) {
-          final videoTrack = videoTracks.first;
-          logInfo('New video track settings: ${videoTrack.getSettings()}');
-        }
+        var videoTrack = _localStream!.getVideoTracks().first;
+        _onLog('New video track settings: ${videoTrack.getSettings()}');
 
         onStreamUpdated?.call(_localStream!);
       }
 
-      logInfo('Stream updated with custom constraints successfully');
+      _onLog('Stream updated with custom constraints successfully');
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error updating stream with constraints: $e', stackTrace);
+    } catch (e) {
+      _onLog('Error updating stream with constraints: $e');
       rethrow;
     }
   }
 
   Future<void> stopStream() async {
     if (_localStream != null) {
-      try {
-        logInfo('Stopping current stream...');
+      _onLog('Stopping current stream...');
 
-        final tracks = _localStream!.getTracks();
-        for (final track in tracks) {
-          logDebug('Stopping track: ${track.kind}');
-          await track.stop();
-        }
-
-        await _localStream!.dispose();
-        _localStream = null;
-
-        logInfo('Stream stopped and disposed');
-        onStateChange?.call();
-      } catch (e, stackTrace) {
-        logError('Error stopping stream: $e', stackTrace);
-      }
-    }
-  }
-
-  Future<void> optimizeForQuality(String quality) async {
-    try {
-      final qualityConfig = AppConstants.videoQualities[quality];
-      if (qualityConfig == null) {
-        logWarning('Unknown quality setting: $quality');
-        return;
+      final tracks = _localStream!.getTracks();
+      for (var track in tracks) {
+        _onLog('Stopping track: ${track.kind}');
+        await track.stop();
       }
 
-      logInfo('Optimizing stream for quality: $quality');
+      await _localStream!.dispose();
+      _localStream = null;
 
-      _selectedVideoSize = VideoSize(qualityConfig.width, qualityConfig.height);
-      _selectedVideoFPS = qualityConfig.frameRate.toString();
-
-      if (_localStream != null) {
-        await updateStreamWithConstraints(qualityConfig.toConstraints());
-      }
-
-      logInfo('Stream optimized for $quality quality');
-    } catch (e, stackTrace) {
-      logError('Error optimizing for quality: $e', stackTrace);
-    }
-  }
-
-  void toggleLowPowerMode() {
-    if (_isLowPowerMode) {
-      _disableLowPowerMode();
-    } else {
-      _enableLowPowerMode();
-    }
-  }
-
-  Future<void> dispose() async {
-    try {
-      logInfo('Disposing media devices manager...');
-
-      _performanceMonitor?.cancel();
-      await stopStream();
-      navigator.mediaDevices.ondevicechange = null;
-
-      logInfo('Media devices manager disposed successfully');
-    } catch (e, stackTrace) {
-      logError('Error disposing media devices manager: $e', stackTrace);
+      _onLog('Stream stopped and disposed');
+      onStateChange?.call();
     }
   }
 }
