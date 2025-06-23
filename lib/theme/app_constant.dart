@@ -142,3 +142,309 @@ class AppStrings {
   В случае возникновения вопросов, предложений или необходимости технической поддержки, Пользователи могут обращаться в службу поддержки приложения Shine Remote Camera по электронной почте: helpmewhynot69@gmail.com. Команда поддержки приложения обязуется предоставлять оперативную помощь и консультации по всем интересующим вопросам, связанным с использованием приложения.''';
 }
 
+class AppConstants {
+  // Network constants
+  static const int discoveryPort = 9000;
+  static const int signalingPort = 8080;
+  static const int maxConnections = 7;
+  static const Duration connectionTimeout = Duration(seconds: 15);
+  static const Duration receiverTimeout = Duration(seconds: 30);
+  static const Duration discoveryInterval = Duration(seconds: 5);
+  static const Duration cleanupInterval = Duration(seconds: 10);
+  static const Duration thermalCheckInterval = Duration(seconds: 30);
+
+  // WebRTC constants
+  static const int maxChunkSize = 16 * 1024;
+  static const int maxRetries = 3;
+  static const int chunkDelayMs = 50;
+  static const int retryDelayBaseMs = 100;
+
+  // ИСПРАВЛЕНИЕ: Улучшенные конфигурации качества видео
+  static const Map<String, VideoQualityConfig> videoQualities = {
+    'low': VideoQualityConfig(
+      width: 640,
+      height: 360,
+      frameRate: 24,
+      bitrate: 800000,
+      name: 'Низкое',
+      description: '640x360, 24fps, 800kbps',
+    ),
+    'medium': VideoQualityConfig(
+      width: 1280,
+      height: 720,
+      frameRate: 30,
+      bitrate: 1500000,
+      name: 'Среднее',
+      description: '1280x720, 30fps, 1.5Mbps',
+    ),
+    'high': VideoQualityConfig(
+      width: 1920,
+      height: 1080,
+      frameRate: 30,
+      bitrate: 2000000,
+      name: 'Высокое',
+      description: '1920x1080, 30fps, 2Mbps',
+    ),
+    'power_save': VideoQualityConfig(
+      width: 854,
+      height: 480,
+      frameRate: 20,
+      bitrate: 600000,
+      name: 'Энергосбережение',
+      description: '854x480, 20fps, 600kbps',
+    ),
+  };
+
+  static const List<Map<String, dynamic>> iceServers = [
+    {
+      'urls': [
+        'stun:stun1.l.google.com:19302',
+        'stun:stun2.l.google.com:19302',
+      ],
+    }
+  ];
+
+  // Messages
+  static const String discoveryMessage = 'DISCOVER';
+  static const String receiverPrefix = 'RECEIVER:';
+
+  // Commands - ИСПРАВЛЕНИЕ: Добавляем все поддерживаемые команды
+  static const String capturePhotoCommand = 'capture_photo';
+  static const String toggleFlashCommand = 'toggle_flashlight';
+  static const String startTimerCommand = 'start_timer';
+  static const String toggleRecordingCommand = 'toggle_video';
+  static const String changeQualityCommand = 'change_quality';
+
+  // ИСПРАВЛЕНИЕ: Добавляем новые команды
+  static const String startRecordingCommand = 'start_recording';
+  static const String stopRecordingCommand = 'stop_recording';
+  static const String switchCameraCommand = 'switch_camera';
+  static const String adjustFocusCommand = 'adjust_focus';
+
+  // ИСПРАВЛЕНИЕ: Настройки по умолчанию
+  static const Map<String, dynamic> defaultSettings = {
+    'highQuality': true,
+    'saveOriginal': true,
+    'sendImmediately': true,
+    'sendToAll': false,
+    'autoReconnect': true,
+    'thermalProtection': true,
+    'adaptiveQuality': true,
+  };
+
+  // ИСПРАВЛЕНИЕ: Таймауты для различных операций
+  static const Duration commandTimeout = Duration(seconds: 5);
+  static const Duration mediaTransferTimeout = Duration(seconds: 30);
+  static const Duration reconnectDelay = Duration(seconds: 3);
+  static const Duration healthCheckInterval = Duration(seconds: 10);
+
+  // ИСПРАВЛЕНИЕ: Лимиты для медиа
+  static const int maxPhotoSize = 10 * 1024 * 1024; // 10MB
+  static const int maxVideoSize = 100 * 1024 * 1024; // 100MB
+  static const int maxRecordingDuration = 600; // 10 минут в секундах
+
+  // ИСПРАВЛЕНИЕ: Качество изображений
+  static const double photoQuality = 0.95;
+  static const double thumbnailQuality = 0.7;
+  static const int thumbnailSize = 200;
+
+  // ИСПРАВЛЕНИЕ: Статусы соединения
+  static const String connectionStatusDisconnected = 'disconnected';
+  static const String connectionStatusConnecting = 'connecting';
+  static const String connectionStatusConnected = 'connected';
+  static const String connectionStatusReconnecting = 'reconnecting';
+  static const String connectionStatusError = 'error';
+
+  // ИСПРАВЛЕНИЕ: Типы уведомлений
+  static const String notificationTypeCommand = 'command';
+  static const String notificationTypeQuality = 'quality';
+  static const String notificationTypeMedia = 'media';
+  static const String notificationTypeConnection = 'connection';
+  static const String notificationTypeError = 'error';
+}
+
+class VideoQualityConfig {
+  final int width;
+  final int height;
+  final int frameRate;
+  final int bitrate;
+  final String name; // ИСПРАВЛЕНИЕ: Добавляем человекочитаемое название
+  final String description; // ИСПРАВЛЕНИЕ: Добавляем описание
+
+  const VideoQualityConfig({
+    required this.width,
+    required this.height,
+    required this.frameRate,
+    required this.bitrate,
+    required this.name,
+    required this.description,
+  });
+
+  Map<String, dynamic> toConstraints() {
+    return {
+      'video': {
+        'facingMode': 'environment',
+        'width': width,
+        'height': height,
+        'frameRate': frameRate,
+        'aspectRatio': 16.0 / 9.0,
+        'advanced': [
+          {
+            'width': {'min': width, 'ideal': width, 'max': width},
+            'height': {'min': height, 'ideal': height, 'max': height},
+            'frameRate': {'min': frameRate, 'ideal': frameRate, 'max': frameRate},
+          },
+          {
+            'exposureMode': 'continuous',
+            'focusMode': 'continuous',
+            'whiteBalanceMode': 'continuous',
+          }
+        ]
+      }
+    };
+  }
+
+  // ИСПРАВЛЕНИЕ: Добавляем методы для удобной работы с качеством
+  bool get isHighDefinition => width >= 1920;
+  bool get isLowBandwidth => bitrate <= 800000;
+
+  String get bitrateString => '${(bitrate / 1000).round()}kbps';
+  String get resolutionString => '${width}x$height';
+  String get fullDescription => '$name ($resolutionString, ${frameRate}fps, $bitrateString)';
+
+  // ИСПРАВЛЕНИЕ: Создание копии с измененными параметрами
+  VideoQualityConfig copyWith({
+    int? width,
+    int? height,
+    int? frameRate,
+    int? bitrate,
+    String? name,
+    String? description,
+  }) {
+    return VideoQualityConfig(
+      width: width ?? this.width,
+      height: height ?? this.height,
+      frameRate: frameRate ?? this.frameRate,
+      bitrate: bitrate ?? this.bitrate,
+      name: name ?? this.name,
+      description: description ?? this.description,
+    );
+  }
+
+  @override
+  String toString() => fullDescription;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is VideoQualityConfig &&
+        other.width == width &&
+        other.height == height &&
+        other.frameRate == frameRate &&
+        other.bitrate == bitrate;
+  }
+
+  @override
+  int get hashCode {
+    return width.hashCode ^
+    height.hashCode ^
+    frameRate.hashCode ^
+    bitrate.hashCode;
+  }
+}
+
+// ИСПРАВЛЕНИЕ: Добавляем enum для команд
+enum BroadcasterCommand {
+  capturePhoto,
+  toggleFlash,
+  startTimer,
+  toggleRecording,
+  startRecording,
+  stopRecording,
+  changeQuality,
+  switchCamera,
+  adjustFocus,
+}
+
+extension BroadcasterCommandExtension on BroadcasterCommand {
+  String get value {
+    switch (this) {
+      case BroadcasterCommand.capturePhoto:
+        return AppConstants.capturePhotoCommand;
+      case BroadcasterCommand.toggleFlash:
+        return AppConstants.toggleFlashCommand;
+      case BroadcasterCommand.startTimer:
+        return AppConstants.startTimerCommand;
+      case BroadcasterCommand.toggleRecording:
+        return AppConstants.toggleRecordingCommand;
+      case BroadcasterCommand.startRecording:
+        return AppConstants.startRecordingCommand;
+      case BroadcasterCommand.stopRecording:
+        return AppConstants.stopRecordingCommand;
+      case BroadcasterCommand.changeQuality:
+        return AppConstants.changeQualityCommand;
+      case BroadcasterCommand.switchCamera:
+        return AppConstants.switchCameraCommand;
+      case BroadcasterCommand.adjustFocus:
+        return AppConstants.adjustFocusCommand;
+    }
+  }
+
+  String get displayName {
+    switch (this) {
+      case BroadcasterCommand.capturePhoto:
+        return 'Сделать фото';
+      case BroadcasterCommand.toggleFlash:
+        return 'Переключить фонарик';
+      case BroadcasterCommand.startTimer:
+        return 'Запустить таймер';
+      case BroadcasterCommand.toggleRecording:
+        return 'Переключить запись';
+      case BroadcasterCommand.startRecording:
+        return 'Начать запись';
+      case BroadcasterCommand.stopRecording:
+        return 'Остановить запись';
+      case BroadcasterCommand.changeQuality:
+        return 'Изменить качество';
+      case BroadcasterCommand.switchCamera:
+        return 'Переключить камеру';
+      case BroadcasterCommand.adjustFocus:
+        return 'Настроить фокус';
+    }
+  }
+}
+
+// ИСПРАВЛЕНИЕ: Добавляем enum для качества видео
+enum VideoQuality {
+  low,
+  medium,
+  high,
+  powerSave,
+}
+
+extension VideoQualityExtension on VideoQuality {
+  String get value {
+    switch (this) {
+      case VideoQuality.low:
+        return 'low';
+      case VideoQuality.medium:
+        return 'medium';
+      case VideoQuality.high:
+        return 'high';
+      case VideoQuality.powerSave:
+        return 'power_save';
+    }
+  }
+
+  VideoQualityConfig get config {
+    return AppConstants.videoQualities[value]!;
+  }
+
+  String get displayName {
+    return config.name;
+  }
+
+  String get description {
+    return config.description;
+  }
+}

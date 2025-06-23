@@ -1,62 +1,36 @@
-// lib/utils/broadcaster_manager.dart (Updated)
+import 'dart:convert';
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:http/http.dart' as http;
+import 'package:network_info_plus/network_info_plus.dart';
+import 'package:shine/utils/settings_manager.dart';
+import 'package:shine/utils/webrtc/NetworkUtils.dart';
+import '../utils/video_size.dart';
+import './webrtc/media_devices_manager.dart';
+import './webrtc/webrtc_connection.dart';
+import './webrtc/discovery_manager.dart';
+import './webrtc/signaling_server.dart';
+import './webrtc/types.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
-import 'package:shine/utils/service/logging_service.dart';
-
-import 'constants.dart';
-import 'video_size.dart';
-import 'webrtc/discovery_manager.dart';
-import 'webrtc/media_devices_manager.dart';
-import 'webrtc/signaling_server.dart';
-import 'webrtc/types.dart';
-import 'webrtc/webrtc_connection.dart';
-import 'service/command_service.dart';
-import 'service/media_service.dart';
-import 'service/network_service.dart';
-import 'service/webrtc_service.dart';
-class BroadcasterManager with LoggerMixin {
-  @override
-  String get loggerContext => 'BroadcasterManager';
-
-  // Services
-  final LoggingService _loggingService = LoggingService();
-  final CommandService _commandService = CommandService();
-  final WebRTCService _webrtcService = WebRTCService();
-  final MediaService _mediaService = MediaService();
-  final NetworkService _networkService = NetworkService();
-
-  // State
+class BroadcasterManager {
   bool _inCalling = false;
   String? _currentReceiverUrl;
   final Map<RTCPeerConnection, RTCDataChannel> _dataChannels = {};
 
-  // Components
   late final MediaDevicesManager _mediaManager;
   late final WebRTCConnection _webrtc;
   late final DiscoveryManager _discovery;
   late final SignalingServer _signaling;
-
-  // Timers
   Timer? _connectionTimer;
-  Timer? _thermalMonitor;
 
-  // Recording
-  MediaRecorder? _mediaRecorder;
-  String? _currentVideoPath;
-  bool _isRecording = false;
+  // ИСПРАВЛЕНИЕ 3: Добавляем SettingsManager
+  SettingsManager? _settingsManager;
 
-  // State flags
-  bool _isPowerSaveMode = false;
-  bool _isFlashOn = false;
-  bool _isConnected = false;
-  DateTime _lastThermalCheck = DateTime.now();
-
-  // Callbacks
-  final VoidCallback? onStateChange;
+  late final VoidCallback? onStateChange;
   final VoidCallback? onCapturePhoto;
   final void Function(String error)? onError;
   final void Function(XFile media)? onMediaCaptured;
@@ -66,6 +40,22 @@ class BroadcasterManager with LoggerMixin {
   final VoidCallback? onConnectionFailed;
   final void Function(String fileName, String mediaType, int sentChunks,
       int totalChunks, bool isCompleted)? onTransferProgress;
+
+  bool _isPowerSaveMode = false;
+  Timer? _thermalMonitor;
+  DateTime _lastThermalCheck = DateTime.now();
+
+  bool _isFlashOn = false;
+
+  MediaRecorder? _mediaRecorder;
+  String? _currentVideoPath;
+  bool _isRecording = false;
+
+  final bool _isConnected = false;
+  final ValueNotifier<List<String>> messagesNotifier = ValueNotifier([]);
+
+  // ИСПРАВЛЕНИЕ 2: Добавляем отслеживание текущего качества
+  String _currentQuality = 'medium';
 
   BroadcasterManager({
     this.onStateChange,
@@ -78,17 +68,14 @@ class BroadcasterManager with LoggerMixin {
     this.onConnectionFailed,
     this.onTransferProgress,
   }) {
-    _initializeComponents();
-    _initializeSettings();
-  }
-
-  void _initializeComponents() {
     _mediaManager = MediaDevicesManager(
+      onLog: _addMessage,
       onStateChange: onStateChange,
       onStreamUpdated: _handleStreamUpdated,
     );
 
     _webrtc = WebRTCConnection(
+      onLog: _addMessage,
       onStateChange: onStateChange,
       onCapturePhoto: onCapturePhoto,
       onIceCandidate: _handleIceCandidate,
@@ -96,30 +83,43 @@ class BroadcasterManager with LoggerMixin {
       onMediaReceived: _handleMediaReceived,
       onCommandReceived: onCommandReceived,
       onQualityChangeRequested: _handleQualityChange,
-      onTransferProgress: onTransferProgress,
+      onTransferProgress:
+          (fileName, mediaType, sentChunks, totalChunks, isCompleted) {
+        onTransferProgress?.call(
+            fileName, mediaType, sentChunks, totalChunks, isCompleted);
+      },
     );
 
     _discovery = DiscoveryManager(
+      onLog: _addMessage,
       onStateChange: onStateChange,
     );
 
     _signaling = SignalingServer(
+      onLog: _addMessage,
       onStateChange: onStateChange,
       onAnswer: (answer) => _webrtc.setRemoteDescription(answer),
       onCandidate: (candidate) => _webrtc.addIceCandidate(candidate),
       getOffer: () => _webrtc.offer,
       getCandidates: () => _webrtc.candidates,
     );
+
+    _initializeSettings();
   }
 
+  // ИСПРАВЛЕНИЕ 3: Инициализация настроек
   Future<void> _initializeSettings() async {
-    // Initialize any required settings
+    try {
+      _settingsManager = await SettingsManager.getInstance();
+      _addMessage('Settings manager initialized');
+    } catch (e) {
+      _addMessage('Error initializing settings: $e');
+    }
   }
 
-  // Getters
   MediaStream? get localStream => _mediaManager.localStream;
   bool get isBroadcasting => _inCalling;
-  List<String> get messages => _loggingService.messages;
+  List<String> get messages => messagesNotifier.value;
   List<MediaDeviceInfo> get videoInputs => _mediaManager.videoInputs;
   String? get selectedVideoFPS => _mediaManager.selectedVideoFPS;
   VideoSize get selectedVideoSize => _mediaManager.selectedVideoSize;
@@ -129,87 +129,345 @@ class BroadcasterManager with LoggerMixin {
   bool get isFlashOn => _isFlashOn;
   bool get isPowerSaveMode => _isPowerSaveMode;
   bool get isConnected => _isConnected;
+  String get currentQuality => _currentQuality; // ИСПРАВЛЕНИЕ 2: Геттер для текущего качества
 
   Future<void> init() async {
-    try {
-      logInfo('Initializing broadcaster manager...');
-      await _mediaManager.init();
-      await _discovery.startDiscoveryListener();
-      _startThermalMonitoring();
-      logInfo('Broadcaster manager initialized successfully');
-    } catch (e, stackTrace) {
-      logError('Failed to initialize broadcaster manager: $e', stackTrace);
-      rethrow;
-    }
+    await _mediaManager.init();
+    await _discovery.startDiscoveryListener();
+    _startThermalMonitoring();
   }
 
   Future<void> toggleFlash() async {
     try {
-      logInfo('Flashlight toggle requested');
+      _addMessage('Flashlight toggle requested');
 
       if (_mediaManager.localStream == null) {
+        _addMessage('No media stream available for flashlight');
         throw Exception('No media stream available');
       }
 
       final videoTracks = _mediaManager.localStream!.getVideoTracks();
       if (videoTracks.isEmpty) {
+        _addMessage('No video tracks available');
         throw Exception('No video tracks available');
       }
 
       final videoTrack = videoTracks.first;
+
       final hasTorch = await videoTrack.hasTorch();
-      logInfo('Camera torch support: $hasTorch');
+      _addMessage('Camera torch support: $hasTorch');
 
       if (!hasTorch) {
-        throw Exception('Camera does not support torch mode');
+        _addMessage('Current camera does not support torch mode');
+        onError?.call('Камера не поддерживает фонарик');
+        return;
       }
 
       _isFlashOn = !_isFlashOn;
+
       await videoTrack.setTorch(_isFlashOn);
+      _addMessage('Torch set to: $_isFlashOn');
 
       final status = _isFlashOn ? 'включен' : 'выключен';
-      logInfo('Flashlight $status successfully');
+      _addMessage('Flashlight $status successfully');
+
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error toggling flash: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error toggling flash: $e');
       onError?.call('Ошибка при переключении вспышки: $e');
     }
   }
 
   Future<void> captureWithTimer() async {
     onStateChange?.call();
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(Duration(seconds: 3));
     await capturePhoto();
+  }
+
+  Future<void> dispose() async {
+    _addMessage('Disposing broadcaster manager...');
+
+    try {
+      await stopBroadcast();
+
+      _thermalMonitor?.cancel();
+
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      await _discovery.dispose();
+      await _mediaManager.dispose();
+
+      _connectionTimer?.cancel();
+      _addMessage('Broadcaster manager disposed successfully');
+    } catch (e) {
+      _addMessage('Error during disposal: $e');
+    }
+  }
+
+  Future<List<String>> discoverReceivers() async {
+    return await _discovery.discoverReceivers();
+  }
+
+  Future<void> refreshReceivers() async {
+    await _discovery.discoverReceivers();
+    onStateChange?.call();
+  }
+
+  Future<void> selectVideoInput(String? deviceId) async {
+    await _mediaManager.selectVideoInput(deviceId);
+  }
+
+  Future<void> selectVideoFps(String fps) async {
+    await _mediaManager.selectVideoFps(fps);
+  }
+
+  Future<void> selectVideoSize(String size) async {
+    await _mediaManager.selectVideoSize(size);
+  }
+
+  Future<void> startBroadcast(String receiverUrl) async {
+    try {
+      if (receiverUrl.isEmpty) {
+        throw Exception('Receiver URL is empty');
+      }
+
+      // ИСПРАВЛЕНИЕ: Используем новую утилиту для получения оптимального IP
+      final wifiIP = await NetworkUtils.getOptimalWiFiIP();
+      if (wifiIP == null) {
+        _addMessage('Failed to get optimal WiFi IP, showing debug info...');
+        final debugInfo = await NetworkUtils.getNetworkDebugInfo();
+        _addMessage('Network debug info: $debugInfo');
+        throw Exception('No valid Wi-Fi IP available. Check network connection.');
+      }
+
+      _addMessage('Using optimal WiFi IP: $wifiIP');
+
+      _currentReceiverUrl = receiverUrl;
+
+      // ИСПРАВЛЕНИЕ 3: Применяем настройки качества
+      final mediaConstraints = await _buildMediaConstraints();
+
+      int retryCount = 0;
+      while (retryCount < 15) {
+        try {
+          await _mediaManager.createStream(mediaConstraints);
+          if (_mediaManager.localStream != null) break;
+          retryCount++;
+        } catch (e) {
+          _addMessage('Attempt ${retryCount + 1} to create stream failed: $e');
+          if (retryCount >= 2) rethrow;
+          await Future.delayed(Duration(seconds: 1));
+        }
+      }
+
+      if (_mediaManager.localStream == null) {
+        throw Exception(
+            'Failed to create media stream after multiple attempts');
+      }
+
+      retryCount = 0;
+      while (retryCount < 15) {
+        try {
+          await _webrtc.createConnection(_mediaManager.localStream!);
+          if (_webrtc.offer != null) break;
+          retryCount++;
+        } catch (e) {
+          _addMessage(
+              'Attempt ${retryCount + 1} to create WebRTC connection failed: $e');
+          if (retryCount >= 2) rethrow;
+          await Future.delayed(Duration(seconds: 1));
+        }
+      }
+
+      if (_webrtc.offer == null) {
+        throw Exception('WebRTC offer is null after multiple attempts');
+      }
+
+      await _signaling.start();
+
+      _inCalling = true;
+      onStateChange?.call();
+
+      bool hasResponse = false;
+      _connectionTimer = Timer(Duration(seconds: 15), () {
+        if (!hasResponse) {
+          _addMessage('Connection timeout after 15 seconds');
+          stopBroadcast();
+        }
+      });
+
+      final uri = Uri.parse(receiverUrl);
+      if (!uri.hasScheme || !uri.hasAuthority) {
+        throw Exception('Invalid receiver URL format');
+      }
+
+      retryCount = 0;
+      Exception? lastError;
+
+      while (retryCount < 15) {
+        try {
+          _addMessage('Attempt ${retryCount + 1} to send offer to receiver');
+
+          final response = await http
+              .post(
+            Uri.parse('$receiverUrl/offer'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'sdp': _webrtc.offer!.sdp,
+              'type': _webrtc.offer!.type,
+              'broadcasterUrl': 'http://$wifiIP:8080',
+            }),
+          )
+              .timeout(Duration(seconds: 5));
+
+          hasResponse = true;
+          _connectionTimer?.cancel();
+
+          if (response.statusCode == 200) {
+            _addMessage('Offer sent successfully');
+            return;
+          } else {
+            lastError = Exception(
+                'Failed to send offer: ${response.statusCode} - ${response.body}');
+          }
+        } catch (e) {
+          lastError = Exception('Error sending offer: $e');
+        }
+
+        retryCount++;
+        if (retryCount < 15) {
+          await Future.delayed(Duration(seconds: 1));
+        }
+      }
+
+      throw lastError ??
+          Exception('Failed to send offer after multiple attempts');
+    } catch (e) {
+      _addMessage('Error starting broadcast: $e');
+      await stopBroadcast();
+      onError?.call('Ошибка при запуске трансляции: $e');
+      rethrow;
+    }
+  }
+
+  // ИСПРАВЛЕНИЕ 3: Функция для построения ограничений медиа с учетом настроек
+  Future<Map<String, dynamic>> _buildMediaConstraints() async {
+    // Получаем настройки качества
+    final isHighQuality = _settingsManager?.isHighQualityEnabled ?? true;
+
+    int width, height, frameRate;
+    if (isHighQuality) {
+      width = selectedVideoSize.width;
+      height = selectedVideoSize.height;
+      frameRate = int.tryParse(selectedVideoFPS ?? '') ?? 30;
+    } else {
+      // Используем среднее качество если высокое отключено
+      width = 1280;
+      height = 720;
+      frameRate = 25;
+    }
+
+    return {
+      'audio': false,
+      'video': {
+        'facingMode': 'environment',
+        'width': width,
+        'height': height,
+        'frameRate': frameRate,
+        'aspectRatio': 16.0 / 9.0,
+        'advanced': [
+          {
+            'width': {
+              'min': width,
+              'ideal': width
+            },
+            'height': {
+              'min': height,
+              'ideal': height
+            },
+          },
+          {
+            'frameRate': {
+              'min': 24,
+              'ideal': frameRate
+            },
+          },
+          {
+            'exposureMode': 'continuous',
+            'focusMode': 'continuous',
+            'whiteBalanceMode': 'continuous',
+          }
+        ]
+      },
+    };
   }
 
   Future<void> capturePhoto() async {
     try {
-      logInfo('Starting photo capture process...');
+      _addMessage('Starting photo capture process...');
 
-      if (_mediaManager.localStream == null) {
+      if (_mediaManager.localStream != null) {
+        _addMessage('Media stream available, getting video track...');
+        final videoTracks = _mediaManager.localStream!.getVideoTracks();
+        _addMessage('Found ${videoTracks.length} video tracks');
+
+        if (videoTracks.isEmpty) {
+          throw Exception('No video tracks in stream');
+        }
+
+        final videoTrack = videoTracks.first;
+        _addMessage(
+            'Video track found: ${videoTrack.id}, enabled: ${videoTrack.enabled}');
+
+        _addMessage('Capturing frame from video track...');
+        final frame = await videoTrack.captureFrame();
+        _addMessage('Frame captured successfully');
+
+        final directory = await getTemporaryDirectory();
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = 'photo_$timestamp.jpg';
+        final filePath = '${directory.path}/$fileName';
+
+        final file = File(filePath);
+        final bytes = frame.asUint8List();
+        _addMessage('Converting frame to bytes: ${bytes.length} bytes');
+        await file.writeAsBytes(bytes);
+        _addMessage('Photo saved to: $filePath');
+
+        // ИСПРАВЛЕНИЕ 3: Сохраняем в галерею только если включено в настройках
+        final saveOriginal = _settingsManager?.isSaveOriginalEnabled ?? true;
+        if (saveOriginal) {
+          await GallerySaver.saveImage(
+            filePath,
+            albumName: 'Shine',
+          );
+          _addMessage('Photo saved to gallery');
+        }
+
+        final xFile = XFile(filePath);
+        onMediaCaptured?.call(xFile);
+
+        // ИСПРАВЛЕНИЕ 3: Отправляем сразу если включено в настройках
+        final sendImmediately = _settingsManager?.isSendImmediatelyEnabled ?? true;
+        if (sendImmediately) {
+          _addMessage('Sending photo to receiver...');
+          await _sendMediaToReceiver(MediaType.photo, xFile);
+        }
+      } else {
         throw Exception('No video stream available');
       }
-
-      final videoTracks = _mediaManager.localStream!.getVideoTracks();
-      if (videoTracks.isEmpty) {
-        throw Exception('No video tracks in stream');
-      }
-
-      final filePath = await _mediaService.capturePhotoFromTrack(videoTracks.first);
-      final xFile = XFile(filePath);
-      onMediaCaptured?.call(xFile);
-
-      logInfo('Sending photo to receiver...');
-      await _sendMediaToReceiver(MediaType.photo, xFile);
-    } catch (e, stackTrace) {
-      logError('Error capturing photo: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error capturing photo: $e');
       onError?.call('Ошибка при съемке фото: $e');
     }
   }
 
   Future<void> startVideoRecording() async {
     try {
-      logInfo('Starting video recording from WebRTC stream...');
+      _addMessage('Starting video recording from WebRTC stream...');
 
       if (_mediaManager.localStream == null) {
         throw Exception('No video stream available');
@@ -230,20 +488,20 @@ class BroadcasterManager with LoggerMixin {
       );
 
       _isRecording = true;
-      logInfo('Video recording started: $_currentVideoPath');
+      _addMessage('Video recording started: $_currentVideoPath');
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error starting video recording: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error starting video recording: $e');
       onError?.call('Ошибка при начале записи видео: $e');
     }
   }
 
   Future<void> stopVideoRecording() async {
     try {
-      logInfo('Stopping video recording...');
+      _addMessage('Stopping video recording...');
 
       if (_mediaRecorder == null || !_isRecording) {
-        logInfo('No active recording to stop');
+        _addMessage('No active recording to stop');
         return;
       }
 
@@ -252,178 +510,66 @@ class BroadcasterManager with LoggerMixin {
       _isRecording = false;
 
       if (_currentVideoPath != null) {
-        await _mediaService.saveToGallery(_currentVideoPath!, 'video');
+        // ИСПРАВЛЕНИЕ 3: Сохраняем в галерею только если включено в настройках
+        final saveOriginal = _settingsManager?.isSaveOriginalEnabled ?? true;
+        if (saveOriginal) {
+          await GallerySaver.saveVideo(
+            _currentVideoPath!,
+            albumName: 'Shine',
+          );
+          _addMessage('Video saved to gallery');
+        }
 
         final xFile = XFile(_currentVideoPath!);
-        logInfo('Video recorded: $_currentVideoPath');
+        _addMessage('Video recorded: $_currentVideoPath');
         onMediaCaptured?.call(xFile);
 
-        await _sendMediaToReceiver(MediaType.video, xFile);
+        // ИСПРАВЛЕНИЕ 3: Отправляем сразу если включено в настройках
+        final sendImmediately = _settingsManager?.isSendImmediatelyEnabled ?? true;
+        if (sendImmediately) {
+          await _sendMediaToReceiver(MediaType.video, xFile);
+        }
+
         _currentVideoPath = null;
       }
 
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error stopping video recording: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error stopping video recording: $e');
       onError?.call('Ошибка при остановке записи видео: $e');
     }
   }
 
-  Future<void> startBroadcast(String receiverUrl) async {
-    try {
-      if (receiverUrl.isEmpty) {
-        throw Exception('Receiver URL is empty');
-      }
-
-      // Validate URL
-      final uri = _networkService.validateReceiverUrl(receiverUrl);
-      if (uri == null) {
-        throw Exception('Invalid receiver URL format');
-      }
-
-      // Get WiFi IP
-      final wifiIP = await _networkService.getWifiIP();
-      if (wifiIP == null) {
-        throw Exception('Wi-Fi IP not available');
-      }
-
-      _currentReceiverUrl = receiverUrl;
-
-      // Create media stream with retry
-      await _createMediaStreamWithRetry();
-
-      // Create WebRTC connection with retry
-      await _createWebRTCConnectionWithRetry();
-
-      await _signaling.start();
-      _inCalling = true;
-      onStateChange?.call();
-
-      // Set connection timeout
-      _setConnectionTimeout();
-
-      // Send offer to receiver
-      await _networkService.sendOfferToReceiver(
-        receiverUrl,
-        _webrtc.offer!,
-        'http://$wifiIP:${AppConstants.signalingPort}',
-      );
-
-      logInfo('Broadcast started successfully');
-    } catch (e, stackTrace) {
-      logError('Error starting broadcast: $e', stackTrace);
-      await stopBroadcast();
-      onError?.call('Ошибка при запуске трансляции: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> _createMediaStreamWithRetry() async {
-    final mediaConstraints = _buildMediaConstraints();
-
-    for (int attempt = 0; attempt < 15; attempt++) {
-      try {
-        await _mediaManager.createStream(mediaConstraints);
-        if (_mediaManager.localStream != null) {
-          logInfo('Media stream created successfully on attempt ${attempt + 1}');
-          return;
-        }
-      } catch (e) {
-        logWarning('Attempt ${attempt + 1} to create stream failed: $e');
-        if (attempt >= 2) rethrow;
-        await Future.delayed(const Duration(seconds: 1));
-      }
-    }
-
-    throw Exception('Failed to create media stream after multiple attempts');
-  }
-
-  Future<void> _createWebRTCConnectionWithRetry() async {
-    for (int attempt = 0; attempt < 15; attempt++) {
-      try {
-        await _webrtc.createConnection(_mediaManager.localStream!);
-        if (_webrtc.offer != null) {
-          logInfo('WebRTC connection created successfully on attempt ${attempt + 1}');
-          return;
-        }
-      } catch (e) {
-        logWarning('Attempt ${attempt + 1} to create WebRTC connection failed: $e');
-        if (attempt >= 2) rethrow;
-        await Future.delayed(const Duration(seconds: 1));
-      }
-    }
-
-    throw Exception('WebRTC offer is null after multiple attempts');
-  }
-
-  Map<String, dynamic> _buildMediaConstraints() {
-    return {
-      'audio': false,
-      'video': {
-        'facingMode': 'environment',
-        'width': selectedVideoSize.width,
-        'height': selectedVideoSize.height,
-        'frameRate': int.tryParse(selectedVideoFPS ?? '') ?? 30,
-        'aspectRatio': 16.0 / 9.0,
-        'advanced': [
-          {
-            'width': {
-              'min': selectedVideoSize.width,
-              'ideal': selectedVideoSize.width
-            },
-            'height': {
-              'min': selectedVideoSize.height,
-              'ideal': selectedVideoSize.height
-            },
-          },
-          {
-            'frameRate': {
-              'min': 24,
-              'ideal': int.tryParse(selectedVideoFPS ?? '') ?? 30
-            },
-          },
-          {
-            'exposureMode': 'continuous',
-            'focusMode': 'continuous',
-            'whiteBalanceMode': 'continuous',
-          }
-        ]
-      },
-    };
-  }
-
-  void _setConnectionTimeout() {
-    bool hasResponse = false;
-    _connectionTimer = Timer(AppConstants.connectionTimeout, () {
-      if (!hasResponse) {
-        logError('Connection timeout after ${AppConstants.connectionTimeout.inSeconds} seconds');
-        stopBroadcast();
-      }
-    });
-  }
-
   Future<void> _sendMediaToReceiver(MediaType type, XFile media) async {
     try {
-      logInfo('Sending ${type.name} to receiver...');
+      _addMessage('Sending ${type.name} to receiver...');
+
       final success = await _webrtc.sendMedia(type, media);
 
       if (success) {
-        logInfo('${type.name} sent successfully');
+        _addMessage('${type.name} sent successfully');
       } else {
-        logWarning('Failed to send ${type.name}');
+        _addMessage('Failed to send ${type.name}');
       }
-    } catch (e, stackTrace) {
-      logError('Error sending media: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error sending media: $e');
     }
   }
 
   Future<void> _handleIceCandidate(RTCIceCandidate candidate) async {
-    if (_currentReceiverUrl == null) return;
-
     try {
-      await _networkService.sendIceCandidate(_currentReceiverUrl!, candidate);
-    } catch (e, stackTrace) {
-      logError('Error sending ICE candidate: $e', stackTrace);
+      final response = await http.post(
+        Uri.parse('$_currentReceiverUrl/candidate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'candidate': candidate.toMap()}),
+      );
+      if (response.statusCode == 200) {
+        _addMessage('ICE candidate sent successfully');
+      } else {
+        _addMessage('Failed to send ICE candidate: ${response.statusCode}');
+      }
+    } catch (e) {
+      _addMessage('Error sending ICE candidate: $e');
     }
   }
 
@@ -431,28 +577,127 @@ class BroadcasterManager with LoggerMixin {
     onMediaReceived?.call(type, base64Data);
   }
 
-  Future<void> _handleQualityChange(String quality) async {
+  void _handleQualityChange(String quality) async {
     try {
-      logInfo('Changing stream quality to: $quality');
+      _addMessage('Changing stream quality to: $quality');
 
-      final qualityConfig = AppConstants.videoQualities[quality];
-      if (qualityConfig == null) {
-        logWarning('Unknown quality setting: $quality, using medium');
-        return _handleQualityChange('medium');
+      Map<String, dynamic> constraints;
+      int targetBitrate;
+
+      switch (quality) {
+        case 'low':
+          constraints = {
+            'video': {
+              'facingMode': 'environment',
+              'width': 640,
+              'height': 360,
+              'frameRate': 24,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 640, 'ideal': 640, 'max': 640},
+                  'height': {'min': 360, 'ideal': 360, 'max': 360},
+                  'frameRate': {'min': 24, 'ideal': 24, 'max': 24},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
+          };
+          targetBitrate = 800000; // 800 Kbps
+          break;
+        case 'medium':
+          constraints = {
+            'video': {
+              'facingMode': 'environment',
+              'width': 1280,
+              'height': 720,
+              'frameRate': 30,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 1280, 'ideal': 1280, 'max': 1280},
+                  'height': {'min': 720, 'ideal': 720, 'max': 720},
+                  'frameRate': {'min': 30, 'ideal': 30, 'max': 30},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
+          };
+          targetBitrate = 1500000; // 1.5 Mbps
+          break;
+        case 'high':
+          constraints = {
+            'video': {
+              'facingMode': 'environment',
+              'width': 1920,
+              'height': 1080,
+              'frameRate': 30,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 1920, 'ideal': 1920, 'max': 1920},
+                  'height': {'min': 1080, 'ideal': 1080, 'max': 1080},
+                  'frameRate': {'min': 30, 'ideal': 30, 'max': 30},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
+          };
+          targetBitrate = 2000000; // 2 Mbps
+          break;
+        default:
+          constraints = {
+            'video': {
+              'facingMode': 'environment',
+              'width': 1280,
+              'height': 720,
+              'frameRate': 30,
+              'aspectRatio': 16.0 / 9.0,
+              'advanced': [
+                {
+                  'width': {'min': 1280, 'ideal': 1280, 'max': 1280},
+                  'height': {'min': 720, 'ideal': 720, 'max': 720},
+                  'frameRate': {'min': 30, 'ideal': 30, 'max': 30},
+                },
+                {
+                  'exposureMode': 'continuous',
+                  'focusMode': 'continuous',
+                  'whiteBalanceMode': 'continuous',
+                }
+              ]
+            }
+          };
+          targetBitrate = 1500000; // 1.5 Mbps
       }
 
-      final constraints = qualityConfig.toConstraints();
+      //применяем ограничения к существующему потоку
       await _mediaManager.updateStreamWithConstraints(constraints);
 
       if (_mediaManager.localStream != null) {
         await _webrtc.updateStream(_mediaManager.localStream!);
       }
 
-      logInfo('Stream quality changed successfully to: $quality with bitrate ${qualityConfig.bitrate ~/ 1000}kbps');
+      // ИСПРАВЛЕНИЕ 2: Сохраняем текущее качество
+      _currentQuality = quality;
+
+      _addMessage(
+          'Stream quality changed successfully to: $quality with bitrate ${targetBitrate ~/ 1000}kbps');
       onQualityChanged?.call(quality);
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error changing quality: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error changing quality: $e');
       onError?.call('Ошибка при изменении качества: $e');
     }
   }
@@ -461,38 +706,45 @@ class BroadcasterManager with LoggerMixin {
     if (!_inCalling) return;
 
     try {
-      logInfo('Stopping broadcast...');
+      _addMessage('Stopping broadcast...');
       _inCalling = false;
-      _connectionTimer?.cancel();
 
       await _webrtc.close();
+
       await _signaling.stop();
 
       _dataChannels.clear();
-      _currentReceiverUrl = null;
 
+      _currentReceiverUrl = null;
       onStateChange?.call();
-      logInfo('Broadcast stopped successfully');
-    } catch (e, stackTrace) {
-      logError('Error stopping broadcast: $e', stackTrace);
+
+      _addMessage('Broadcast stopped successfully');
+    } catch (e) {
+      _addMessage('Error stopping broadcast: $e');
       onError?.call('Ошибка при остановке трансляции: $e');
     }
   }
 
+  void _addMessage(String message) {
+    messagesNotifier.value = [...messagesNotifier.value, message];
+  }
+
   void _handleStreamUpdated(MediaStream stream) async {
     try {
-      logInfo('Stream updated, updating WebRTC connection...');
+      _addMessage('Stream updated, updating WebRTC connection...');
+
       await _webrtc.updateStream(stream);
-      logInfo('WebRTC connection updated with new stream');
+
+      _addMessage('WebRTC connection updated with new stream');
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error updating WebRTC stream: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error updating WebRTC stream: $e');
       onError?.call('Ошибка при обновлении потока: $e');
     }
   }
 
   void _startThermalMonitoring() {
-    _thermalMonitor = Timer.periodic(AppConstants.thermalCheckInterval, (timer) {
+    _thermalMonitor = Timer.periodic(const Duration(seconds: 30), (timer) {
       _checkThermalStateAndOptimize();
     });
   }
@@ -502,7 +754,7 @@ class BroadcasterManager with LoggerMixin {
     final timeSinceLastCheck = now.difference(_lastThermalCheck);
 
     if (timeSinceLastCheck.inMinutes > 3 && _inCalling && !_isPowerSaveMode) {
-      logInfo('Enabling power save mode to prevent overheating');
+      _addMessage('Enabling power save mode to prevent overheating');
       _enablePowerSaveMode();
     }
 
@@ -514,41 +766,14 @@ class BroadcasterManager with LoggerMixin {
 
     try {
       _isPowerSaveMode = true;
-      logInfo('Power save mode enabled');
+      _addMessage('Power save mode enabled');
 
-      await _handleQualityChange('medium');
+      _handleQualityChange('medium');
+
       onQualityChanged?.call('power_save');
       onStateChange?.call();
-    } catch (e, stackTrace) {
-      logError('Error enabling power save mode: $e', stackTrace);
-    }
-  }
-
-  // Delegate methods for simplicity
-  Future<List<String>> discoverReceivers() => _discovery.discoverReceivers();
-  Future<void> refreshReceivers() async {
-    await _discovery.discoverReceivers();
-    onStateChange?.call();
-  }
-  Future<void> selectVideoInput(String? deviceId) => _mediaManager.selectVideoInput(deviceId);
-  Future<void> selectVideoFps(String fps) => _mediaManager.selectVideoFps(fps);
-  Future<void> selectVideoSize(String size) => _mediaManager.selectVideoSize(size);
-
-  Future<void> dispose() async {
-    try {
-      logInfo('Disposing broadcaster manager...');
-      await stopBroadcast();
-
-      _thermalMonitor?.cancel();
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      await _discovery.dispose();
-      await _mediaManager.dispose();
-
-      _connectionTimer?.cancel();
-      logInfo('Broadcaster manager disposed successfully');
-    } catch (e, stackTrace) {
-      logError('Error during disposal: $e', stackTrace);
+    } catch (e) {
+      _addMessage('Error enabling power save mode: $e');
     }
   }
 }

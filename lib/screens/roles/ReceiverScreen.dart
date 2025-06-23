@@ -51,7 +51,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
     final messages = _cubit.messages;
     String status = 'Статус подключения:\n';
     status +=
-    state.isConnected ? '✅ Соединение активно\n' : '❌ Нет соединения\n';
+        state.isConnected ? '✅ Соединение активно\n' : '❌ Нет соединения\n';
     status += state.remoteStream != null
         ? '✅ Видео поток активен\n'
         : '❌ Нет видео потока\n';
@@ -111,12 +111,12 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               color: msg.contains('Error') ||
-                                  msg.contains('ошибка')
+                                      msg.contains('ошибка')
                                   ? Colors.red
                                   : msg.contains('успешно') ||
-                                  msg.contains('connected')
-                                  ? Colors.green
-                                  : null,
+                                          msg.contains('connected')
+                                      ? Colors.green
+                                      : null,
                             ),
                           ),
                         );
@@ -199,42 +199,42 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
           body: Stack(
             children: [
               Positioned.fill(
-                  child: RTCVideoView(
-                    _remoteRenderer,
-                    key: ValueKey(state.remoteStream.toString()),
-                    objectFit:
-                    RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                  )
-                //  Center(
-                //     child: Column(
-                //       mainAxisAlignment: MainAxisAlignment.center,
-                //       children: [
-                //         const Icon(
-                //           Icons.wifi_tethering,
-                //           color: Colors.white54,
-                //           size: 48,
-                //         ),
-                //         const SizedBox(height: 16),
-                //         Text(
-                //           state.isConnected
-                //               ? 'Подключено, ожидание видео потока...'
-                //               : 'Ожидание подключения...',
-                //           style: const TextStyle(
-                //             color: Colors.white54,
-                //             fontSize: 16,
-                //           ),
-                //         ),
-                //         const SizedBox(height: 8),
-                //         TextButton(
-                //           onPressed: _showConnectionStatus,
-                //           child: const Text(
-                //             'Показать статус подключения',
-                //             style: TextStyle(color: Colors.blue),
-                //           ),
-                //         ),
-                //       ],
-                //     ),
-                //   ),
+                child: RTCVideoView(
+                        _remoteRenderer,
+                        key: ValueKey(state.remoteStream.toString()),
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                      )
+                    //  Center(
+                    //     child: Column(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         const Icon(
+                    //           Icons.wifi_tethering,
+                    //           color: Colors.white54,
+                    //           size: 48,
+                    //         ),
+                    //         const SizedBox(height: 16),
+                    //         Text(
+                    //           state.isConnected
+                    //               ? 'Подключено, ожидание видео потока...'
+                    //               : 'Ожидание подключения...',
+                    //           style: const TextStyle(
+                    //             color: Colors.white54,
+                    //             fontSize: 16,
+                    //           ),
+                    //         ),
+                    //         const SizedBox(height: 8),
+                    //         TextButton(
+                    //           onPressed: _showConnectionStatus,
+                    //           child: const Text(
+                    //             'Показать статус подключения',
+                    //             style: TextStyle(color: Colors.blue),
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
               ),
               Positioned(
                 top: 0,
@@ -256,20 +256,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                                 style: AppTextStyles.lead
                                     .copyWith(color: Colors.white),
                               ),
-                              if (state.connectedBroadcasters.isNotEmpty)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 2),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.8),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    '📱 ${state.connectedBroadcasters.length}/7',
-                                    style: const TextStyle(fontSize: 10),
-                                  ),
-                                ),
+
                             ],
                           ),
                         ),
@@ -343,7 +330,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                               _cubit.sendCommand('flashlight');
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Команда: Переключить фонарик'),
+                                  content: Text(''),
                                   duration: Duration(seconds: 2),
                                 ),
                               );
@@ -354,7 +341,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                               _cubit.sendCommand('photo');
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Команда: Сделать фото'),
+                                  content: Text(''),
                                   duration: Duration(seconds: 2),
                                 ),
                               );
@@ -376,7 +363,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                               _cubit.sendCommand('timer');
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Команда: Запустить таймер'),
+                                  content: Text(''),
                                   duration: Duration(seconds: 2),
                                 ),
                               );
@@ -388,41 +375,41 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                   ),
                 ),
               ),
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 10,
-                right: 60,
-                child: GestureDetector(
-                  onTap: _showConnectionStatus,
-                  child: Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          state.isConnected ? Icons.link : Icons.link_off,
-                          color: state.isConnected ? Colors.green : Colors.red,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          state.remoteStream != null
-                              ? Icons.videocam
-                              : Icons.videocam_off,
-                          color: state.remoteStream != null
-                              ? Colors.green
-                              : Colors.red,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   top: MediaQuery.of(context).padding.top + 10,
+              //   right: 60,
+              //   child: GestureDetector(
+              //     onTap: _showConnectionStatus,
+              //     child: Container(
+              //       padding:
+              //           const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              //       decoration: BoxDecoration(
+              //         color: Colors.black.withOpacity(0.5),
+              //         borderRadius: BorderRadius.circular(12),
+              //       ),
+              //       child: Row(
+              //         mainAxisSize: MainAxisSize.min,
+              //         children: [
+              //           Icon(
+              //             state.isConnected ? Icons.link : Icons.link_off,
+              //             color: state.isConnected ? Colors.green : Colors.red,
+              //             size: 16,
+              //           ),
+              //           const SizedBox(width: 4),
+              //           Icon(
+              //             state.remoteStream != null
+              //                 ? Icons.videocam
+              //                 : Icons.videocam_off,
+              //             color: state.remoteStream != null
+              //                 ? Colors.green
+              //                 : Colors.red,
+              //             size: 16,
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         );

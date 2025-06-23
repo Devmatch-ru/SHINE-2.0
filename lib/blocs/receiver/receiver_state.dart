@@ -15,6 +15,7 @@ abstract class ReceiverState extends Equatable {
     this.remoteStream,
     this.connectedBroadcasters = const [],
     this.isFlashOn = false,
+    this.currentQuality = 'medium', // ИСПРАВЛЕНИЕ: Добавляем текущее качество
     this.error,
   });
 
@@ -23,6 +24,7 @@ abstract class ReceiverState extends Equatable {
   final MediaStream? remoteStream;
   final List<String> connectedBroadcasters;
   final bool isFlashOn;
+  final String currentQuality; // ИСПРАВЛЕНИЕ: Новое поле для отслеживания качества
   final String? error;
 
   @override
@@ -32,6 +34,7 @@ abstract class ReceiverState extends Equatable {
     remoteStream,
     connectedBroadcasters,
     isFlashOn,
+    currentQuality, // ИСПРАВЛЕНИЕ: Добавляем в props
     error,
   ];
 }
@@ -46,9 +49,48 @@ class ReceiverReady extends ReceiverState {
     required super.remoteStream,
     required super.connectedBroadcasters,
     super.isFlashOn,
+    super.currentQuality = 'medium', // ИСПРАВЛЕНИЕ: Добавляем параметр качества
   }) : super(
     isInitializing: false,
   );
+
+  // ИСПРАВЛЕНИЕ: Добавляем удобные геттеры
+  bool get hasStream => remoteStream != null;
+  bool get hasMultipleBroadcasters => connectedBroadcasters.length > 1;
+  int get broadcasterCount => connectedBroadcasters.length;
+
+  // ИСПРАВЛЕНИЕ: Геттер для получения информации о качестве
+  String get qualityDisplayName {
+    switch (currentQuality) {
+      case 'low':
+        return 'Низкое (640x360)';
+      case 'medium':
+        return 'Среднее (1280x720)';
+      case 'high':
+        return 'Высокое (1920x1080)';
+      case 'power_save':
+        return 'Энергосбережение (854x480)';
+      default:
+        return 'Неизвестно';
+    }
+  }
+
+  // ИСПРАВЛЕНИЕ: Копирование состояния с изменениями
+  ReceiverReady copyWith({
+    bool? isConnected,
+    MediaStream? remoteStream,
+    List<String>? connectedBroadcasters,
+    bool? isFlashOn,
+    String? currentQuality,
+  }) {
+    return ReceiverReady(
+      isConnected: isConnected ?? this.isConnected,
+      remoteStream: remoteStream ?? this.remoteStream,
+      connectedBroadcasters: connectedBroadcasters ?? this.connectedBroadcasters,
+      isFlashOn: isFlashOn ?? this.isFlashOn,
+      currentQuality: currentQuality ?? this.currentQuality,
+    );
+  }
 }
 
 class ReceiverError extends ReceiverState {
@@ -61,4 +103,42 @@ class ReceiverError extends ReceiverState {
 
   @override
   List<Object?> get props => [...super.props, error];
+
+  // ИСПРАВЛЕНИЕ: Удобные геттеры для типов ошибок
+  bool get isConnectionError => error?.contains('connection') == true ||
+      error?.contains('подключен') == true;
+
+  bool get isCommandError => error?.contains('команд') == true ||
+      error?.contains('command') == true;
+
+  bool get isQualityError => error?.contains('качеств') == true ||
+      error?.contains('quality') == true;
+
+  // ИСПРАВЛЕНИЕ: Получение типа ошибки для UI
+  String get errorType {
+    if (isConnectionError) return 'connection';
+    if (isCommandError) return 'command';
+    if (isQualityError) return 'quality';
+    return 'general';
+  }
+
+  // ИСПРАВЛЕНИЕ: Локализованное сообщение об ошибке
+  String get localizedError {
+    if (error == null) return 'Неизвестная ошибка';
+
+    if (error!.contains('No active connection')) {
+      return 'Нет активного соединения';
+    }
+    if (error!.contains('Data channel')) {
+      return 'Ошибка канала данных';
+    }
+    if (error!.contains('timeout')) {
+      return 'Превышено время ожидания';
+    }
+    if (error!.contains('Failed to send')) {
+      return 'Не удалось отправить команду';
+    }
+
+    return error!;
+  }
 }
