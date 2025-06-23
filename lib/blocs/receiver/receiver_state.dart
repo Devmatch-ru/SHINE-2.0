@@ -27,13 +27,13 @@ abstract class ReceiverState extends Equatable {
 
   @override
   List<Object?> get props => [
-        isInitializing,
-        isConnected,
-        remoteStream,
-        connectedBroadcasters,
-        isFlashOn,
-        error,
-      ];
+    isInitializing,
+    isConnected,
+    remoteStream,
+    connectedBroadcasters,
+    isFlashOn,
+    error,
+  ];
 }
 
 class ReceiverInitial extends ReceiverState {
@@ -47,17 +47,17 @@ class ReceiverReady extends ReceiverState {
     required super.connectedBroadcasters,
     super.isFlashOn,
   }) : super(
-          isInitializing: false,
-        );
+    isInitializing: false,
+  );
 }
 
 class ReceiverError extends ReceiverState {
   const ReceiverError(String message)
       : super(
-          isInitializing: false,
-          isConnected: false,
-          error: message,
-        );
+    isInitializing: false,
+    isConnected: false,
+    error: message,
+  );
 
   @override
   List<Object?> get props => [...super.props, error];

@@ -68,7 +68,7 @@ class LoggingService {
           debugPrint('[DEBUG] ${entry.toString()}');
           break;
         case LogLevel.info:
-          debugPrint('[INFO] ${entry.toString()}');
+          // debugPrint('[INFO] ${entry.toString()}');
           break;
         case LogLevel.warning:
           debugPrint('[WARNING] ${entry.toString()}');

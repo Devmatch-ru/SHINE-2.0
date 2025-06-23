@@ -1,562 +1,673 @@
+// lib/blocs/broadcaster/broadcaster_cubit.dart (Updated)
 import 'dart:async';
+import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:shine/utils/webrtc/discovery_manager.dart';
+
 import '../../utils/broadcaster_manager.dart';
-import 'broadcaster_state.dart';
+import '../../utils/service/error_handling_service.dart';
+import '../../utils/service/logging_service.dart';
+import '../../utils/webrtc/types.dart';
+import './broadcaster_state.dart';
 
-class BroadcasterCubit extends Cubit<BroadcasterState> {
-  String? _receiverUrl;
-  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+class BroadcasterCubit extends Cubit<BroadcasterState> with LoggerMixin {
+  @override
+  String get loggerContext => 'BroadcasterCubit';
+
   late final BroadcasterManager _manager;
-  late final DiscoveryManager _discoveryManager;
-  Timer? _captureTimer;
-  Timer? _reconnectTimer;
-  int _reconnectAttempts = 0;
-  static const int maxReconnectAttempts = 5;
+  late final RTCVideoRenderer _localRenderer;
 
-  BroadcasterCubit({String? receiverUrl})
-      : _receiverUrl = receiverUrl,
-        super(const BroadcasterInitial()) {
-    _discoveryManager = DiscoveryManager(
-      onLog: (message) => print('Discovery: $message'),
-      onStateChange: () => print('Discovery state changed'),
+  final String receiverUrl;
+  StreamSubscription? _streamSubscription;
+  Timer? _stateUpdateTimer;
+  Timer? _performanceMonitor;
+  Timer? _heartbeatTimer;
+
+  // Performance metrics
+  double _currentCpuUsage = 0.0;
+  double _currentThermalState = 0.0;
+  double _currentNetworkLatency = 0.0;
+  int _currentFps = 30;
+  int _currentBitrate = 1200000;
+  final List<String> _currentWarnings = [];
+
+  BroadcasterCubit({required this.receiverUrl}) : super(BroadcasterInitial()) {
+    logInfo('Creating BroadcasterCubit for receiver: $receiverUrl');
+    _initializeComponents();
+  }
+
+  void _initializeComponents() {
+    // Создаем видео рендерер для локального стрима
+    _localRenderer = RTCVideoRenderer();
+    logInfo('Video renderer created');
+
+    // Создаем менеджер с колбэками
+    _manager = BroadcasterManager(
+      onStateChange: _handleStateChange,
+      onError: _handleError,
+      onMediaCaptured: _handleMediaCaptured,
+      onConnectionFailed: _handleConnectionFailed,
+      onQualityChanged: _handleQualityChanged,
     );
+    logInfo('BroadcasterManager initialized');
   }
 
-  RTCVideoRenderer get localRenderer {
-    if (state is BroadcasterInitial) {
-      throw Exception('Renderer not initialized yet');
-    }
-    return _localRenderer;
-  }
-
+  // Getters
+  RTCVideoRenderer get localRenderer => _localRenderer;
+  BroadcasterManager get manager => _manager;
+  bool get isConnected => _manager.isConnected;
+  bool get isRecording => _manager.isRecording;
   bool get isFlashOn => _manager.isFlashOn;
-  List<String> get debugMessages => _manager.messages;
+  MediaStream? get localStream => _manager.localStream;
+  String? get broadcasterId => _manager.broadcasterId;
 
   Future<void> initialize() async {
     try {
-      emit(const BroadcasterInitial());
+      logInfo('Initializing broadcaster...');
+      emit(BroadcasterInitializing());
+
+      // Инициализируем рендерер
       await _localRenderer.initialize();
+      logInfo('Renderer initialized');
 
-      _manager = BroadcasterManager(
-        onStateChange: _handleStateChange,
-        onError: _handleError,
-        onMediaCaptured: _handleMediaCaptured,
-        onCommandReceived: _handleCommandReceived,
-        onQualityChanged: _handleQualityChanged,
-        onConnectionFailed: _handleConnectionFailed,
-      );
-
+      // Инициализируем менеджер
       await _manager.init();
+      logInfo('Manager initialized');
 
-      if (_manager.localStream != null) {
-        _localRenderer.srcObject = _manager.localStream;
-        emit(BroadcasterReady(
-          stream: _manager.localStream!,
-          connectedReceivers: const [],
-        ));
-      }
+      // Создаем медиа стрим для предварительного просмотра
+      await _createInitialStream();
 
-      await _discoveryManager.startDiscoveryListener();
-      final receivers = await _discoveryManager.discoverReceivers();
-      if (receivers.isNotEmpty) {
-        _receiverUrl = receivers.first.replaceFirst('RECEIVER:', 'http://');
-        print('Selected receiver: $_receiverUrl');
-      } else {
-        _handleError('Не удалось обнаружить ресивер');
-        return;
-      }
+      // Запускаем мониторинг
+      _startStateUpdateTimer();
+      _startPerformanceMonitoring();
 
-      if (_receiverUrl == null || _receiverUrl!.startsWith('http://169.254.')) {
-        _handleError('Неверный адрес ресивера: $_receiverUrl');
-        return;
-      }
-
-      await startBroadcasting();
-    } catch (e) {
-      _handleError(e.toString());
+      logInfo('Broadcaster initialized successfully');
+    } catch (e, stackTrace) {
+      logError('Error initializing broadcaster: $e', stackTrace);
+      emit(BroadcasterError('Ошибка инициализации: $e', isCritical: true));
     }
   }
 
-  Future<void> startBroadcasting() async {
-    if (_receiverUrl == null || _receiverUrl!.startsWith('http://169.254.')) {
-      _handleError('Неверный адрес ресивера: $_receiverUrl');
+  Future<void> _createInitialStream() async {
+    try {
+      logInfo('Creating initial media stream for preview...');
+
+      // Создаем стрим для предварительного просмотра
+      final mediaConstraints = {
+        'audio': false,
+        'video': {
+          'facingMode': 'environment',
+          'width': 1280,
+          'height': 720,
+          'frameRate': 30,
+          'aspectRatio': 16.0 / 9.0,
+        },
+      };
+
+      final stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+
+      if (stream != null) {
+        // Привязываем стрим к рендереру
+        _localRenderer.srcObject = stream;
+        logInfo('Video stream attached to renderer');
+
+        // Эмитим состояние с локальным стримом
+        emit(BroadcasterReady(
+          isConnected: false,
+          isRecording: false,
+          isFlashOn: false,
+          connectionStatus: 'Готов к подключению',
+          localStream: stream,
+          broadcasterId: _manager.broadcasterId,
+          receiverUrl: receiverUrl,
+          currentFps: _currentFps,
+          currentBitrate: _currentBitrate,
+        ));
+      }
+    } catch (e, stackTrace) {
+      logError('Error creating initial stream: $e', stackTrace);
+      // Эмитим состояние без стрима, но готовое к работе
+      emit(BroadcasterReady(
+        isConnected: false,
+        isRecording: false,
+        isFlashOn: false,
+        connectionStatus: 'Камера недоступна',
+        broadcasterId: _manager.broadcasterId,
+        receiverUrl: receiverUrl,
+        lastError: 'Камера недоступна',
+        lastErrorTime: DateTime.now(),
+        hasRecentError: true,
+      ));
+    }
+  }
+
+  void _startStateUpdateTimer() {
+    _stateUpdateTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      _updateState();
+    });
+  }
+
+  void _startPerformanceMonitoring() {
+    _performanceMonitor = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _updatePerformanceMetrics();
+    });
+  }
+
+  void _updatePerformanceMetrics() {
+    try {
+      // Симуляция метрик производительности
+      // В реальном приложении здесь были бы системные вызовы
+      final now = DateTime.now();
+
+      // CPU usage simulation based on connection state and quality
+      if (_manager.isConnected) {
+        _currentCpuUsage = (0.3 + (DateTime.now().millisecondsSinceEpoch % 1000) / 10000)
+            .clamp(0.0, 1.0);
+      } else {
+        _currentCpuUsage = 0.1;
+      }
+
+      // Thermal state simulation
+      if (_manager.isBroadcasting) {
+        _currentThermalState = (_currentThermalState + 0.02).clamp(0.0, 1.0);
+      } else {
+        _currentThermalState = (_currentThermalState - 0.05).clamp(0.0, 1.0);
+      }
+
+      // Network latency simulation
+      if (_manager.isConnected) {
+        _currentNetworkLatency = 50 + (DateTime.now().millisecondsSinceEpoch % 100);
+      } else {
+        _currentNetworkLatency = 0;
+      }
+
+      // FPS tracking
+      _currentFps = _manager.isConnected ? 30 : 0;
+
+      // Update warnings
+      _updateWarnings();
+
+    } catch (e, stackTrace) {
+      logError('Error updating performance metrics: $e', stackTrace);
+    }
+  }
+
+  void _updateWarnings() {
+    _currentWarnings.clear();
+
+    if (_currentThermalState > 0.8) {
+      _currentWarnings.add('Устройство перегревается');
+    }
+
+    if (_currentCpuUsage > 0.8) {
+      _currentWarnings.add('Высокая нагрузка на процессор');
+    }
+
+    if (_currentNetworkLatency > 500) {
+      _currentWarnings.add('Высокая задержка сети');
+    }
+
+    if (_currentFps < 15 && _manager.isConnected) {
+      _currentWarnings.add('Низкая частота кадров');
+    }
+  }
+
+  void _updateState() {
+    if (state is BroadcasterReady) {
+      final currentState = state as BroadcasterReady;
+      final newLocalStream = _manager.localStream;
+
+      // Обновляем рендерер если стрим изменился
+      if (newLocalStream != null && currentState.localStream?.id != newLocalStream.id) {
+        _localRenderer.srcObject = newLocalStream;
+        logInfo('Updated renderer with new stream: ${newLocalStream.id}');
+      }
+
+      // Calculate connection strength
+      final connectionStrength = _calculateConnectionStrength();
+
+      // Эмитим новое состояние только если что-то значительно изменилось
+      final newState = BroadcasterReady(
+        isConnected: _manager.isConnected,
+        isRecording: _manager.isRecording,
+        isFlashOn: _manager.isFlashOn,
+        isPowerSaveMode: _manager.isPowerSaveMode,
+        connectionStatus: _getConnectionStatus(),
+        localStream: newLocalStream ?? currentState.localStream,
+        broadcasterId: _manager.broadcasterId,
+        receiverUrl: receiverUrl,
+        connectionStrength: connectionStrength,
+        lastHeartbeat: _manager.isConnected ? DateTime.now() : currentState.lastHeartbeat,
+        currentQuality: _getCurrentQuality(),
+        networkLatency: _currentNetworkLatency,
+        cpuUsage: _currentCpuUsage,
+        thermalState: _currentThermalState,
+        fps: _currentFps,
+        bitrate: _currentBitrate,
+        warnings: List.from(_currentWarnings),
+        connectedReceivers: _manager.connectedReceivers,
+        primaryReceiver: _manager.connectedReceivers.isNotEmpty
+            ? _manager.connectedReceivers.first
+            : null,
+        isMulticastMode: _manager.connectedReceivers.length > 1,
+      );
+
+      if (_shouldUpdateState(currentState, newState)) {
+        emit(newState);
+      }
+    }
+  }
+
+  bool _shouldUpdateState(BroadcasterReady oldState, BroadcasterReady newState) {
+    // Проверяем значительные изменения
+    return oldState.isConnected != newState.isConnected ||
+        oldState.isRecording != newState.isRecording ||
+        oldState.isFlashOn != newState.isFlashOn ||
+        oldState.localStream?.id != newState.localStream?.id ||
+        (oldState.connectionStrength - newState.connectionStrength).abs() > 0.1 ||
+        oldState.connectedReceivers.length != newState.connectedReceivers.length ||
+        oldState.warnings.length != newState.warnings.length;
+  }
+
+  double _calculateConnectionStrength() {
+    if (!_manager.isConnected) return 0.0;
+
+    double strength = 0.5; // Base strength
+
+    // Add strength for low latency
+    if (_currentNetworkLatency < 100) {
+      strength += 0.3;
+    } else if (_currentNetworkLatency < 300) {
+      strength += 0.1;
+    }
+
+    // Add strength for good performance
+    if (_currentCpuUsage < 0.5) {
+      strength += 0.1;
+    }
+
+    if (_currentThermalState < 0.5) {
+      strength += 0.1;
+    }
+
+    return strength.clamp(0.0, 1.0);
+  }
+
+  String _getCurrentQuality() {
+    // Логика определения текущего качества
+    if (_manager.isPowerSaveMode) {
+      return 'power_save';
+    }
+    return 'medium'; // Default
+  }
+
+  String _getConnectionStatus() {
+    if (_manager.isBroadcasting && _manager.isConnected) {
+      final receiverCount = _manager.connectedReceivers.length;
+      if (receiverCount > 1) {
+        return 'Подключено к $receiverCount приемникам';
+      }
+      return 'Подключено';
+    } else if (_manager.isBroadcasting) {
+      return 'Подключение...';
+    } else {
+      return 'Готов к подключению';
+    }
+  }
+
+  Future<void> startBroadcast() async {
+    try {
+      logInfo('Starting broadcast to: $receiverUrl');
+      emit(BroadcasterConnecting(
+        receiverUrl,
+        broadcasterId: _manager.broadcasterId,
+      ));
+
+      await _manager.startBroadcast(receiverUrl);
+
+      // Обновляем рендерер с новым стримом после подключения
+      final stream = _manager.localStream;
+      if (stream != null) {
+        _localRenderer.srcObject = stream;
+        logInfo('Updated renderer after broadcast start');
+      }
+
+      logInfo('Broadcast started successfully');
+      emit(BroadcasterConnected(
+        receiverUrl,
+        broadcasterId: _manager.broadcasterId,
+        localStream: stream,
+      ));
+
+      // Запускаем heartbeat мониторинг
+      _startHeartbeatTimer();
+
+      // Переходим в состояние Ready для нормальной работы
+      _handleStateChange();
+
+    } catch (e, stackTrace) {
+      logError('Error starting broadcast: $e', stackTrace);
+      emit(BroadcasterError(
+        'Ошибка подключения: $e',
+        errorCode: 'CONNECTION_FAILED',
+        canRetry: true,
+        errorContext: {'receiverUrl': receiverUrl},
+      ));
+    }
+  }
+
+  void _startHeartbeatTimer() {
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _sendHeartbeat();
+    });
+  }
+
+  void _sendHeartbeat() async {
+    if (!_manager.isConnected) {
+      _heartbeatTimer?.cancel();
       return;
     }
 
     try {
-      print('Starting broadcast to: $_receiverUrl');
-      await _manager.startBroadcast(_receiverUrl!);
-
-      if (_manager.isBroadcasting && _manager.localStream != null) {
-        _reconnectAttempts = 0;
-        _reconnectTimer?.cancel();
-
-        emit(BroadcasterReady(
-          stream: _manager.localStream!,
-          connectedReceivers: _manager.connectedReceivers,
-        ));
-      }
+      // Heartbeat логика уже в BroadcasterManager
+      logDebug('Heartbeat check');
     } catch (e) {
-      _handleError('Ошибка при запуске трансляции: $e');
+      logWarning('Heartbeat failed: $e');
     }
   }
 
-  void _handleConnectionFailed() {
-    if (isClosed) return;
-    if (state is BroadcasterError) return;
-
-    _addMessage('Connection failed, attempting to reconnect...');
-
-    if (_reconnectAttempts < maxReconnectAttempts) {
-      _reconnectAttempts++;
-      final delay = Duration(seconds: _reconnectAttempts * 2);
-
-      _reconnectTimer?.cancel();
-      _reconnectTimer = Timer(delay, () async {
-        _addMessage('Attempting reconnection (attempt $_reconnectAttempts of $maxReconnectAttempts)');
-        final receivers = await _discoveryManager.discoverReceivers();
-        if (receivers.isNotEmpty) {
-          _receiverUrl = receivers.first.replaceFirst('RECEIVER:', 'http://');
-          print('Re-selected receiver: $_receiverUrl');
-        }
-        await startBroadcasting();
-      });
-    } else {
-      _addMessage('Max reconnection attempts reached');
-      emit(BroadcasterError('Не удалось восстановить подключение после $maxReconnectAttempts попыток'));
-    }
-  }
-
-  void _handleError(String error) {
-    if (isClosed) return;
-    _addMessage('Error occurred: $error');
-
-    if (!error.contains('Не удалось восстановить подключение')) {
-      _handleConnectionFailed();
-    }
-
-    emit(BroadcasterError(error));
-  }
-
-  void _handleStateChange() {
-    if (state is BroadcasterError) return;
-
-    final currentStream = _manager.localStream;
-    if (currentStream == null) return;
-
-    _localRenderer.srcObject = currentStream;
-
-    if (_manager.isBroadcasting) {
-      _reconnectAttempts = 0;
-      _reconnectTimer?.cancel();
-
-      if (state is BroadcasterTimer) {
-        final currentState = state as BroadcasterTimer;
-        emit(BroadcasterTimer(
-          stream: currentStream,
-          seconds: currentState.timerSeconds,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-          isVideoMode: state.isVideoMode,
-        ));
-      } else if (state.isRecording || _manager.isRecording) {
-        emit(BroadcasterRecording(
-          stream: currentStream,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
-      } else {
-        emit(BroadcasterReady(
-          stream: currentStream,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-          isVideoMode: state.isVideoMode,
-        ));
-      }
-    } else {
-      emit(BroadcasterReady(
-        stream: currentStream,
-        connectedReceivers: const [],
-        isPowerSaveMode: _manager.isPowerSaveMode,
-        isVideoMode: state.isVideoMode,
-      ));
-    }
-  }
-
-  void _handleMediaCaptured(XFile media) {
-    if (_manager.localStream != null) {
-      emit(BroadcasterReady(
-        stream: _manager.localStream!,
-        connectedReceivers: _manager.connectedReceivers,
-        isPowerSaveMode: _manager.isPowerSaveMode,
-        isVideoMode: state.isVideoMode,
-      ));
-    }
-  }
-
-  void _handleCommandReceived(String command) {
-    if (_manager.localStream == null) return;
-
-    String message;
-    switch (command) {
-      case 'capture_photo':
-        message = 'Получена команда: Сделать фото';
-        _executePhotoCommand();
-        break;
-      case 'toggle_video':
-        message = 'Получена команда: Переключить видеозапись';
-        _executeVideoCommand();
-        break;
-      case 'toggle_flashlight':
-        message = 'Получена команда: Переключить фонарик';
-        _executeFlashlightCommand();
-        break;
-      case 'start_timer':
-        message = 'Получена команда: Запустить таймер';
-        _executeTimerCommand();
-        break;
-      default:
-        message = 'Получена команда: $command';
-    }
-
-    emit(BroadcasterCommandReceived(
-      stream: _manager.localStream!,
-      message: message,
-      connectedReceivers: _manager.connectedReceivers,
-      isPowerSaveMode: _manager.isPowerSaveMode,
-      isVideoMode: state.isVideoMode,
-    ));
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (_manager.localStream != null) {
-        emit(BroadcasterReady(
-          stream: _manager.localStream!,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-          isVideoMode: state.isVideoMode,
-        ));
-      }
-    });
-  }
-
-  Future<void> _executePhotoCommand() async {
+  Future<void> stopBroadcast() async {
     try {
-      if (_manager.localStream != null) {
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '📸 Делаем фото...',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
+      logInfo('Stopping broadcast...');
+      _heartbeatTimer?.cancel();
+
+      await _manager.stopBroadcast();
+
+      // Возвращаемся к предварительному просмотру
+      await _createInitialStream();
+
+    } catch (e, stackTrace) {
+      logError('Error stopping broadcast: $e', stackTrace);
+      emit(BroadcasterError(
+        'Ошибка отключения: $e',
+        errorCode: 'DISCONNECT_FAILED',
+      ));
+    }
+  }
+
+  // Command methods with enhanced state tracking
+  Future<void> capturePhoto() async {
+    try {
+      logInfo('Capturing photo...');
+
+      if (state is BroadcasterReady) {
+        final currentState = state as BroadcasterReady;
+        emit(currentState.copyWith(isCapturingPhoto: true));
       }
 
       await _manager.capturePhoto();
 
-      if (_manager.localStream != null) {
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '✅ Фото сохранено!',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
-
-        Future.delayed(const Duration(seconds: 3), () {
-          if (_manager.localStream != null) {
-            emit(BroadcasterReady(
-              stream: _manager.localStream!,
-              connectedReceivers: _manager.connectedReceivers,
-              isPowerSaveMode: _manager.isPowerSaveMode,
-            ));
-          }
-        });
-      }
-    } catch (e) {
-      emit(BroadcasterError('Ошибка при съемке фото: $e'));
-    }
-  }
-
-  Future<void> _executeVideoCommand() async {
-    try {
-      final wasRecording = state.isRecording || _manager.isRecording;
-
-      if (wasRecording) {
-        await _manager.stopVideoRecording();
-        if (_manager.localStream != null) {
-          emit(BroadcasterReady(
-            stream: _manager.localStream!,
-            connectedReceivers: _manager.connectedReceivers,
-            isPowerSaveMode: _manager.isPowerSaveMode,
-          ));
-        }
-
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '📹 Видео сохранено',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
-      } else {
-        _addMessage('Начинаем запись видео...');
-        await _manager.startVideoRecording();
-
-        if (_manager.localStream != null) {
-          emit(BroadcasterRecording(
-            stream: _manager.localStream!,
-            connectedReceivers: _manager.connectedReceivers,
-            isPowerSaveMode: _manager.isPowerSaveMode,
-          ));
-        }
-
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '🔴 Запись видео начата',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
-      }
-
-      Future.delayed(const Duration(seconds: 2), () {
-        if (_manager.localStream != null) {
-          if (_manager.isRecording) {
-            emit(BroadcasterRecording(
-              stream: _manager.localStream!,
-              connectedReceivers: _manager.connectedReceivers,
-              isPowerSaveMode: _manager.isPowerSaveMode,
-            ));
-          } else {
-            emit(BroadcasterReady(
-              stream: _manager.localStream!,
-              connectedReceivers: _manager.connectedReceivers,
-              isPowerSaveMode: _manager.isPowerSaveMode,
-            ));
-          }
+      // Reset capture state after a delay
+      Future.delayed(const Duration(seconds: 1), () {
+        if (state is BroadcasterReady) {
+          final currentState = state as BroadcasterReady;
+          emit(currentState.copyWith(isCapturingPhoto: false));
         }
       });
-    } catch (e) {
-      emit(BroadcasterError('Ошибка при работе с видео: $e'));
+
+    } catch (e, stackTrace) {
+      logError('Error capturing photo: $e', stackTrace);
+
+      if (state is BroadcasterReady) {
+        final currentState = state as BroadcasterReady;
+        emit(currentState.copyWith(
+          isCapturingPhoto: false,
+          lastError: 'Ошибка съемки фото: $e',
+          lastErrorTime: DateTime.now(),
+          hasRecentError: true,
+        ));
+      }
     }
   }
 
-  void _addMessage(String message) {
-    print('BroadcasterCubit: $message');
-  }
-
-  Future<void> _executeFlashlightCommand() async {
+  Future<void> captureWithTimer() async {
     try {
-      await _manager.toggleFlash();
+      logInfo('Capturing photo with timer...');
 
-      if (_manager.localStream != null) {
-        final status = _manager.isFlashOn ? 'включен' : 'выключен';
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '🔦 Фонарик $status',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
+      if (state is BroadcasterReady) {
+        final currentState = state as BroadcasterReady;
+        emit(currentState.copyWith(
+          isCapturingWithTimer: true,
+          timerSeconds: 3,
         ));
 
-        Future.delayed(const Duration(seconds: 2), () {
-          if (_manager.localStream != null) {
-            emit(BroadcasterReady(
-              stream: _manager.localStream!,
-              connectedReceivers: _manager.connectedReceivers,
-              isPowerSaveMode: _manager.isPowerSaveMode,
-            ));
+        // Timer countdown
+        for (int i = 3; i > 0; i--) {
+          await Future.delayed(const Duration(seconds: 1));
+          if (state is BroadcasterReady) {
+            final timerState = state as BroadcasterReady;
+            emit(timerState.copyWith(timerSeconds: i - 1));
           }
-        });
+        }
       }
-    } catch (e) {
-      emit(BroadcasterError('Ошибка при переключении фонарика: $e'));
-    }
-  }
 
-  Future<void> _executeTimerCommand() async {
-    try {
-      await startTimerCapture();
-    } catch (e) {
-      emit(BroadcasterError('Ошибка при запуске таймера: $e'));
+      await _manager.captureWithTimer();
+
+      // Reset timer state
+      if (state is BroadcasterReady) {
+        final currentState = state as BroadcasterReady;
+        emit(currentState.copyWith(
+          isCapturingWithTimer: false,
+          timerSeconds: 0,
+        ));
+      }
+
+    } catch (e, stackTrace) {
+      logError('Error capturing with timer: $e', stackTrace);
+
+      if (state is BroadcasterReady) {
+        final currentState = state as BroadcasterReady;
+        emit(currentState.copyWith(
+          isCapturingWithTimer: false,
+          timerSeconds: 0,
+          lastError: 'Ошибка съемки с таймером: $e',
+          lastErrorTime: DateTime.now(),
+          hasRecentError: true,
+        ));
+      }
     }
   }
 
   Future<void> toggleRecording() async {
-    if (!_manager.isBroadcasting) {
-      emit(BroadcasterError('Нет подключения к слушателю'));
-      return;
-    }
-
     try {
-      if (state.isRecording || _manager.isRecording) {
+      if (_manager.isRecording) {
+        logInfo('Stopping video recording...');
         await _manager.stopVideoRecording();
-        emit(BroadcasterReady(
-          stream: _manager.localStream!,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
       } else {
+        logInfo('Starting video recording...');
         await _manager.startVideoRecording();
-        emit(BroadcasterRecording(
-          stream: _manager.localStream!,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
+      }
+    } catch (e, stackTrace) {
+      logError('Error toggling recording: $e', stackTrace);
+
+      if (state is BroadcasterReady) {
+        final currentState = state as BroadcasterReady;
+        emit(currentState.copyWith(
+          lastError: 'Ошибка записи видео: $e',
+          lastErrorTime: DateTime.now(),
+          hasRecentError: true,
         ));
       }
-    } catch (e) {
-      emit(BroadcasterError(e.toString()));
     }
-  }
-
-  Future<void> capturePhoto() async {
-    if (!_manager.isBroadcasting) {
-      emit(BroadcasterError('Нет подключения к слушателю'));
-      return;
-    }
-
-    try {
-      await _manager.capturePhoto();
-    } catch (e) {
-      emit(BroadcasterError(e.toString()));
-    }
-  }
-
-  Future<void> startTimerCapture() async {
-    if (state.isTimerActive || state.isRecording) return;
-
-    const totalSeconds = 3;
-    for (int i = totalSeconds; i > 0; i--) {
-      emit(BroadcasterTimer(
-        stream: _manager.localStream!,
-        seconds: i,
-        connectedReceivers: _manager.connectedReceivers,
-        isPowerSaveMode: _manager.isPowerSaveMode,
-      ));
-      await Future.delayed(const Duration(seconds: 1));
-    }
-
-    await capturePhoto();
-    emit(BroadcasterReady(
-      stream: _manager.localStream!,
-      connectedReceivers: _manager.connectedReceivers,
-      isPowerSaveMode: _manager.isPowerSaveMode,
-    ));
-  }
-
-  void _handleQualityChanged(String quality) {
-    if (_manager.localStream == null) return;
-
-    final message = 'Качество изменено на: ${_getQualityDisplayName(quality)}';
-
-    emit(BroadcasterCommandReceived(
-      stream: _manager.localStream!,
-      message: message,
-      connectedReceivers: _manager.connectedReceivers,
-      isPowerSaveMode: _manager.isPowerSaveMode,
-    ));
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (_manager.localStream != null) {
-        emit(BroadcasterReady(
-          stream: _manager.localStream!,
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
-        ));
-      }
-    });
-  }
-
-  String _getQualityDisplayName(String quality) {
-    switch (quality) {
-      case 'low':
-        return 'Низкое (640x360, 15fps)';
-      case 'medium':
-        return 'Среднее (1280x720, 30fps)';
-      case 'high':
-        return 'Высокое (1920x1080, 25fps)';
-      default:
-        return quality;
-    }
-  }
-
-  @override
-  Future<void> close() async {
-    _reconnectTimer?.cancel();
-    _captureTimer?.cancel();
-    await _localRenderer.dispose();
-    await _manager.dispose();
-    await _discoveryManager.dispose();
-    super.close();
-  }
-
-  Future<void> disconnect() async {
-    try {
-      _captureTimer?.cancel();
-      _reconnectTimer?.cancel();
-
-      await _manager.stopBroadcast();
-      _localRenderer.srcObject = null;
-      await _manager.dispose();
-      await _discoveryManager.dispose();
-
-      await Future.delayed(const Duration(milliseconds: 300));
-      emit(const BroadcasterInitial());
-    } catch (e) {
-      _addMessage('Error during disconnect: $e');
-      emit(BroadcasterError('Ошибка при отключении: $e'));
-    }
-  }
-
-  Future<void> setPhotoMode() async {
-    if (_manager.localStream == null) return;
-
-    if (state.isRecording) {
-      await _manager.stopVideoRecording();
-    }
-
-    emit(BroadcasterReady(
-      stream: _manager.localStream!,
-      connectedReceivers: _manager.connectedReceivers,
-      isPowerSaveMode: _manager.isPowerSaveMode,
-      isVideoMode: false,
-    ));
-  }
-
-  Future<void> setVideoMode() async {
-    if (_manager.localStream == null) return;
-
-    emit(BroadcasterReady(
-      stream: _manager.localStream!,
-      connectedReceivers: _manager.connectedReceivers,
-      isPowerSaveMode: _manager.isPowerSaveMode,
-      isVideoMode: true,
-    ));
   }
 
   Future<void> toggleFlash() async {
     try {
+      logInfo('Toggling flash...');
       await _manager.toggleFlash();
+    } catch (e, stackTrace) {
+      logError('Error toggling flash: $e', stackTrace);
 
-      if (_manager.localStream != null) {
-        final status = _manager.isFlashOn ? 'включен' : 'выключен';
-        emit(BroadcasterCommandReceived(
-          stream: _manager.localStream!,
-          message: '🔦 Фонарик $status',
-          connectedReceivers: _manager.connectedReceivers,
-          isPowerSaveMode: _manager.isPowerSaveMode,
+      if (state is BroadcasterReady) {
+        final currentState = state as BroadcasterReady;
+        emit(currentState.copyWith(
+          lastError: 'Ошибка переключения вспышки: $e',
+          lastErrorTime: DateTime.now(),
+          hasRecentError: true,
         ));
-
-        Future.delayed(const Duration(seconds: 2), () {
-          if (_manager.localStream != null) {
-            emit(BroadcasterReady(
-              stream: _manager.localStream!,
-              connectedReceivers: _manager.connectedReceivers,
-              isPowerSaveMode: _manager.isPowerSaveMode,
-            ));
-          }
-        });
       }
-    } catch (e) {
-      emit(BroadcasterError('Ошибка при переключении фонарика: $e'));
     }
+  }
+
+  // Settings methods
+  Future<void> selectVideoInput(String? deviceId) async {
+    try {
+      await _manager.selectVideoInput(deviceId);
+      _handleStateChange();
+    } catch (e, stackTrace) {
+      logError('Error selecting video input: $e', stackTrace);
+    }
+  }
+
+  Future<void> selectVideoFps(String fps) async {
+    try {
+      await _manager.selectVideoFps(fps);
+      _currentFps = int.tryParse(fps) ?? 30;
+      _handleStateChange();
+    } catch (e, stackTrace) {
+      logError('Error selecting video FPS: $e', stackTrace);
+    }
+  }
+
+  Future<void> selectVideoSize(String size) async {
+    try {
+      await _manager.selectVideoSize(size);
+      _handleStateChange();
+    } catch (e, stackTrace) {
+      logError('Error selecting video size: $e', stackTrace);
+    }
+  }
+
+  // Event handlers
+  void _handleStateChange() {
+    logDebug('State change callback triggered');
+    // State update handled by timer
+  }
+
+  void _handleError(String error) {
+    logError('Manager error: $error');
+
+    // Определяем критичность ошибки
+    final isCritical = error.contains('камера') ||
+        error.contains('инициализ') ||
+        error.contains('permission');
+
+    final canRetry = !error.contains('permission') &&
+        !error.contains('не поддерживается');
+
+    emit(BroadcasterError(
+      error,
+      isCritical: isCritical,
+      canRetry: canRetry,
+      errorContext: {
+        'receiverUrl': receiverUrl,
+        'broadcasterId': _manager.broadcasterId,
+        'isConnected': _manager.isConnected,
+      },
+    ));
+  }
+
+  void _handleMediaCaptured(XFile media) {
+    logInfo('Media captured: ${media.path}');
+
+    if (state is BroadcasterReady) {
+      final currentState = state as BroadcasterReady;
+      final updatedPaths = List<String>.from(currentState.recentMediaPaths);
+      updatedPaths.insert(0, media.path);
+
+      // Keep only last 5 media paths
+      if (updatedPaths.length > 5) {
+        updatedPaths.removeLast();
+      }
+
+      emit(currentState.copyWith(
+        recentMediaPaths: updatedPaths,
+      ));
+    }
+  }
+
+  void _handleConnectionFailed() {
+    logWarning('Connection failed');
+    emit(BroadcasterError(
+      'Соединение потеряно',
+      errorCode: 'CONNECTION_LOST',
+      canRetry: true,
+      errorContext: {'receiverUrl': receiverUrl},
+    ));
+  }
+
+  void _handleQualityChanged(String quality) {
+    logInfo('Quality changed to: $quality');
+
+    if (state is BroadcasterReady) {
+      final currentState = state as BroadcasterReady;
+      emit(currentState.copyWith(
+        currentQuality: quality,
+        isQualityChanging: false,
+      ));
+    }
+  }
+
+  // Utility methods
+  void clearError() {
+    if (state is BroadcasterReady) {
+      final currentState = state as BroadcasterReady;
+      emit(currentState.copyWith(
+        lastError: null,
+        lastErrorTime: null,
+        hasRecentError: false,
+      ));
+    }
+  }
+
+  String getDetailedStatus() {
+    if (state is BroadcasterReady) {
+      return (state as BroadcasterReady).detailedStatusText;
+    }
+    return state.toString();
+  }
+
+  Map<String, dynamic> getPerformanceStats() {
+    return {
+      'cpuUsage': _currentCpuUsage,
+      'thermalState': _currentThermalState,
+      'networkLatency': _currentNetworkLatency,
+      'fps': _currentFps,
+      'bitrate': _currentBitrate,
+      'warnings': _currentWarnings,
+      'isConnected': _manager.isConnected,
+      'connectionStrength': state is BroadcasterReady
+          ? (state as BroadcasterReady).connectionStrength
+          : 0.0,
+    };
+  }
+
+  @override
+  Future<void> close() async {
+    logInfo('Disposing broadcaster cubit...');
+
+    _stateUpdateTimer?.cancel();
+    _performanceMonitor?.cancel();
+    _heartbeatTimer?.cancel();
+    _streamSubscription?.cancel();
+
+    try {
+      await _manager.dispose();
+      await _localRenderer.dispose();
+    } catch (e, stackTrace) {
+      logError('Error disposing broadcaster cubit: $e', stackTrace);
+    }
+
+    return super.close();
   }
 }

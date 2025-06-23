@@ -1,4 +1,3 @@
-// lib/services/media_service.dart
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
@@ -6,8 +5,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
-import '../../constants.dart';
-import '../../webrtc/types.dart';
+import '../constants.dart';
+import '../webrtc/types.dart';
 import './logging_service.dart';
 
 class MediaMetadata {

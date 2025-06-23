@@ -3,8 +3,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import './logging_service.dart';
-import './error_handling_service.dart';
+
+import 'error_handling_service.dart';
+import 'logging_service.dart';
 
 enum SettingKey {
   // Quality settings

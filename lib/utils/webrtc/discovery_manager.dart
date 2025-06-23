@@ -1,181 +1,252 @@
+// lib/utils/webrtc/discovery_manager.dart (Updated)
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:network_info_plus/network_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 
-class DiscoveryManager {
+import '../constants.dart';
+import '../service/logging_service.dart';
+import '../service/network_service.dart';
+
+
+class DiscoveryManager with LoggerMixin {
+  @override
+  String get loggerContext => 'DiscoveryManager';
+
+  // Services
+  final NetworkService _networkService = NetworkService();
+
+  // Network components
   RawDatagramSocket? _udpSocket;
+
+  // Timers
   Timer? _discoveryTimer;
   Timer? _cleanupTimer;
-  final Set<String> _receivers = {};
-  final void Function(String) _onLog;
-  final VoidCallback? onStateChange;
 
+  // State
+  final Set<String> _receivers = {};
   final Map<String, DateTime> _lastSeenReceivers = {};
-  static const Duration _receiverTimeout = Duration(seconds: 30);
-  static const Duration _discoveryInterval = Duration(seconds: 5);
-  static const Duration _cleanupInterval = Duration(seconds: 10);
   bool _isInitialScan = true;
 
+  // Callbacks
+  final VoidCallback? onStateChange;
+
   DiscoveryManager({
-    required void Function(String) onLog,
     this.onStateChange,
-  }) : _onLog = onLog;
+  });
 
-  Set<String> get receivers => _receivers;
-
-  Future<bool> _checkPermissions() async {
-    if (Platform.isAndroid) {
-      final status = await Permission.locationWhenInUse.request();
-      _onLog('Location permission status: $status');
-      return status.isGranted;
-    }
-    return true; 
-  }
+  // Getters
+  Set<String> get receivers => Set.unmodifiable(_receivers);
 
   Future<void> startDiscoveryListener() async {
     try {
-      if (!await _checkPermissions()) {
-        _onLog('Location permission denied, discovery may fail');
-      }
+      logInfo('Starting discovery listener...');
 
-      _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 9000,
-          reuseAddress: true);
+      _udpSocket = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4,
+        AppConstants.discoveryPort,
+        reuseAddress: true,
+      );
+
       _udpSocket!.broadcastEnabled = true;
 
       _udpSocket!.listen((event) {
         if (event == RawSocketEvent.read) {
-          final datagram = _udpSocket!.receive();
-          if (datagram != null) {
-            final message = String.fromCharCodes(datagram.data);
-            if (message.startsWith('RECEIVER:')) {
-              _handleReceiverResponse(message);
-            }
-          }
+          _handleUdpPacket();
         }
       });
 
       _startPeriodicDiscovery();
       _startCleanupTimer();
-      _onLog('UDP discovery listener started');
-    } catch (e) {
-      _onLog('Error starting discovery listener: $e');
+
+      logInfo('Discovery listener started on port ${AppConstants.discoveryPort}');
+    } catch (e, stackTrace) {
+      logError('Error starting discovery listener: $e', stackTrace);
+      rethrow;
+    }
+  }
+
+  void _handleUdpPacket() {
+    try {
+      final datagram = _udpSocket!.receive();
+      if (datagram != null) {
+        final message = String.fromCharCodes(datagram.data);
+        if (_networkService.isReceiverResponse(message)) {
+          _handleReceiverResponse(message);
+        }
+      }
+    } catch (e, stackTrace) {
+      logError('Error handling UDP packet: $e', stackTrace);
     }
   }
 
   void _handleReceiverResponse(String message) {
-    final parts = message.split(':');
-    if (parts.length >= 2) {
-      final ip = parts[1];
-      if (ip.startsWith('169.254.')) {
-        _onLog('Ignoring APIPA address: $ip');
-        return;
-      }
+    try {
       if (_receivers.add(message)) {
-        _onLog('Found new receiver: $message');
+        logInfo('Found new receiver: $message');
         onStateChange?.call();
       }
       _lastSeenReceivers[message] = DateTime.now();
+    } catch (e, stackTrace) {
+      logError('Error handling receiver response: $e', stackTrace);
     }
   }
 
   void _startPeriodicDiscovery() {
     _discoveryTimer?.cancel();
-    _discoveryTimer =
-        Timer.periodic(_discoveryInterval, (_) => _performDiscovery());
-    _performDiscovery();
+    _discoveryTimer = Timer.periodic(AppConstants.discoveryInterval, (_) => _performDiscovery());
+    _performDiscovery(); // Initial discovery
   }
 
   void _startCleanupTimer() {
     _cleanupTimer?.cancel();
-    _cleanupTimer =
-        Timer.periodic(_cleanupInterval, (_) => _cleanupStaleReceivers());
+    _cleanupTimer = Timer.periodic(AppConstants.cleanupInterval, (_) => _cleanupStaleReceivers());
   }
 
   Future<void> _performDiscovery() async {
     try {
-      final wifiIP = await NetworkInfo().getWifiIP();
-      if (wifiIP == null || wifiIP.startsWith('169.254.')) {
-        _onLog('Invalid Wi-Fi IP: $wifiIP');
+      final wifiIP = await _networkService.getWifiIP();
+      if (wifiIP == null) {
+        logWarning('WiFi IP not available for discovery');
         return;
       }
 
       final parts = wifiIP.split('.');
-      if (parts.length == 4) {
-        final baseIP = '${parts[0]}.${parts[1]}.${parts[2]}';
-
-        if (_isInitialScan) {
-          for (int i = 1; i <= 254; i++) {
-            final address = '$baseIP.$i';
-            _udpSocket!
-                .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
-            _onLog('Sent discovery to: $address:9000');
-          }
-          _isInitialScan = false;
-        } else {
-          final knownIPs = _receivers.map((r) {
-            final parts = r.split(':');
-            return parts[1];
-          }).toSet();
-
-          for (final ip in knownIPs) {
-            final lastPart = int.tryParse(ip.split('.').last) ?? 0;
-            for (int i = -5; i <= 5; i++) {
-              final newLast = lastPart + i;
-              if (newLast > 0 && newLast < 255) {
-                final address = '$baseIP.$newLast';
-                _udpSocket!.send(
-                    'DISCOVER'.codeUnits, InternetAddress(address), 9000);
-                _onLog('Sent discovery to: $address:9000');
-              }
-            }
-          }
-
-          final random = List.generate(10,
-              (i) => (DateTime.now().millisecondsSinceEpoch + i) % 254 + 1);
-          for (final i in random) {
-            final address = '$baseIP.$i';
-            _udpSocket!
-                .send('DISCOVER'.codeUnits, InternetAddress(address), 9000);
-            _onLog('Sent discovery to: $address:9000');
-          }
-        }
+      if (parts.length != 4) {
+        logError('Invalid WiFi IP format: $wifiIP');
+        return;
       }
-    } catch (e) {
-      _onLog('Error during discovery: $e');
+
+      final baseIP = '${parts[0]}.${parts[1]}.${parts[2]}';
+
+      if (_isInitialScan) {
+        logInfo('Performing initial full network scan');
+        _networkService.sendDiscoveryBroadcast(_udpSocket!, baseIP);
+        _isInitialScan = false;
+      } else {
+        logInfo('Performing targeted discovery');
+        _performTargetedDiscovery(baseIP);
+      }
+    } catch (e, stackTrace) {
+      logError('Error during discovery: $e', stackTrace);
+    }
+  }
+
+  void _performTargetedDiscovery(String baseIP) {
+    try {
+      // Get known IPs from receivers
+      final knownIPs = _receivers
+          .map((r) {
+        try {
+          final info = _networkService.parseReceiverInfo(r);
+          return info['ip']!;
+        } catch (e) {
+          return null;
+        }
+      })
+          .where((ip) => ip != null)
+          .cast<String>()
+          .toSet();
+
+      _networkService.sendTargetedDiscovery(_udpSocket!, baseIP, knownIPs);
+    } catch (e, stackTrace) {
+      logError('Error in targeted discovery: $e', stackTrace);
     }
   }
 
   void _cleanupStaleReceivers() {
-    final now = DateTime.now();
-    final staleReceivers = _lastSeenReceivers.entries
-        .where((entry) => now.difference(entry.value) > _receiverTimeout)
-        .map((entry) => entry.key)
-        .toList();
+    try {
+      final now = DateTime.now();
+      final staleReceivers = _lastSeenReceivers.entries
+          .where((entry) => now.difference(entry.value) > AppConstants.receiverTimeout)
+          .map((entry) => entry.key)
+          .toList();
 
-    for (final receiver in staleReceivers) {
-      _receivers.remove(receiver);
-      _lastSeenReceivers.remove(receiver);
-      _onLog('Removed stale receiver: $receiver');
-      onStateChange?.call();
+      for (final receiver in staleReceivers) {
+        _receivers.remove(receiver);
+        _lastSeenReceivers.remove(receiver);
+        logInfo('Removed stale receiver: $receiver');
+        onStateChange?.call();
+      }
+
+      if (staleReceivers.isNotEmpty) {
+        logInfo('Cleaned up ${staleReceivers.length} stale receivers');
+      }
+    } catch (e, stackTrace) {
+      logError('Error cleaning up stale receivers: $e', stackTrace);
     }
   }
 
   Future<List<String>> discoverReceivers() async {
+    try {
+      logInfo('Starting manual receiver discovery...');
+
+      _isInitialScan = true;
+      await _performDiscovery();
+
+      // Wait a bit for responses
+      await Future.delayed(const Duration(seconds: 2));
+
+      final receiverList = _receivers.toList();
+      logInfo('Discovery completed. Found ${receiverList.length} receivers');
+
+      return receiverList;
+    } catch (e, stackTrace) {
+      logError('Error in manual receiver discovery: $e', stackTrace);
+      return [];
+    }
+  }
+
+  Future<void> refreshReceivers() async {
+    try {
+      logInfo('Refreshing receiver list...');
+      await _performDiscovery();
+    } catch (e, stackTrace) {
+      logError('Error refreshing receivers: $e', stackTrace);
+    }
+  }
+
+  void forceFullScan() {
+    logInfo('Forcing full network scan on next discovery');
     _isInitialScan = true;
-    await _performDiscovery();
-    await Future.delayed(const Duration(seconds: 2));
-    return _receivers.toList();
+  }
+
+  void clearReceivers() {
+    logInfo('Clearing all discovered receivers');
+    _receivers.clear();
+    _lastSeenReceivers.clear();
+    onStateChange?.call();
+  }
+
+  Map<String, Map<String, String>> getParsedReceivers() {
+    final parsed = <String, Map<String, String>>{};
+
+    for (final receiver in _receivers) {
+      try {
+        final info = _networkService.parseReceiverInfo(receiver);
+        parsed[receiver] = info;
+      } catch (e) {
+        logWarning('Could not parse receiver info: $receiver');
+      }
+    }
+
+    return parsed;
   }
 
   Future<void> dispose() async {
-    _discoveryTimer?.cancel();
-    _cleanupTimer?.cancel();
-    _udpSocket?.close();
-    _udpSocket = null;
-    _receivers.clear();
-    _lastSeenReceivers.clear();
-    _onLog('Discovery manager disposed');
+    try {
+      logInfo('Disposing discovery manager...');
+
+      _discoveryTimer?.cancel();
+      _cleanupTimer?.cancel();
+      _udpSocket?.close();
+
+      _udpSocket = null;
+      _receivers.clear();
+      _lastSeenReceivers.clear();
+
+      logInfo('Discovery manager disposed successfully');
+    } catch (e, stackTrace) {
+      logError('Error disposing discovery manager: $e', stackTrace);
+    }
   }
 }

@@ -2,8 +2,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import './logging_service.dart';
-import './error_handling_service.dart';
+
+import 'error_handling_service.dart';
+import 'logging_service.dart';
 
 enum PermissionType {
   camera('Камера', 'для съемки фото и видео'),

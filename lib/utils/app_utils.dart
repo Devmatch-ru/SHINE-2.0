@@ -2,8 +2,8 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:shine/utils/new_organize/service/logging_service.dart';
-import 'package:shine/utils/new_organize/service/network_service.dart';
+import 'package:shine/utils/service/logging_service.dart';
+import 'package:shine/utils/service/network_service.dart';
 
 class UserNameGenerator with LoggerMixin {
   @override

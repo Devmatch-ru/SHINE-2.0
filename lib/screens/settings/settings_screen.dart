@@ -7,9 +7,9 @@ import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/app_constant.dart';
-import '../../utils/new_organize/service/error_handling_service.dart';
-import '../../utils/new_organize/service/logging_service.dart';
-import '../../utils/new_organize/service/settings_service.dart';
+import '../../utils/service/error_handling_service.dart';
+import '../../utils/service/logging_service.dart';
+import '../../utils/service/settings_service.dart';
 import './about_tabs_screen.dart';
 import './faq_screen.dart';
 
