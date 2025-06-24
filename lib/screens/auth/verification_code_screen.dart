@@ -39,6 +39,7 @@ class VerificationCodeScreen extends StatefulWidget {
 
 class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
   late List<TextEditingController> _codeControllers;
+  late List<FocusNode> _focusNodes;
   bool _isLoading = false;
   String? _error;
   int _timer = 59;
@@ -48,11 +49,23 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
   void initState() {
     super.initState();
     _codeControllers = List.generate(6, (_) => TextEditingController());
+    _focusNodes = List.generate(6, (_) => FocusNode());
     _startTimer();
-    if (!widget.skipCodeSending &&
-        widget.type != VerificationType.passwordReset) {
+    if (!widget.skipCodeSending && widget.type != VerificationType.passwordReset) {
       _resendCode();
     }
+  }
+
+  @override
+  void dispose() {
+    _resendTimer?.cancel();
+    for (var controller in _codeControllers) {
+      controller.dispose();
+    }
+    for (var focusNode in _focusNodes) {
+      focusNode.dispose();
+    }
+    super.dispose();
   }
 
   void _startTimer() {
@@ -68,15 +81,6 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         });
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _resendTimer?.cancel();
-    for (var controller in _codeControllers) {
-      controller.dispose();
-    }
-    super.dispose();
   }
 
   String _getTitle() {
@@ -156,6 +160,21 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
     }
 
     return text;
+  }
+
+  void _handleCodeInput(String value, int index) {
+    if (value.isEmpty && index > 0) {
+      // Если поле пустое и не первое, возвращаемся назад
+      _focusNodes[index - 1].requestFocus();
+    } else if (value.length == 1 && index < 5) {
+      // Если введена цифра и это не последнее поле, переходим вперед
+      _focusNodes[index + 1].requestFocus();
+    }
+
+    // Проверка заполненности всех полей
+    if (index == 5 && _codeControllers.every((c) => c.text.isNotEmpty)) {
+      _verifyCode();
+    }
   }
 
   Future<void> _verifyCode() async {
@@ -253,11 +272,69 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
       for (var controller in _codeControllers) {
         controller.clear();
       }
+      // Возврат фокуса на первое поле
+      _focusNodes[0].requestFocus();
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  void _handleBackspace() {
+    for (int i = 5; i >= 0; i--) {
+      if (_focusNodes[i].hasFocus) {
+        if (_codeControllers[i].text.isEmpty && i > 0) {
+          _codeControllers[i - 1].clear();
+          _focusNodes[i - 1].requestFocus();
+        } else if (_codeControllers[i].text.isNotEmpty) {
+          _codeControllers[i].clear();
+        }
+        break;
+      }
+    }
+  }
+
+  Widget _buildCodeTextField(int index, double digitWidth) {
+    return Container(
+      width: digitWidth,
+      height: digitWidth,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      child: TextField(
+        focusNode: _focusNodes[index],
+        controller: _codeControllers[index],
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        maxLength: 1,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: digitWidth * 0.5,
+        ),
+        decoration: const InputDecoration(
+          counterText: '',
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey, width: 0.5),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey, width: 0.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey, width: 0.5),
+          ),
+          contentPadding: EdgeInsets.zero,
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty && index < 5) {
+            _focusNodes[index + 1].requestFocus();
+          } else if (value.isEmpty && index > 0) {
+            _focusNodes[index - 1].requestFocus();
+          }
+          if (index == 5 && value.isNotEmpty) {
+            _verifyCode();
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -270,135 +347,101 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: AppSpacing.xl),
-              Center(
-                child: Text(
-                  _getTitle(),
-                  style: AppTextStyles.h2,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Center(
-                child: Text(
-                  _getDescription(),
-                  style: AppTextStyles.lead,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(6, (i) {
-                  return Container(
-                    width: digitWidth,
-                    height: digitWidth,
-                    margin: const EdgeInsets.symmetric(horizontal: 5),
-                    child: TextField(
-                      controller: _codeControllers[i],
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      maxLength: 1,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: digitWidth * 0.5,
-                      ),
-                      decoration: const InputDecoration(
-                        counterText: '',
-                        border: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.grey, width: 0.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.grey, width: 0.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.grey, width: 0.5),
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (value) {
-                        if (value.isNotEmpty && i < 5) {
-                          FocusScope.of(context).nextFocus();
-                        } else if (value.isEmpty && i > 0) {
-                          FocusScope.of(context).previousFocus();
-                        }
-                        if (i == 5 && value.isNotEmpty) {
-                          _verifyCode();
-                        }
-                      },
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+          child: RawKeyboardListener(
+            focusNode: FocusNode(),
+            onKey: (RawKeyEvent event) {
+              if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
+                _handleBackspace();
+              }
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.xl),
+                Center(
                   child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red),
+                    _getTitle(),
+                    style: AppTextStyles.h2,
                     textAlign: TextAlign.center,
                   ),
                 ),
-              if (_error == null) const SizedBox(height: AppSpacing.xl),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _verifyCode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: const StadiumBorder(),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  minimumSize: const Size(double.infinity, 48),
+                const SizedBox(height: AppSpacing.xl),
+                Center(
+                  child: Text(
+                    _getDescription(),
+                    style: AppTextStyles.lead,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(
-                        _getButtonText(),
-                        style: const TextStyle(color: Colors.white),
-                      ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Center(
-                child: _timer > 0
-                    ? Text(
-                        '${(_timer ~/ 60).toString().padLeft(2, '0')}:${(_timer % 60).toString().padLeft(2, '0')}',
-                        style: AppTextStyles.lead,
-                      )
-                    : TextButton(
-                        onPressed: !_isLoading ? _resendCode : null,
-                        child: const Text(
-                          'Отправить код снова',
-                          style: TextStyle(color: Colors.black),
-                        ),
-                      ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: const StadiumBorder(),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(6, (i) => _buildCodeTextField(i, digitWidth)),
                 ),
-                child: const Text(
-                  'Вернуться',
-                  style: TextStyle(color: Colors.black),
+                const SizedBox(height: AppSpacing.xs),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                if (_error == null) const SizedBox(height: AppSpacing.xl),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _verifyCode,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : Text(
+                    _getButtonText(),
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-            ],
+                const SizedBox(height: AppSpacing.xl),
+                Center(
+                  child: _timer > 0
+                      ? Text(
+                    '${(_timer ~/ 60).toString().padLeft(2, '0')}:${(_timer % 60).toString().padLeft(2, '0')}',
+                    style: AppTextStyles.lead,
+                  )
+                      : TextButton(
+                    onPressed: !_isLoading ? _resendCode : null,
+                    child: const Text(
+                      'Отправить код снова',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'Вернуться',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+              ],
+            ),
           ),
         ),
       ),

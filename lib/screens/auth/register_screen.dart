@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_cubit.dart';
+import '../../models/user_model/user_model.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_constant.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../utils/validators.dart';
@@ -29,11 +31,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
 
   Future<void> _register() async {
-    // Валидация
     final emailError = validateEmail(_email.text.trim());
     final passwordError = validatePassword(_password.text);
     final confirmError =
-        _password.text != _confirm.text ? 'Пароли не совпадают' : null;
+    _password.text != _confirm.text ? 'Пароли не совпадают' : null;
 
     setState(() {
       _emailError = emailError;
@@ -49,6 +50,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
 
+      final api = ApiService();
+      UserModel user = UserModel(email: _email.text.trim(), password: _password.text);
+      await api.register(user);
+
       if (mounted) {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -57,9 +62,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               type: VerificationType.registration,
               onSuccess: (email, _) {
                 context.read<AuthCubit>().signIn(
-                      email,
-                      _password.text,
-                    );
+                  email,
+                  _password.text,
+                );
               },
             ),
           ),
@@ -67,18 +72,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       final error = e.toString().replaceFirst('Exception: ', '');
-      if (error.contains('необходимо подтвердить email')) {
+      if (error.contains('необходимо подтвердить email') ||
+          error.contains('verification required') ||
+          error.contains('code sent')) {
         if (mounted) {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => VerificationCodeScreen(
                 email: _email.text.trim(),
+                skipCodeSending: true,
                 type: VerificationType.registration,
                 onSuccess: (email, _) {
                   context.read<AuthCubit>().signIn(
-                        email,
-                        _password.text,
-                      );
+                    email,
+                    _password.text,
+                  );
                 },
               ),
             ),
