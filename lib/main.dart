@@ -37,11 +37,13 @@ final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
 class ShineApp extends StatelessWidget {
   const ShineApp({super.key});
-  
+
 
   @override
   Widget build(BuildContext context) {
-    Future.microtask(() => PermissionManager.requestPermissions(context));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PermissionManager.requestPermissions(context);
+    });
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: 'SHINE',

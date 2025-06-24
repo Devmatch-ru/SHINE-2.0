@@ -1,5 +1,6 @@
+import 'dart:io';
 import 'package:google_sign_in/google_sign_in.dart';
-
+import '../../config/api_config.dart';
 import '../../models/user_model/dart.dart';
 
 class GoogleAuthService {
@@ -8,32 +9,88 @@ class GoogleAuthService {
 
   GoogleAuthService._() {
     _googleSignIn = GoogleSignIn(
-      // Для Android и iOS этот clientId не обязателен.
-      // Его нужно указывать только для Web или если вы хотите
-      // привязать свой web-клиент (например, для получения idToken).
-      // clientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
-      scopes: <String>['email', 'profile'],
+      clientId: _getClientId(),
+      scopes: <String>[
+        'email',
+        'profile',
+      ],
     );
   }
-  Future<void> disconnect() => _googleSignIn.disconnect();
-  Future<GoogleSignInAccount?> signIn() async {
-    return await _googleSignIn.signIn();
+
+  String? _getClientId() {
+    // Для Android null (будет использован из android/app/google-services.json)
+    return Platform.isIOS
+        ? GoogleConfig.clientId
+        : null;
   }
 
-  Future<void> signOut() => _googleSignIn.disconnect();
+  GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
+
+  Future<bool> isSignedIn() async {
+    return await _googleSignIn.isSignedIn();
+  }
+
+  Future<GoogleSignInAccount?> signIn() async {
+    try {
+      final account = await _googleSignIn.signInSilently();
+      if (account != null) {
+        return account;
+      }
+
+      return await _googleSignIn.signIn();
+    } catch (error) {
+      print('Google Sign In Error: $error');
+      return null;
+    }
+  }
+
+  Future<void> signOut() async {
+    await _googleSignIn.signOut();
+  }
+
+  Future<void> disconnect() async {
+    await _googleSignIn.disconnect();
+  }
 
   Future<GoogleUser?> signInAndGetUser() async {
-    final account = await _googleSignIn.signIn();
-    if (account == null) return null;
-    final auth = await account.authentication;
-    return GoogleUser(
-      id:          account.id,
-      name:        account.displayName,
-      email:       account.email,
-      photoUrl:    account.photoUrl,
-      idToken:     auth.idToken,
-      accessToken: auth.accessToken,
-    );
+    try {
+      final account = await signIn();
+      if (account == null) return null;
+
+      final auth = await account.authentication;
+
+      return GoogleUser(
+        id: account.id,
+        name: account.displayName,
+        email: account.email,
+        photoUrl: account.photoUrl,
+        idToken: auth.idToken,
+        accessToken: auth.accessToken,
+      );
+    } catch (error) {
+      print('Google Sign In Error: $error');
+      return null;
+    }
+  }
+
+  Future<GoogleUser?> signInSilently() async {
+    try {
+      final account = await _googleSignIn.signInSilently();
+      if (account == null) return null;
+
+      final auth = await account.authentication;
+
+      return GoogleUser(
+        id: account.id,
+        name: account.displayName,
+        email: account.email,
+        photoUrl: account.photoUrl,
+        idToken: auth.idToken,
+        accessToken: auth.accessToken,
+      );
+    } catch (error) {
+      print('Silent Sign In Error: $error');
+      return null;
+    }
   }
 }
-

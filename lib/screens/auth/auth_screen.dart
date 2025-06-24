@@ -1,19 +1,20 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shine/permission_manager.dart';
 import '../../blocs/auth/auth_cubit.dart';
+import '../../models/user_model/user_model.dart';
 import '../../theme/app_constant.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../utils/validators.dart';
 import '../../services/api_service.dart';
-import '../../models/user_model/user_model.dart';
-import 'forgot_password_screen.dart';
-import 'register_screen.dart';
 import 'verification_code_screen.dart';
-import 'dart:convert';
+import 'register_screen.dart';
+import '../../blocs/auth/auth_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -22,7 +23,35 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _isLoading = false;
+  String? _emailError;
+  String? _passwordError;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<AuthCubit>().stream.listen((state) {
+      if (state is AuthError && state.message == 'google_verification_required') {
+        _handleGoogleVerification();
+      }
+    });
+  }
+
+  void _handleGoogleVerification() async {
+    if (_email.text.isNotEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VerificationCodeScreen(
+            email: _email.text.trim(),
+            type: VerificationType.registration,
+            onSuccess: (email, _) {
+              context.read<AuthCubit>().signInWithGoogle();
+            },
+          ),
+        ),
+      );
+    }
+  }
 
   String extractErrorText(Object e) {
     var text = e.toString();
@@ -88,16 +117,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 type: VerificationType.enterAccount,
                 onSuccess: (email, _) {
                   context.read<AuthCubit>().signIn(
-                        email,
-                        _password.text,
-                      );
+                    email,
+                    _password.text,
+                  );
                 },
               ),
             ),
           );
         } else {
           setState(
-              () => _error = authResponse['error'] ?? 'Ошибка авторизации');
+                  () => _error = authResponse['error'] ?? 'Ошибка авторизации');
         }
       }
     } catch (e) {
@@ -107,118 +136,176 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    final emailError = validateEmail(_email.text.trim());
+    if (emailError != null) {
+      setState(() => _emailError = emailError);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final api = ApiService();
+      await api.sendCode(_email.text.trim());
+
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => VerificationCodeScreen(
+              email: _email.text.trim(),
+              type: VerificationType.passwordReset,
+              skipCodeSending: true,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _emailError = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _signInWithGoogle() {
+    context.read<AuthCubit>().signInWithGoogle();
+  }
+
   @override
   Widget build(BuildContext context) {
-    Future.microtask(() => PermissionManager.requestPermissions(context));
     final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 32),
-              Center(
-                child: Text(
-                  'Вход в аккаунт',
-                  style: theme.textTheme.titleLarge,
+          child: BlocListener<AuthCubit, AuthState>(
+            listener: (context, state) {
+              if (state is AuthError) {
+                if (state.message == 'google_verification_required') {
+                  _handleGoogleVerification();
+                } else {
+                  setState(() => _error = state.message);
+                }
+              } else if (state is AuthLoading) {
+                setState(() => _isLoading = true);
+              } else {
+                setState(() => _isLoading = false);
+              }
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 48),
+                Center(
+                  child: Text(
+                    'Вход в аккаунт',
+                    style: theme.textTheme.titleLarge,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomTextField(
-                    label: 'ВВЕДИТЕ EMAIL',
-                    hint: 'Ваш Email',
-                    controller: _email,
-                    errorText: _error,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomTextField(
-                    label: 'ВВЕДИТЕ ПАРОЛЬ',
-                    hint: 'Введите пароль',
-                    controller: _password,
-                    obscure: true,
-                  ),
+                const SizedBox(height: 32),
+                CustomTextField(
+                  label: 'ВВЕДИТЕ EMAIL',
+                  hint: 'Ваш Email',
+                  controller: _email,
+                  errorText: _emailError,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  label: 'ВВЕДИТЕ ПАРОЛЬ',
+                  hint: 'Ваш пароль',
+                  controller: _password,
+                  obscure: true,
+                  errorText: _passwordError,
+                ),
+                if (_error != null) ...[
                   const SizedBox(height: 8),
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.s),
-                    child: TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen()),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        alignment: Alignment.centerLeft,
-                      ),
-                      child: const Text(
-                        'Забыли пароль?',
-                        style: TextStyle(color: Colors.blueGrey),
-                      ),
+                  Text(
+                    _error!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.red,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.l),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _signIn,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: const StadiumBorder(),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Войти',
-                        style: TextStyle(color: Colors.white),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isLoading ? null : _resetPassword,
+                    child: Text(
+                      'Забыли пароль?',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w500,
                       ),
-              ),
-              const SizedBox(height: AppSpacing.s),
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Center(
-                  child: Text('или войдите с помощью',
-                      style: theme.textTheme.bodySmall),
+                    ),
+                  ),
                 ),
-              ),
-              // const SocialAuthButton(),
-              const Spacer(),
-              Center(
-                  child:
-                      Text('Нет аккаунта?', style: theme.textTheme.bodySmall)),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _signIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Войти'),
                 ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: const StadiumBorder(),
-                  side: BorderSide.none,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                const SizedBox(height: AppSpacing.xl),
+                Center(
+                  child: Text(
+                    'или войдите с помощью',
+                    style: theme.textTheme.bodySmall,
+                  ),
                 ),
-                child: const Text(
-                  'Зарегистрироваться',
-                  style: TextStyle(color: Colors.black),
+                const SizedBox(height: AppSpacing.xs),
+                OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _signInWithGoogle,
+                  icon: Image.asset(
+                    'assets/images/google.png',
+                    width: 24,
+                    height: 24,
+                  ),
+                  label: const Text('Google'),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const Spacer(),
+                Center(
+                  child: Text(
+                    'Нет аккаунта?',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const RegisterScreen(),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('Зарегистрироваться'),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),

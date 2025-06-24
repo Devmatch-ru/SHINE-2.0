@@ -1,4 +1,3 @@
-// lib/blocs/auth/auth_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
@@ -17,18 +16,36 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final loggedIn = await _authService.isLoggedIn();
       if (loggedIn) {
-        final prefs = await SharedPreferences.getInstance();
-        final email = prefs.getString(_keyEmail) ?? '';
-        emit(Authenticated(
-          id: email,
-          email: email,
-          name: null,
-          photoUrl: null,
-        ));
+        // Сначала пробуем автоматический вход через Google
+        final googleUser = await _authService.tryAutoSignIn();
+
+        if (googleUser != null) {
+          emit(Authenticated(
+            id: googleUser.id,
+            email: googleUser.email,
+            name: googleUser.name,
+            photoUrl: googleUser.photoUrl,
+          ));
+        } else {
+          // Если Google вход не удался, используем сохраненный email
+          final prefs = await SharedPreferences.getInstance();
+          final email = prefs.getString(_keyEmail) ?? '';
+          if (email.isNotEmpty) {
+            emit(Authenticated(
+              id: email,
+              email: email,
+              name: null,
+              photoUrl: null,
+            ));
+          } else {
+            emit(Unauthenticated());
+          }
+        }
       } else {
         emit(Unauthenticated());
       }
     } catch (e) {
+      print('Auth Init Error: $e');
       emit(AuthError(e.toString()));
     }
   }
@@ -37,6 +54,11 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await _authService.signInWithEmail(email, password);
+
+      // Сохраняем email в SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyEmail, email);
+
       emit(Authenticated(
         id: email,
         email: email,
@@ -52,6 +74,11 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await _authService.signUpWithEmail(email, password);
+
+      // Сохраняем email в SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyEmail, email);
+
       emit(Authenticated(
         id: email,
         email: email,
@@ -70,6 +97,10 @@ class AuthCubit extends Cubit<AuthState> {
       if (googleUser == null) {
         emit(Unauthenticated());
       } else {
+        // Сохраняем email в SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_keyEmail, googleUser.email);
+
         emit(Authenticated(
           id: googleUser.id,
           email: googleUser.email,
@@ -78,7 +109,19 @@ class AuthCubit extends Cubit<AuthState> {
         ));
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
+      print('Google Sign In Error: $e');
+
+      // Проверяем, нужна ли верификация email
+      final errorStr = e.toString();
+      if (errorStr.contains('необходимо подтвердить email') ||
+          errorStr.contains('verification required') ||
+          errorStr.contains('code sent')) {
+
+        // Если нужна верификация, emit специальное состояние
+        emit(AuthError('google_verification_required'));
+      } else {
+        emit(AuthError(e.toString()));
+      }
     }
   }
 
@@ -86,9 +129,18 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await _authService.signOut();
+
+      // Очищаем email из SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyEmail);
+
       emit(Unauthenticated());
     } catch (e) {
       emit(AuthError(e.toString()));
     }
+  }
+
+  Future<void> refresh() async {
+    await _init();
   }
 }
