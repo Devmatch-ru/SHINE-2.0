@@ -22,8 +22,9 @@ String? validatePassword(String password) {
   if (!RegExp(r'[0-9]').hasMatch(password)) {
     return 'Пароль должен содержать хотя бы одну цифру';
   }
-  if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password)) {
+  if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>_]').hasMatch(password)) {
     return 'Пароль должен содержать спецсимвол';
   }
+
   return null;
 }

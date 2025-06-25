@@ -9,6 +9,7 @@ import '../../theme/app_constant.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../utils/validators.dart';
 import '../../services/api_service.dart';
+import '../roles/role_select.dart';
 import 'verification_code_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -32,70 +33,99 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    // Слушаем изменения состояния авторизации для Google
     context.read<AuthCubit>().stream.listen((state) {
-      if (state is AuthError && state.message == 'google_verification_required') {
-        _handleGoogleVerification();
+      if (state is AuthError) {
+        if (state.message.startsWith('google_verification_required:')) {
+          _handleGoogleVerification();
+        } else if (state.message.startsWith('email_verification_required:')) {
+          _handleEmailVerification();
+        } else if (state.message.startsWith('google_conflict:')) {
+          _handleGoogleConflict();
+        }
       }
     });
   }
 
-  void _handleGoogleVerification() async {
-    // Для Google верификации мы не можем использовать email из текстового поля,
-    // так как он может быть пустым. Нужно получить email из Google данных
-    // Пока используем простое решение - показываем диалог с просьбой ввести email
-    _showGoogleEmailDialog();
+  void _handleEmailVerification() async {
+    final state = context.read<AuthCubit>().state;
+    String email = '';
+
+    if (state is AuthError && state.message.startsWith('email_verification_required:')) {
+      email = state.message.split(':')[1];
+    }
+
+    if (email.isNotEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VerificationCodeScreen(
+            email: email,
+            type: VerificationType.registration,
+            onSuccess: (verifiedEmail, _) {
+              context.read<AuthCubit>().signIn(verifiedEmail, _password.text);
+            },
+          ),
+        ),
+      );
+    }
   }
 
-  void _showGoogleEmailDialog() {
-    final emailController = TextEditingController();
+  void _handleGoogleVerification() async {
+    final state = context.read<AuthCubit>().state;
+    String email = '';
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Подтверждение email'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Введите email для отправки кода подтверждения:'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                hintText: 'Ваш email',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
+    if (state is AuthError && state.message.startsWith('google_verification_required:')) {
+      email = state.message.split(':')[1];
+    }
+
+    if (email.isNotEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => BlocListener<AuthCubit, AuthState>(
+            listener: (context, state) {
+
+            },
+            child: VerificationCodeScreen(
+              email: email,
+              type: VerificationType.googleVerification,
+              skipCodeSending: true,
+              onSuccess: (email, _) {
+                context.read<AuthCubit>().completeGoogleSignIn();
+              },
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _handleGoogleConflict() {
+    final state = context.read<AuthCubit>().state;
+    if (state is AuthError && state.message.startsWith('google_conflict:')) {
+      final parts = state.message.split(':');
+      final email = parts.length > 1 ? parts[1] : '';
+      final message = parts.length > 2 ? parts.sublist(2).join(':') : 'Конфликт аккаунтов';
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Аккаунт уже существует'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: const Text('Войти'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Отмена'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              if (emailController.text.isNotEmpty) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => VerificationCodeScreen(
-                      email: emailController.text.trim(),
-                      type: VerificationType.registration,
-                      onSuccess: (email, _) {
-                        context.read<AuthCubit>().signInWithGoogle();
-                      },
-                    ),
-                  ),
-                );
-              }
-            },
-            child: const Text('Продолжить'),
-          ),
-        ],
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _register() async {
@@ -117,55 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    try {
-      final api = ApiService();
-      UserModel user = UserModel(email: _email.text.trim(), password: _password.text);
-      await api.register(user);
-
-      if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => VerificationCodeScreen(
-              email: _email.text.trim(),
-              type: VerificationType.registration,
-              onSuccess: (email, _) {
-                context.read<AuthCubit>().signIn(
-                  email,
-                  _password.text,
-                );
-              },
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      final error = e.toString().replaceFirst('Exception: ', '');
-      if (error.contains('необходимо подтвердить email') ||
-          error.contains('verification required') ||
-          error.contains('code sent')) {
-        if (mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => VerificationCodeScreen(
-                email: _email.text.trim(),
-                skipCodeSending: true,
-                type: VerificationType.registration,
-                onSuccess: (email, _) {
-                  context.read<AuthCubit>().signIn(
-                    email,
-                    _password.text,
-                  );
-                },
-              ),
-            ),
-          );
-        }
-      } else {
-        setState(() => _emailError = error);
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    context.read<AuthCubit>().signUp(_email.text.trim(), _password.text);
   }
 
   void _signInWithGoogle() {
@@ -183,8 +165,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: BlocListener<AuthCubit, AuthState>(
             listener: (context, state) {
               if (state is AuthError) {
-                if (state.message == 'google_verification_required') {
+                if (state.message.startsWith('google_verification_required:')) {
                   _handleGoogleVerification();
+                } else if (state.message.startsWith('email_verification_required:')) {
+                  _handleEmailVerification();
+                } else if (state.message.startsWith('google_conflict:')) {
+                  _handleGoogleConflict();
                 } else {
                   setState(() => _error = state.message);
                 }
@@ -387,7 +373,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         style: theme.textTheme.bodySmall)),
                 const SizedBox(height: 8),
                 OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const LoginScreen(),
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.white,
                     shape: const StadiumBorder(),

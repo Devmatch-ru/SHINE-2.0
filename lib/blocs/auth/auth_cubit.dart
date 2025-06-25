@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/auth/google_auth_service.dart';
 import '../../services/auth_service.dart';
 import 'auth_state.dart';
 
@@ -12,14 +13,18 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> _init() async {
+    print('🔄 AuthCubit _init started');
     emit(AuthLoading());
     try {
       final loggedIn = await _authService.isLoggedIn();
+      print('📱 Is logged in: $loggedIn');
+
       if (loggedIn) {
-        // Сначала пробуем автоматический вход через Google
         final googleUser = await _authService.tryAutoSignIn();
+        print('🔍 Auto sign-in result: ${googleUser?.email ?? 'null'}');
 
         if (googleUser != null) {
+          print('✅ Auto sign-in successful, emitting Authenticated');
           emit(Authenticated(
             id: googleUser.id,
             email: googleUser.email,
@@ -27,10 +32,12 @@ class AuthCubit extends Cubit<AuthState> {
             photoUrl: googleUser.photoUrl,
           ));
         } else {
-          // Если Google вход не удался, используем сохраненный email
           final prefs = await SharedPreferences.getInstance();
           final email = prefs.getString(_keyEmail) ?? '';
+          print('📧 Saved email: $email');
+
           if (email.isNotEmpty) {
+            print('✅ Using saved email, emitting Authenticated');
             emit(Authenticated(
               id: email,
               email: email,
@@ -38,14 +45,16 @@ class AuthCubit extends Cubit<AuthState> {
               photoUrl: null,
             ));
           } else {
+            print('❌ No saved data, emitting Unauthenticated');
             emit(Unauthenticated());
           }
         }
       } else {
+        print('❌ Not logged in, emitting Unauthenticated');
         emit(Unauthenticated());
       }
     } catch (e) {
-      print('Auth Init Error: $e');
+      print('💥 Auth Init Error: $e');
       emit(AuthError(e.toString()));
     }
   }
@@ -55,7 +64,6 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _authService.signInWithEmail(email, password);
 
-      // Сохраняем email в SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyEmail, email);
 
@@ -66,7 +74,19 @@ class AuthCubit extends Cubit<AuthState> {
         photoUrl: null,
       ));
     } catch (e) {
-      emit(AuthError(e.toString()));
+      final errorStr = e.toString();
+
+      if (errorStr.contains('необходимо подтвердить email') ||
+          errorStr.contains('verification required') ||
+          errorStr.contains('verify') ||
+          errorStr.contains('код') ||
+          errorStr.contains('code') ||
+          errorStr.contains('подтвер') ||
+          errorStr.contains('confirm')) {
+        emit(AuthError('email_verification_required:$email'));
+      } else {
+        emit(AuthError(e.toString()));
+      }
     }
   }
 
@@ -75,7 +95,6 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _authService.signUpWithEmail(email, password);
 
-      // Сохраняем email в SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyEmail, email);
 
@@ -86,7 +105,19 @@ class AuthCubit extends Cubit<AuthState> {
         photoUrl: null,
       ));
     } catch (e) {
-      emit(AuthError(e.toString()));
+      final errorStr = e.toString();
+
+      if (errorStr.contains('необходимо подтвердить email') ||
+          errorStr.contains('verification required') ||
+          errorStr.contains('verify') ||
+          errorStr.contains('код') ||
+          errorStr.contains('code') ||
+          errorStr.contains('подтвер') ||
+          errorStr.contains('confirm')) {
+        emit(AuthError('email_verification_required:$email'));
+      } else {
+        emit(AuthError(e.toString()));
+      }
     }
   }
 
@@ -97,7 +128,6 @@ class AuthCubit extends Cubit<AuthState> {
       if (googleUser == null) {
         emit(Unauthenticated());
       } else {
-        // Сохраняем email в SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_keyEmail, googleUser.email);
 
@@ -111,17 +141,60 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       print('Google Sign In Error: $e');
 
-      // Проверяем, нужна ли верификация email
-      final errorStr = e.toString();
-      if (errorStr.contains('необходимо подтвердить email') ||
-          errorStr.contains('verification required') ||
-          errorStr.contains('code sent')) {
-
-        // Если нужна верификация, emit специальное состояние
-        emit(AuthError('google_verification_required'));
+      if (e is GoogleVerificationException) {
+        await (AuthService.instance as AuthServiceImpl).saveGoogleUserForVerification(e.googleUser);
+        emit(AuthError('google_verification_required:${e.email}'));
+      } else if (e is GoogleConflictException) {
+        emit(AuthError('google_conflict:${e.email}:${e.message}'));
       } else {
-        emit(AuthError(e.toString()));
+        final errorStr = e.toString();
+        if (errorStr.contains('Google account needs email verification')) {
+          final emailMatch = RegExp(r'verification: (.+)').firstMatch(errorStr);
+          final email = emailMatch?.group(1) ?? '';
+          emit(AuthError('google_verification_required:$email'));
+        } else {
+          emit(AuthError(e.toString()));
+        }
       }
+    }
+  }
+
+  Future<void> completeGoogleSignIn() async {
+    print('🔄 Completing Google sign-in...');
+    emit(AuthLoading());
+    try {
+      await (AuthService.instance as AuthServiceImpl).completeGoogleSignIn();
+
+      final googleUser = await _authService.tryAutoSignIn();
+
+      if (googleUser != null) {
+        print('✅ Google sign-in completed successfully');
+        print('👤 User: ${googleUser.email}');
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_keyEmail, googleUser.email);
+
+        final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+        if (!onboardingCompleted) {
+          print('📝 Marking onboarding as completed for Google user');
+          await prefs.setBool('onboarding_completed', true);
+        }
+
+        emit(Authenticated(
+          id: googleUser.id,
+          email: googleUser.email,
+          name: googleUser.name,
+          photoUrl: googleUser.photoUrl,
+        ));
+
+        print('🎯 Emitted Authenticated state for Google user');
+      } else {
+        print('❌ Failed to get Google user after completion');
+        emit(AuthError('Failed to complete Google sign in'));
+      }
+    } catch (e) {
+      print('💥 Complete Google Sign In Error: $e');
+      emit(AuthError(e.toString()));
     }
   }
 
@@ -130,7 +203,6 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _authService.signOut();
 
-      // Очищаем email из SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_keyEmail);
 

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_constant.dart';
 import '../../blocs/auth/auth_cubit.dart';
+import '../roles/role_select.dart';
 import 'reset_password_screen.dart';
 import '../../blocs/onboarding/onboarding_cubit.dart' as onb;
 import '../../blocs/role/role_cubit.dart';
@@ -15,6 +16,7 @@ enum VerificationType {
   passwordReset,
   accountDeletion,
   enterAccount,
+  googleVerification,
 }
 
 class VerificationCodeScreen extends StatefulWidget {
@@ -51,7 +53,10 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
     _codeControllers = List.generate(6, (_) => TextEditingController());
     _focusNodes = List.generate(6, (_) => FocusNode());
     _startTimer();
-    if (!widget.skipCodeSending && widget.type != VerificationType.passwordReset) {
+
+    if (!widget.skipCodeSending &&
+        widget.type != VerificationType.passwordReset &&
+        widget.type != VerificationType.googleVerification) {
       _resendCode();
     }
   }
@@ -93,6 +98,8 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         return 'Сброс пароля';
       case VerificationType.accountDeletion:
         return 'Подтверждение удаления';
+      case VerificationType.googleVerification:
+        return 'Подтверждение Google аккаунта';
     }
   }
 
@@ -106,6 +113,8 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         return 'Введите код, отправленный на ${widget.email} для сброса пароля';
       case VerificationType.accountDeletion:
         return 'Введите код, отправленный на ${widget.email} для подтверждения удаления аккаунта';
+      case VerificationType.googleVerification:
+        return 'Введите код, отправленный на ${widget.email} для подтверждения Google аккаунта';
     }
   }
 
@@ -119,6 +128,8 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         return 'Сбросить пароль';
       case VerificationType.accountDeletion:
         return 'Удалить аккаунт';
+      case VerificationType.googleVerification:
+        return 'Подтвердить аккаунт';
     }
   }
 
@@ -164,14 +175,11 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
 
   void _handleCodeInput(String value, int index) {
     if (value.isEmpty && index > 0) {
-      // Если поле пустое и не первое, возвращаемся назад
       _focusNodes[index - 1].requestFocus();
     } else if (value.length == 1 && index < 5) {
-      // Если введена цифра и это не последнее поле, переходим вперед
       _focusNodes[index + 1].requestFocus();
     }
 
-    // Проверка заполненности всех полей
     if (index == 5 && _codeControllers.every((c) => c.text.isNotEmpty)) {
       _verifyCode();
     }
@@ -248,6 +256,22 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
             Navigator.of(context).popUntil((route) => route.isFirst);
           }
           break;
+
+        case VerificationType.googleVerification:
+          await api.verifyCode(codeInt);
+          if (mounted) {
+            _resendTimer?.cancel();
+            print('📱 Google verification successful, completing sign-in...');
+            if (widget.onSuccess != null) {
+              widget.onSuccess!(widget.email, null);
+            }
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const RoleSelectScreen(),
+              ),
+            );
+          }
+          break;
       }
     } catch (e) {
       if (mounted) {
@@ -267,12 +291,15 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
     });
     try {
       final api = ApiService();
-      await api.sendCode(widget.email);
+
+      if (widget.type != VerificationType.googleVerification) {
+        await api.sendCode(widget.email);
+      }
+
       _startTimer();
       for (var controller in _codeControllers) {
         controller.clear();
       }
-      // Возврат фокуса на первое поле
       _focusNodes[0].requestFocus();
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
@@ -419,10 +446,30 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
                     style: AppTextStyles.lead,
                   )
                       : TextButton(
-                    onPressed: !_isLoading ? _resendCode : null,
-                    child: const Text(
-                      'Отправить код снова',
-                      style: TextStyle(color: Colors.black),
+                    onPressed: !_isLoading ? () {
+                      if (widget.type == VerificationType.googleVerification) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Внимание'),
+                            content: const Text('Код для Google аккаунта уже отправлен на вашу почту. Проверьте входящие сообщения.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        _resendCode();
+                      }
+                    } : null,
+                    child: Text(
+                      widget.type == VerificationType.googleVerification
+                          ? 'Не приходит код?'
+                          : 'Отправить код снова',
+                      style: const TextStyle(color: Colors.black),
                     ),
                   ),
                 ),

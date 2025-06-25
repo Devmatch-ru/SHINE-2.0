@@ -9,10 +9,11 @@ class ApiService {
   ApiService({http.Client? client}) : _client = client ?? http.Client();
 
   Future<Map<String, dynamic>> _makeRequest(
-    String endpoint,
-    String method,
-    Map<String, dynamic>? body,
-  ) async {
+      String endpoint,
+      String method,
+      Map<String, dynamic>? body, {
+        bool throwOnError = true,
+      }) async {
     final uri = Uri.parse(ApiConfig.baseUrl + endpoint);
     final headers = {'Content-Type': 'application/json'};
 
@@ -47,6 +48,9 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final jsonBody = json.decode(response.body);
         if (jsonBody is Map<String, dynamic>) {
+          if (!throwOnError) {
+            return jsonBody;
+          }
           if (jsonBody.containsKey('error') &&
               jsonBody.containsKey('success')) {
             if (!jsonBody['success']) {
@@ -59,6 +63,20 @@ class ApiService {
         }
         return jsonBody;
       } else {
+        if (response.statusCode >= 400 && response.statusCode < 600) {
+          try {
+            final jsonBody = json.decode(response.body);
+            if (jsonBody is Map<String, dynamic> && !throwOnError) {
+              return {
+                'error': jsonBody['error'] ?? 'Server error',
+                'success': false,
+                'status_code': response.statusCode,
+              };
+            }
+          } catch (_) {
+          }
+        }
+
         throw Exception(
           'Request failed with status: ${response.statusCode}\nBody: ${response.body}',
         );
@@ -73,6 +91,7 @@ class ApiService {
       ApiConfig.register,
       'POST',
       user.toJson(),
+      throwOnError: false,
     );
   }
 
@@ -97,6 +116,7 @@ class ApiService {
       ApiConfig.auth,
       'POST',
       user.toJson(),
+      throwOnError: false,
     );
   }
 

@@ -18,7 +18,6 @@ class GoogleAuthService {
   }
 
   String? _getClientId() {
-    // Для Android null (будет использован из android/app/google-services.json)
     return Platform.isIOS
         ? GoogleConfig.clientId
         : null;
@@ -32,10 +31,7 @@ class GoogleAuthService {
 
   Future<GoogleSignInAccount?> signIn() async {
     try {
-      final account = await _googleSignIn.signInSilently();
-      if (account != null) {
-        return account;
-      }
+      await _googleSignIn.signOut();
 
       return await _googleSignIn.signIn();
     } catch (error) {
@@ -93,4 +89,14 @@ class GoogleAuthService {
       return null;
     }
   }
+}
+
+class GoogleConflictException implements Exception {
+  final String email;
+  final String message;
+
+  GoogleConflictException(this.email, this.message);
+
+  @override
+  String toString() => 'Google account conflict for $email: $message';
 }
