@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
-import 'package:network_info_plus/network_info_plus.dart';
 import 'package:shine/utils/settings_manager.dart';
 import 'package:shine/utils/webrtc/NetworkUtils.dart';
 import '../utils/video_size.dart';

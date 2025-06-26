@@ -55,11 +55,9 @@ class PermissionManager {
       try {
         final status = await permission.status;
         if (!_isPermissionGranted(status)) {
-          print('Permission ${permission.toString()} denied with status: ${status.toString()}');
           return false;
         }
       } catch (e) {
-        print('Error checking permission ${permission.toString()}: $e');
         continue;
       }
     }
@@ -100,13 +98,13 @@ class PermissionManager {
   static List<List<Permission>> _groupPermissions() {
     if (Platform.isAndroid) {
       return [
-        [Permission.camera, Permission.microphone], // Медиа группа
+        [Permission.camera, Permission.microphone],
         if (_androidSdkInt! >= 33) ...[
-          [Permission.photos, Permission.videos, Permission.audio], // Файлы для Android 13+
+          [Permission.photos, Permission.videos, Permission.audio],
         ] else ...[
-          [Permission.storage], // Хранилище для старых версий
+          [Permission.storage],
         ],
-        [Permission.locationWhenInUse], // Локация
+        [Permission.locationWhenInUse],
         if (_androidSdkInt! >= 31) ...[
           [Permission.bluetoothScan, Permission.bluetoothConnect, Permission.bluetoothAdvertise],
         ] else ...[
@@ -198,18 +196,15 @@ class PermissionManager {
     return statuses;
   }
 
-  // Метод для проверки конкретного разрешения
   static Future<bool> checkSpecificPermission(Permission permission) async {
     try {
       final status = await permission.status;
       return _isPermissionGranted(status);
     } catch (e) {
-      print('Error checking specific permission: $e');
       return false;
     }
   }
 
-  // Метод для запроса конкретного разрешения
   static Future<bool> requestSpecificPermission(Permission permission, BuildContext context) async {
     try {
       final status = await permission.request();
@@ -223,7 +218,6 @@ class PermissionManager {
       }
       return false;
     } catch (e) {
-      print('Error requesting specific permission: $e');
       return false;
     }
   }

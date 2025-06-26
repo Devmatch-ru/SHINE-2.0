@@ -5,20 +5,6 @@ export 'animations.dart';
 export 'icons.dart';
 export 'theme.dart';
 
-// Сохраняем обратную совместимость
-import 'colors.dart';
-import 'colors.dart' as colors;
-import 'text_styles.dart' as text_styles;
-import 'dimensions.dart' as dimensions;
-import 'icons.dart' as icons;
-
-// Переэкспортируем классы для обратной совместимости
-class AppColors extends colors.AppColors {}
-class AppTextStyles extends text_styles.AppTextStyles {}
-class AppSpacing extends dimensions.AppSpacing {}
-class IconSize extends dimensions.IconSize {}
-class AppBorderRadius extends dimensions.AppBorderRadius {}
-class AppIcons extends icons.AppIcons {}
 
 // Строки приложения
 class AppStrings {

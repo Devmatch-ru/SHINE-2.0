@@ -74,46 +74,33 @@ class AuthServiceImpl implements AuthService {
 
   @override
   Future<GoogleUser?> signInWithGoogle() async {
-    print('🚀 Starting Google sign-in process...');
 
     try {
-      print('📱 Getting Google user data...');
       final googleUser = await GoogleAuthService.instance.signInAndGetUser();
       if (googleUser == null) {
-        print('❌ Google user is null - user cancelled or error occurred');
         return null;
       }
 
-      print('✅ Google user obtained: ${googleUser.email}');
-      print('🔑 Google ID: ${googleUser.id}');
-
       final tempPassword = _generateGooglePassword(googleUser.email);
-      print('🔐 Generated stable password for API');
 
-      print('🔍 Attempting authentication with existing account...');
       try {
         final user = UserModel(email: googleUser.email, password: tempPassword);
         final authResponse = await _apiService.authenticate(user);
 
-        print('📡 Auth API response: $authResponse');
 
         if (authResponse['error'] == null) {
-          print('✅ Authentication successful - account exists');
           await saveGoogleUserForVerification(googleUser);
           throw GoogleVerificationException(googleUser.email, googleUser);
         } else {
           final error = authResponse['error'].toString().toLowerCase();
-          print('❌ Authentication failed: ${authResponse['error']}');
 
           if (error.contains('неверный пароль') || error.contains('wrong password')) {
-            print('⚠️ User exists but used different authentication method');
             throw GoogleConflictException(googleUser.email,
                 'Аккаунт с этим email уже существует. Войдите через email и пароль или используйте восстановление пароля.');
           } else if (error.contains('пользователь не найден') ||
               error.contains('user not found') ||
               error.contains('не существует') ||
               error.contains('not exist')) {
-            print('📝 User not found, proceeding to registration...');
           } else {
             throw Exception('Ошибка авторизации: ${authResponse['error']}');
           }
@@ -122,26 +109,17 @@ class AuthServiceImpl implements AuthService {
         if (authError is GoogleConflictException) {
           rethrow;
         }
-        print('❌ Auth API call failed: $authError');
       }
-
-      print('📝 Attempting registration of new account...');
       try {
         final user = UserModel(email: googleUser.email, password: tempPassword);
         final registerResponse = await _apiService.register(user);
 
-        print('📡 Register API response: $registerResponse');
-
         if (registerResponse['error'] == null) {
-          print('📧 Registration successful, verification required');
           await saveGoogleUserForVerification(googleUser);
           throw GoogleVerificationException(googleUser.email, googleUser);
         } else {
           final error = registerResponse['error'].toString().toLowerCase();
-          print('❌ Registration failed: ${registerResponse['error']}');
-
           if (error.contains('уже существует') || error.contains('already exists')) {
-            print('🔄 Account exists, might need verification');
             await saveGoogleUserForVerification(googleUser);
             throw GoogleVerificationException(googleUser.email, googleUser);
           } else {
@@ -153,8 +131,6 @@ class AuthServiceImpl implements AuthService {
           rethrow;
         }
 
-        print('❌ Registration failed: $regError');
-
         final errorStr = regError.toString().toLowerCase();
 
         if (errorStr.contains('необходимо подтвердить email') ||
@@ -164,7 +140,6 @@ class AuthServiceImpl implements AuthService {
             errorStr.contains('code') ||
             errorStr.contains('подтвер') ||
             errorStr.contains('confirm')) {
-          print('📧 Email verification required detected');
           await saveGoogleUserForVerification(googleUser);
           throw GoogleVerificationException(googleUser.email, googleUser);
         }
@@ -173,7 +148,6 @@ class AuthServiceImpl implements AuthService {
             errorStr.contains('already exists') ||
             errorStr.contains('duplicate') ||
             errorStr.contains('exist')) {
-          print('🔄 Account exists but might need verification');
           await saveGoogleUserForVerification(googleUser);
           throw GoogleVerificationException(googleUser.email, googleUser);
         }
@@ -184,16 +158,11 @@ class AuthServiceImpl implements AuthService {
 
     } catch (e) {
       if (e is GoogleVerificationException) {
-        print('📧 Re-throwing verification exception for: ${e.email}');
         rethrow;
       }
       if (e is GoogleConflictException) {
-        print('⚠️ Re-throwing conflict exception for: ${e.email}');
         rethrow;
       }
-
-      print('💥 Google Sign In Error: $e');
-      print('🔍 Error type: ${e.runtimeType}');
       rethrow;
     }
   }
@@ -216,7 +185,6 @@ class AuthServiceImpl implements AuthService {
             return googleUser;
           }
         } catch (e) {
-          print('Auto sign-in validation failed: $e');
           await signOut();
         }
       } else {
@@ -242,7 +210,6 @@ class AuthServiceImpl implements AuthService {
               );
             }
           } catch (e) {
-            print('Stored account validation failed: $e');
             await signOut();
           }
         }
@@ -304,21 +271,16 @@ class AuthServiceImpl implements AuthService {
   }
 
   Future<void> completeGoogleSignIn() async {
-    print('🔄 Completing Google sign-in process...');
     final googleUser = await getGoogleUserForVerification();
     if (googleUser != null) {
-      print('👤 Found Google user for completion: ${googleUser.email}');
       await _saveGoogleUser(googleUser);
       await clearGoogleUserForVerification();
-      print('✅ Google user saved and temp data cleared');
     } else {
-      print('❌ No Google user found for completion');
       throw Exception('No Google user found for completion');
     }
   }
 
   Future<void> _saveGoogleUser(GoogleUser user) async {
-    print('💾 Saving Google user: ${user.email}');
     final prefs = await SharedPreferences.getInstance();
     if (user.idToken != null) {
       await prefs.setString(_keyIdToken, user.idToken!);
@@ -332,7 +294,6 @@ class AuthServiceImpl implements AuthService {
     await prefs.setString(_keyGoogleUserPhoto, user.photoUrl ?? '');
     await prefs.setString(_keyAuthType, 'google');
     await prefs.setBool(_keyIsLoggedIn, true);
-    print('✅ Google user saved successfully');
   }
 
   @override

@@ -35,7 +35,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
   bool get isFlashOn => _manager.isFlashOn;
   List<String> get debugMessages => _manager.messages;
 
-  // ИСПРАВЛЕНИЕ 2: Добавляем геттер для текущего качества
   String get currentQuality => _manager.currentQuality;
 
   Future<void> initialize() async {
@@ -66,7 +65,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
       final receivers = await _discoveryManager.discoverReceivers();
       if (receivers.isNotEmpty) {
         _receiverUrl = receivers.first.replaceFirst('RECEIVER:', 'http://');
-        print('Selected receiver: $_receiverUrl');
       } else {
         _handleError('Не удалось обнаружить ресивер');
         return;
@@ -90,7 +88,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
     }
 
     try {
-      print('Starting broadcast to: $_receiverUrl');
       await _manager.startBroadcast(_receiverUrl!);
 
       if (_manager.isBroadcasting && _manager.localStream != null) {
@@ -123,7 +120,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
         final receivers = await _discoveryManager.discoverReceivers();
         if (receivers.isNotEmpty) {
           _receiverUrl = receivers.first.replaceFirst('RECEIVER:', 'http://');
-          print('Re-selected receiver: $_receiverUrl');
         }
         await startBroadcasting();
       });
@@ -360,7 +356,6 @@ class BroadcasterCubit extends Cubit<BroadcasterState> {
   }
 
   void _addMessage(String message) {
-    print('BroadcasterCubit: $message');
   }
 
   Future<void> _executeFlashlightCommand() async {

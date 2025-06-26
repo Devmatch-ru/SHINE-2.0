@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shine/screens/roles/host_selection_screen.dart';
+import 'package:shine/screens/user/receiver/receiver_screen.dart';
 import '../../blocs/wifi/wifi_cubit.dart';
 import '../../blocs/wifi/wifi_state.dart';
 import '../../theme/app_constant.dart';
 
-class ClientTipScreen extends StatelessWidget {
-  const ClientTipScreen({super.key});
+class HostTipScreen extends StatelessWidget {
+  const HostTipScreen({super.key});
 
-  static const _prefsKey = 'client_tip_seen';
+  static const _prefsKey = 'host_tip_seen';
 
   static Future<bool> shouldShow() async {
     final prefs = await SharedPreferences.getInstance();
@@ -23,14 +23,14 @@ class ClientTipScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Future.microtask(() => ClientTipScreen.markSeen());
+    Future.microtask(() => HostTipScreen.markSeen());
 
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('assets/images/tips/host_tip.png'),
+          image: AssetImage('assets/images/tips/client_tip.png'),
           fit: BoxFit.cover,
         ),
       ),
@@ -52,7 +52,7 @@ class ClientTipScreen extends StatelessWidget {
             Expanded(
               child: BlocBuilder<WifiCubit, WifiState>(
                 builder: (context, state) {
-                  final baseSubtitle = 'Изображение камеры транслируется\nна все подключённые устройства';
+                  final baseSubtitle = 'Доступ к просмотру изображения с камеры другого устройства. Снижайте качество трансляции для более стабильной работы';
                   final errorSubtitle = switch (state) {
                     WifiDisconnected() => 'Кажется, отсутствует соединение.\nДля работы подключитесь к точке доступа Wi-Fi',
                     //WifiConnectedStable() || WifiDisconnected() => 'Кажется, соединение нестабильно.\nПроверьте подключение к точке доступа Wi-Fi',
@@ -74,7 +74,7 @@ class ClientTipScreen extends StatelessWidget {
                               children: [
                                 const SizedBox(height: 332),
                                 const Text(
-                                  'Я фотографирую',
+                                  'Меня фотографируют',
                                   style: AppTextStyles.h2,
                                   textAlign: TextAlign.center,
                                 ),
@@ -109,7 +109,7 @@ class ClientTipScreen extends StatelessWidget {
                                       context,
                                       PageRouteBuilder(
                                         transitionDuration: const Duration(milliseconds: 300),
-                                        pageBuilder: (context, animation, secondaryAnimation) => const HostSelectionScreen(),
+                                        pageBuilder: (context, animation, secondaryAnimation) => const ReceiverScreen(),
                                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                           return SlideTransition(
                                             position: animation.drive(

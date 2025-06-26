@@ -10,7 +10,7 @@ import 'package:shine/blocs/role/role_state.dart';
 import 'package:shine/blocs/onboarding/onboarding_cubit.dart' as onb;
 import 'package:shine/blocs/wifi/wifi_cubit.dart';
 import 'package:shine/screens/onboarding_screen.dart';
-import 'package:shine/screens/roles/role_select.dart';
+import 'package:shine/screens/user/role_select.dart';
 import 'package:shine/screens/saver_screen.dart';
 import 'package:shine/permission_manager.dart';
 import 'package:shine/theme/app_constant.dart';
@@ -46,6 +46,7 @@ class ShineApp extends StatelessWidget {
     });
     return MaterialApp(
       navigatorKey: _navigatorKey,
+      themeMode: ThemeMode.system,
       title: 'SHINE',
       theme: ThemeData(
         useMaterial3: true,

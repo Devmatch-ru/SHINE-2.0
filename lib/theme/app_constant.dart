@@ -11,6 +11,8 @@ class AppColors {
   static const Color error = Color(0xFFF44336);
   static const Color shadow = Color(0x1A000000);
   static const Color blur = Color(0xB3000000);
+  static const Color success = Color(0xFF4CAF50);
+  static const Color warning = Color(0xFFFFC107);
 }
 class AppIcons {
   static const _basePath = 'assets/icons';

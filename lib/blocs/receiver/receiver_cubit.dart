@@ -178,19 +178,15 @@ class ReceiverCubit extends Cubit<ReceiverState> {
 
   void _handleStreamChanged(MediaStream? stream) {
     if (stream != null) {
-      // ИСПРАВЛЕНИЕ: Логируем получение потока
-      print('ReceiverCubit: Stream received with ${stream.getTracks().length} tracks');
     }
     _emitReady();
   }
 
   void _handleBroadcastersChanged(List<String> broadcasters) {
-    print('ReceiverCubit: Broadcasters changed: $broadcasters');
     _emitReady();
   }
 
   void _handleError(String error) {
-    print('ReceiverCubit: Error occurred: $error');
     emit(ReceiverError(error));
   }
 

@@ -3,10 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shine/screens/auth/auth_screen.dart';
+import 'package:shine/screens/auth/register_screen.dart';
+import 'package:shine/screens/user/profile_screen.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_constant.dart';
 import '../../blocs/auth/auth_cubit.dart';
-import '../roles/role_select.dart';
+import '../user/role_select.dart';
 import 'reset_password_screen.dart';
 import '../../blocs/onboarding/onboarding_cubit.dart' as onb;
 import '../../blocs/role/role_cubit.dart';
@@ -132,6 +135,38 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         return 'Подтвердить аккаунт';
     }
   }
+  Object _backRoute() {
+    switch (widget.type) {
+      case VerificationType.enterAccount:
+        return  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const RegisterScreen(),
+                    ),
+                  );
+      case VerificationType.registration:
+        return Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const RegisterScreen(),
+                    ),
+                  );
+      case VerificationType.passwordReset:
+        Navigator.pop(context);
+        return true;
+      case VerificationType.accountDeletion:
+        return Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ProfileScreen(),
+                    ),
+                  );
+      case VerificationType.googleVerification:
+        return Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const LoginScreen(),
+                    ),
+                  );
+    }
+  }
+
 
   String extractErrorText(Object e) {
     var text = e.toString();
@@ -261,7 +296,6 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
           await api.verifyCode(codeInt);
           if (mounted) {
             _resendTimer?.cancel();
-            print('📱 Google verification successful, completing sign-in...');
             if (widget.onSuccess != null) {
               widget.onSuccess!(widget.email, null);
             }
@@ -475,7 +509,7 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => _backRoute(),
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.white,
                     shape: const StadiumBorder(),

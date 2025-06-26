@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
 import '../../models/user_model/dart.dart';
 
 class GoogleTestScreen extends StatefulWidget {

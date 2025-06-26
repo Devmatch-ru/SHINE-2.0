@@ -35,7 +35,6 @@ class GoogleAuthService {
 
       return await _googleSignIn.signIn();
     } catch (error) {
-      print('Google Sign In Error: $error');
       return null;
     }
   }
@@ -64,7 +63,6 @@ class GoogleAuthService {
         accessToken: auth.accessToken,
       );
     } catch (error) {
-      print('Google Sign In Error: $error');
       return null;
     }
   }
@@ -85,7 +83,6 @@ class GoogleAuthService {
         accessToken: auth.accessToken,
       );
     } catch (error) {
-      print('Silent Sign In Error: $error');
       return null;
     }
   }

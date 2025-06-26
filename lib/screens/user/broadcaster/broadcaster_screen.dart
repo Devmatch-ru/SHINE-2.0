@@ -4,8 +4,8 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:shine/theme/app_constant.dart';
 import 'dart:ui' as ui;
 
-import '../../blocs/broadcaster/broadcaster_cubit.dart';
-import '../../blocs/broadcaster/broadcaster_state.dart';
+import '../../../blocs/broadcaster/broadcaster_cubit.dart';
+import '../../../blocs/broadcaster/broadcaster_state.dart';
 
 class BroadcasterScreen extends StatelessWidget {
   final String receiverUrl;

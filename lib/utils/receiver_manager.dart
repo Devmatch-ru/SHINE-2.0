@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
-import 'package:network_info_plus/network_info_plus.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:path_provider/path_provider.dart';
@@ -23,10 +22,9 @@ class ReceiverManager {
   final List<String> _connectedBroadcasters = [];
   bool _isConnected = false;
   bool _isDisposed = false;
-  final int maxConnections = AppConstants.maxConnections; // ИСПРАВЛЕНИЕ: Используем константу
+  final int maxConnections = AppConstants.maxConnections;
   final ValueNotifier<List<String>> messagesNotifier = ValueNotifier([]);
 
-  // Callbacks
   VoidCallback? onStateChange;
   void Function(MediaStream?)? onStreamChanged;
   void Function(String error)? onError;
@@ -65,7 +63,6 @@ class ReceiverManager {
 
   Future<void> startDiscoveryListener() async {
     try {
-      // ИСПРАВЛЕНИЕ: Используем новую утилиту для получения оптимального IP
       final wifiIP = await NetworkUtils.getOptimalWiFiIP();
       if (wifiIP == null) {
         _addMessage('Failed to get optimal WiFi IP, showing debug info...');
